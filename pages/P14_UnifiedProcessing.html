@@ -567,6 +567,37 @@
             font-size: 0.875rem;
         }
 
+        /* Restored file styles */
+        .restored {
+            border-color: #10B981 !important;
+            background: rgba(16, 185, 129, 0.05) !important;
+        }
+
+        .restored-badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .zone-file-item.restored {
+            border-left: 3px solid #10B981;
+        }
+
+        .step3-file-item.restored {
+            border-left: 3px solid #10B981;
+        }
+
+        .step3-rawid-select:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         /* Dark mode */
         [data-theme="dark"] .section-card,
         [data-theme="dark"] .wizard-navigation {
@@ -883,14 +914,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
     <!-- Scripts -->
     <script src="../utils/session.js"></script>
     <script src="../utils/navigation.js"></script>
     <script src="../js/config.js"></script>
+    <script src="../js/supabase-client.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/markdown-converter.js"></script>
     <script src="../js/multi-llm-client.js"></script>
+    <script src="../js/llm-session-manager.js"></script>
 
     <script>
         // ========================================
@@ -937,10 +971,171 @@
         // ========================================
         // 초기화
         // ========================================
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             initDarkMode();
+            await loadSavedState();  // 저장된 데이터 복원
             updateStepUI();
         });
+
+        // ========================================
+        // 저장된 상태 복원
+        // ========================================
+        async function loadSavedState() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportId = urlParams.get('reportId');
+
+            if (!reportId) {
+                console.log('📌 reportId 없음 - 새 세션');
+                return;
+            }
+
+            console.log('📌 저장된 상태 복원 시작, reportId:', reportId);
+
+            try {
+                showToast('저장된 데이터를 불러오는 중...', 'info');
+
+                // 1. DB에서 reports.user_inputs 로드 시도
+                if (window.supabaseClient && typeof window.supabaseClient.getReport === 'function') {
+                    const report = await window.supabaseClient.getReport(reportId);
+                    if (report?.user_inputs?.stage2) {
+                        console.log('✅ DB에서 stage2 데이터 발견');
+                        await restoreStateFromUserInputs(report.user_inputs.stage2);
+                        showToast('저장된 데이터를 복원했습니다', 'success');
+                        return;
+                    }
+                }
+
+                // 2. Fallback: localStorage에서 로드
+                const restored = await restoreStateFromLocalStorage();
+                if (restored) {
+                    showToast('저장된 데이터를 복원했습니다', 'success');
+                }
+
+            } catch (error) {
+                console.error('❌ 상태 복원 실패:', error);
+                showToast('저장된 데이터 로드 실패', 'error');
+            }
+        }
+
+        async function restoreStateFromUserInputs(stage2Data) {
+            console.log('📦 user_inputs에서 복원:', stage2Data);
+
+            // Step 1-2 파일 복원
+            if (stage2Data.uploadedFiles) {
+                Object.keys(uploadedFiles).forEach(zone => {
+                    if (stage2Data.uploadedFiles[zone]) {
+                        uploadedFiles[zone] = stage2Data.uploadedFiles[zone].map(file => ({
+                            ...file,
+                            isRestored: true  // UI 표시용 플래그
+                        }));
+                    }
+                });
+            }
+
+            // Step 3 파일 복원
+            if (stage2Data.step3Files) {
+                step3Files.length = 0;
+                stage2Data.step3Files.forEach(file => {
+                    step3Files.push({ ...file, isRestored: true });
+                });
+            }
+
+            // 라디오 버튼 상태 복원
+            if (stage2Data.radioStates) {
+                setRadioStatesFromData(stage2Data.radioStates);
+            }
+
+            // 처리 완료 상태 복원
+            if (stage2Data.processingComplete) {
+                markProcessingComplete();
+            }
+
+            // UI 갱신
+            renderAllFileLists();
+            updateAllUploadButtons();
+        }
+
+        async function restoreStateFromLocalStorage() {
+            console.log('📦 localStorage에서 복원 시도');
+
+            // localStorage에서 복원
+            const savedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            const savedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
+
+            if (Array.isArray(savedFiles) && savedFiles.length > 0) {
+                // uploadedFiles 배열 형식인 경우 (이전 저장 형식)
+                savedFiles.forEach(file => {
+                    const zoneId = file.zoneId;
+                    if (zoneId === 'step3') {
+                        step3Files.push({
+                            name: file.fileName,
+                            size: file.fileSize,
+                            rawId: file.rawId,
+                            isRestored: true
+                        });
+                    } else if (uploadedFiles[zoneId]) {
+                        uploadedFiles[zoneId].push({
+                            name: file.fileName,
+                            size: file.fileSize,
+                            rawIdCandidates: rawIdMapping[zoneId] || [],
+                            isRestored: true
+                        });
+                    }
+                });
+
+                renderAllFileLists();
+                updateAllUploadButtons();
+                console.log('✅ localStorage에서 복원 완료:', savedFiles.length, '개 파일');
+                return true;
+            }
+
+            console.log('📌 localStorage에 저장된 파일 없음');
+            return false;
+        }
+
+        // 헬퍼 함수들
+        function setRadioStatesFromData(radioStates) {
+            Object.entries(radioStates).forEach(([name, value]) => {
+                const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    // 라디오 상태에 따라 업로드 영역 토글
+                    const zoneId = name.replace('_hasChanges', '').replace('_sponsored', '_sponsored').replace('_iitnis', '_iitnis');
+                    toggleUploadZones(name.replace('_hasChanges', '').replace('step2_sponsored', 'step2_sponsored').replace('step2_iitnis', 'step2_iitnis'));
+                }
+            });
+        }
+
+        function renderAllFileLists() {
+            // Step 1-2 파일 목록 렌더링
+            Object.keys(uploadedFiles).forEach(zone => {
+                renderZoneFiles(zone);
+            });
+            // Step 3 파일 목록 렌더링
+            renderStep3FileList();
+        }
+
+        function updateAllUploadButtons() {
+            Object.keys(uploadedFiles).forEach(zone => {
+                updateUploadButton(zone);
+            });
+        }
+
+        function markProcessingComplete() {
+            const icons = document.querySelectorAll('.processing-step-icon');
+            icons.forEach(icon => {
+                icon.classList.add('completed');
+                icon.textContent = '✓';
+            });
+            document.getElementById('processingStatus').classList.add('visible');
+        }
+
+        function clearAllFiles() {
+            Object.keys(uploadedFiles).forEach(zone => {
+                uploadedFiles[zone] = [];
+            });
+            step3Files.length = 0;
+        }
 
         function initDarkMode() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -1063,8 +1258,9 @@
             const files = uploadedFiles[zoneId];
 
             container.innerHTML = files.map((f, index) => `
-                <div class="zone-file-item">
+                <div class="zone-file-item ${f.isRestored ? 'restored' : ''}">
                     <span class="zone-file-name">${f.name}</span>
+                    ${f.isRestored ? '<span class="restored-badge">복원됨</span>' : ''}
                     <button class="zone-file-remove" onclick="removeFile('${zoneId}', ${index})">✕</button>
                 </div>
             `).join('');
@@ -1124,13 +1320,13 @@
             }
 
             container.innerHTML = step3Files.map((f, index) => `
-                <div class="step3-file-item">
+                <div class="step3-file-item ${f.isRestored ? 'restored' : ''}">
                     <span class="step3-file-icon">${getFileIcon(f.name)}</span>
                     <div class="step3-file-info">
                         <div class="step3-file-name">${f.name}</div>
-                        <div class="step3-file-size">${formatFileSize(f.size)}</div>
+                        <div class="step3-file-size">${formatFileSize(f.size)}${f.isRestored ? ' <span class="restored-badge">복원됨</span>' : ''}</div>
                     </div>
-                    <select class="step3-rawid-select" onchange="updateStep3RawId(${index}, this.value)">
+                    <select class="step3-rawid-select" onchange="updateStep3RawId(${index}, this.value)" ${f.isRestored ? 'disabled' : ''}>
                         ${step3RawIdOptions.map(opt => `
                             <option value="${opt.value}" ${f.rawId === opt.value ? 'selected' : ''}>
                                 ${opt.label}
@@ -1274,7 +1470,7 @@
                 localStorage.setItem('generatedPSURReport', JSON.stringify({
                     content: JSON.stringify({ sections: generatedSections }),
                     generatedAt: new Date().toISOString(),
-                    model: 'gemini-2.0-flash',
+                    model: 'gemini-3-flash-preview',
                     sourceFiles: Object.keys(convertedMarkdowns).length
                 }));
                 updateProcessingStep(4, 'completed', '완료');
@@ -1456,14 +1652,64 @@
             localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFilesData));
             localStorage.setItem('convertedMarkdowns', JSON.stringify(convertedMarkdowns));
 
+            // Stage 2 상태 데이터 구성 (DB 저장용)
+            const stage2Data = {
+                uploadedFiles: {},
+                step3Files: step3Files.map(f => ({
+                    name: f.name,
+                    size: f.size,
+                    rawId: f.rawId
+                })),
+                radioStates: collectRadioStates(),
+                processingComplete: true,
+                savedAt: new Date().toISOString()
+            };
+
+            // uploadedFiles를 zone별로 저장 (파일 객체 제외)
+            Object.keys(uploadedFiles).forEach(zone => {
+                stage2Data.uploadedFiles[zone] = uploadedFiles[zone].map(f => ({
+                    name: f.name,
+                    size: f.size,
+                    rawIdCandidates: f.rawIdCandidates || []
+                }));
+            });
+
             // current_report 업데이트
             const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
             currentReport.user_inputs = currentReport.user_inputs || {};
             currentReport.user_inputs.uploadedFiles = uploadedFilesData;
             currentReport.user_inputs.convertedMarkdowns = convertedMarkdowns;
+            currentReport.user_inputs.stage2 = stage2Data;  // Stage 2 전체 상태 저장
             localStorage.setItem('current_report', JSON.stringify(currentReport));
 
+            // DB에 저장 (reports.user_inputs 업데이트)
+            const reportId = getUrlParam('reportId');
+            if (reportId && window.supabaseClient && typeof window.supabaseClient.updateReport === 'function') {
+                try {
+                    await window.supabaseClient.updateReport(reportId, {
+                        user_inputs: currentReport.user_inputs,
+                        current_stage: 2
+                    });
+                    console.log('✅ DB에 Stage 2 상태 저장 완료');
+                } catch (dbError) {
+                    console.warn('⚠️ DB 저장 실패 (localStorage는 성공):', dbError);
+                }
+            }
+
             console.log('✅ 처리 결과 저장 완료:', convertedFiles.length, '개 파일');
+        }
+
+        // 라디오 버튼 상태 수집
+        function collectRadioStates() {
+            const radioNames = ['step1_hasChanges', 'step2_sponsored', 'step2_iitnis'];
+            const states = {};
+            radioNames.forEach(name => {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                if (checked) {
+                    states[name] = checked.value;
+                }
+            });
+            return states;
         }
 
         // ========================================
@@ -1522,19 +1768,33 @@ ${allMarkdowns}
 
                 console.log('📝 LLM 프롬프트 생성 완료, 토큰 수:', prompt.length);
 
-                // 4. LLM 호출
-                if (!window.multiLLMClient) {
-                    throw new Error('multiLLMClient가 초기화되지 않았습니다.');
+                // 4. LLM 호출 (세션 매니저를 통해 - DB에 저장됨)
+                if (!window.llmSessionManager) {
+                    throw new Error('llmSessionManager가 초기화되지 않았습니다.');
                 }
 
-                const response = await window.multiLLMClient.generate(prompt, {
+                // 세션 초기화 (reportId 기반)
+                const reportId = new URLSearchParams(window.location.search).get('reportId') ||
+                                 localStorage.getItem('current_report_id') ||
+                                 'local_' + Date.now();
+
+                await window.llmSessionManager.initSession(reportId, {
+                    model: 'gemini-3-flash-preview',
+                    provider: 'google'
+                });
+
+                // 세션 매니저를 통해 LLM 호출 → DB에 자동 저장됨
+                const response = await window.llmSessionManager.sendMessage(prompt, {
                     provider: 'google',
-                    model: 'gemini-3-flash-preview'
+                    model: 'gemini-3-flash-preview',
+                    dialogType: 'psur_generation',  // 대화 타입 구분
+                    skipHistory: true  // 대용량 프롬프트이므로 히스토리 누적 방지
                 });
 
                 // response는 객체, response.text가 실제 텍스트
                 const responseText = response?.text || '';
                 console.log('✅ LLM 응답 수신:', responseText.length, '자');
+                console.log('📊 PSUR 생성 대화가 세션에 저장됨 (dialogType: psur_generation)');
 
                 // 5. JSON 파싱
                 return parseSectionsFromResponse(responseText, sectionNames);
