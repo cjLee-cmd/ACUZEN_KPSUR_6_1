@@ -27,11 +27,11 @@ class SupabaseClient {
 
         try {
             // Supabase SDK 로드 확인
-            if (typeof supabase === 'undefined') {
+            if (typeof window.supabase === 'undefined') {
                 throw new Error('Supabase SDK not loaded');
             }
 
-            const { createClient } = supabase;
+            const { createClient } = window.supabase;
             this.client = createClient(
                 window.CONFIG.SUPABASE_URL,
                 window.CONFIG.SUPABASE_ANON_KEY
@@ -197,19 +197,24 @@ class SupabaseClient {
     /**
      * 보고서 목록 조회
      */
-    async getReports(userId) {
+    async getReports(userId = null) {
         await this.init();
 
         try {
-            const { data, error } = await this.client
+            let query = this.client
                 .from('reports')
-                .select('*')
-                .eq('created_by', userId)
-                .order('updated_at', { ascending: false });
+                .select('*');
+
+            // userId가 제공된 경우에만 필터링
+            if (userId) {
+                query = query.eq('created_by', userId);
+            }
+
+            const { data, error } = await query.order('updated_at', { ascending: false });
 
             if (error) throw error;
 
-            console.log(`✅ Retrieved ${data.length} reports`);
+            console.log(`✅ Retrieved ${data.length} reports${userId ? ' for user ' + userId : ''}`);
             return { success: true, reports: data };
 
         } catch (error) {
@@ -278,12 +283,17 @@ class SupabaseClient {
                 .update(updates)
                 .eq('id', reportId)
                 .select()
-                .single();
+                .maybeSingle();  // single() 대신 maybeSingle() 사용 - 결과가 없어도 에러 안남
 
             if (error) throw error;
 
-            console.log('✅ Report updated:', reportId);
-            return { success: true, report: data };
+            if (data) {
+                console.log('✅ Report updated:', reportId);
+                return { success: true, report: data };
+            } else {
+                console.warn('⚠️ Report not found for update:', reportId);
+                return { success: false, error: 'Report not found' };
+            }
 
         } catch (error) {
             console.error('❌ Update report failed:', error.message);
@@ -1000,6 +1010,201 @@ class SupabaseClient {
             console.error('❌ Get LLM cost stats failed:', error.message);
             return { success: false, error: error.message };
         }
+    }
+
+    // =========================================
+    // LLM Session Management Methods
+    // =========================================
+
+    /**
+     * LLM 세션 생성
+     * @param {string} reportId - 보고서 UUID
+     * @param {Object} data - 세션 데이터
+     */
+    async createLLMSession(reportId, data = {}) {
+        await this.init();
+
+        try {
+            const sessionId = data.sessionId || `session_${reportId}_${Date.now()}`;
+
+            const sessionData = {
+                report_id: reportId,
+                session_id: sessionId,
+                system_prompt: data.systemPrompt || null,
+                model_name: data.model || 'claude-sonnet-3-5',
+                context_window_tokens: 0,
+                max_context_tokens: data.maxTokens || 200000,
+                status: 'active'
+            };
+
+            const { data: result, error } = await this.client
+                .from('llm_sessions')
+                .insert([sessionData])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log(`✅ LLM session created: ${sessionId}`);
+            return { success: true, session: result };
+
+        } catch (error) {
+            console.error('❌ Create LLM session failed:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * 보고서의 활성 LLM 세션 조회
+     * @param {string} reportId - 보고서 UUID
+     */
+    async getLLMSession(reportId) {
+        await this.init();
+
+        try {
+            const { data, error } = await this.client
+                .from('llm_sessions')
+                .select('*')
+                .eq('report_id', reportId)
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
+
+            if (data) {
+                console.log(`✅ LLM session found: ${data.session_id}`);
+                return { success: true, session: data };
+            }
+
+            return { success: true, session: null };
+
+        } catch (error) {
+            console.error('❌ Get LLM session failed:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * LLM 세션 업데이트
+     * @param {string} sessionId - 세션 UUID (llm_sessions.id)
+     * @param {Object} data - 업데이트할 데이터
+     */
+    async updateLLMSession(sessionId, data) {
+        await this.init();
+
+        try {
+            const updateData = {
+                last_activity_at: new Date().toISOString()
+            };
+
+            if (data.systemPrompt !== undefined) updateData.system_prompt = data.systemPrompt;
+            if (data.model !== undefined) updateData.model_name = data.model;
+            if (data.contextTokens !== undefined) updateData.context_window_tokens = data.contextTokens;
+            if (data.status !== undefined) updateData.status = data.status;
+
+            const { data: result, error } = await this.client
+                .from('llm_sessions')
+                .update(updateData)
+                .eq('id', sessionId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log(`✅ LLM session updated: ${sessionId}`);
+            return { success: true, session: result };
+
+        } catch (error) {
+            console.error('❌ Update LLM session failed:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * 세션의 전체 대화 메시지 조회
+     * @param {string} sessionId - 세션 UUID (llm_sessions.id)
+     */
+    async getLLMSessionMessages(sessionId) {
+        await this.init();
+
+        try {
+            const { data, error } = await this.client
+                .from('llm_dialogs')
+                .select('*')
+                .eq('session_id', sessionId)
+                .order('sequence_number', { ascending: true });
+
+            if (error) throw error;
+
+            console.log(`✅ Retrieved ${data.length} messages for session ${sessionId}`);
+            return { success: true, messages: data };
+
+        } catch (error) {
+            console.error('❌ Get session messages failed:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * 세션에 대화 메시지 저장
+     * @param {string} sessionId - 세션 UUID (llm_sessions.id)
+     * @param {string} reportId - 보고서 UUID
+     * @param {Object} data - 메시지 데이터
+     */
+    async saveLLMMessage(sessionId, reportId, data) {
+        await this.init();
+
+        try {
+            // 현재 시퀀스 번호 조회
+            const { data: lastMsg } = await this.client
+                .from('llm_dialogs')
+                .select('sequence_number')
+                .eq('session_id', sessionId)
+                .order('sequence_number', { ascending: false })
+                .limit(1)
+                .single();
+
+            const sequenceNumber = (lastMsg?.sequence_number || 0) + 1;
+
+            const messageData = {
+                session_id: sessionId,
+                report_id: reportId,
+                sequence_number: sequenceNumber,
+                dialog_type: data.dialogType || 'chat',
+                model: data.model,
+                user_message: data.userMessage,
+                assistant_message: data.assistantMessage,
+                input_tokens: data.inputTokens || 0,
+                output_tokens: data.outputTokens || 0,
+                cost_usd: data.costUsd || 0,
+                duration_ms: data.durationMs || 0
+            };
+
+            const { data: result, error } = await this.client
+                .from('llm_dialogs')
+                .insert([messageData])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log(`✅ Message saved to session (seq: ${sequenceNumber})`);
+            return { success: true, message: result };
+
+        } catch (error) {
+            console.error('❌ Save LLM message failed:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * 세션 아카이브 (비활성화)
+     * @param {string} sessionId - 세션 UUID
+     */
+    async archiveLLMSession(sessionId) {
+        return await this.updateLLMSession(sessionId, { status: 'archived' });
     }
 }
 

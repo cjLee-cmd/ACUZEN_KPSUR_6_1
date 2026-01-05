@@ -140,7 +140,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #25739B;
+            background: #12305B;
             color: white;
             display: flex;
             align-items: center;
@@ -196,7 +196,7 @@
 
         .role-badge.viewer {
             background: #F1F5F9;
-            color: #475569;
+            color: #273453;
         }
 
         .status-badge {
@@ -233,8 +233,8 @@
         }
 
         .action-btn:hover {
-            border-color: #25739B;
-            color: #25739B;
+            border-color: #12305B;
+            color: #12305B;
         }
 
         /* User Modal */
@@ -301,8 +301,8 @@
 
         .form-input:focus {
             outline: none;
-            border-color: #25739B;
-            box-shadow: 0 0 0 3px rgba(37, 115, 155, 0.1);
+            border-color: #12305B;
+            box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.1);
         }
 
         .form-select {
@@ -324,7 +324,7 @@
 
         /* 다크모드 변수 */
         :root {
-            --page-bg: #F5F7FA;
+            --page-bg: #F2F5FC;
             --card-bg: white;
             --text-primary: #07161D;
             --text-secondary: #64748b;
@@ -335,14 +335,14 @@
         }
 
         [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
+            --page-bg: #0B1730;
+            --card-bg: #0B1730;
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            --border-color: #334155;
-            --section-bg: #334155;
-            --input-bg: #334155;
+            --border-color: #1C2740;
+            --section-bg: #1C2740;
+            --input-bg: #1C2740;
         }
 
         /* 다크모드 스타일 */
@@ -358,7 +358,7 @@
         [data-theme="dark"] .control-bar,
         [data-theme="dark"] .user-table-container {
             background: transparent !important;
-            border-color: #475569;
+            border-color: #273453;
         }
 
         [data-theme="dark"] .stat-value {
@@ -371,14 +371,14 @@
 
         [data-theme="dark"] .search-input,
         [data-theme="dark"] .filter-select {
-            background: #334155;
-            border-color: #475569;
+            background: #1C2740;
+            border-color: #273453;
             color: var(--text-primary);
         }
 
         [data-theme="dark"] .user-table thead {
-            background: #334155;
-            border-color: #475569;
+            background: #1C2740;
+            border-color: #273453;
         }
 
         [data-theme="dark"] .user-table th {
@@ -386,11 +386,11 @@
         }
 
         [data-theme="dark"] .user-table tbody tr {
-            border-color: #475569;
+            border-color: #273453;
         }
 
         [data-theme="dark"] .user-table tbody tr:hover {
-            background: #334155;
+            background: #1C2740;
         }
 
         [data-theme="dark"] .user-table td {
@@ -421,7 +421,7 @@
         }
 
         [data-theme="dark"] .role-badge.viewer {
-            background: #334155;
+            background: #1C2740;
             color: #94a3b8;
         }
 
@@ -436,8 +436,8 @@
         }
 
         [data-theme="dark"] .action-btn {
-            background: #334155;
-            border-color: #475569;
+            background: #1C2740;
+            border-color: #273453;
             color: #94a3b8;
         }
 
@@ -447,12 +447,12 @@
         }
 
         [data-theme="dark"] .user-modal-content {
-            background: #1e293b;
-            border: 1px solid #475569;
+            background: #0B1730;
+            border: 1px solid #273453;
         }
 
         [data-theme="dark"] .user-modal-header {
-            border-color: #475569;
+            border-color: #273453;
         }
 
         [data-theme="dark"] .user-modal-title {
@@ -465,13 +465,13 @@
 
         [data-theme="dark"] .form-input,
         [data-theme="dark"] .form-select {
-            background: #334155;
-            border-color: #475569;
+            background: #1C2740;
+            border-color: #273453;
             color: var(--text-primary);
         }
 
         [data-theme="dark"] .user-modal-footer {
-            border-color: #475569;
+            border-color: #273453;
         }
 
         /* Header styles */
@@ -493,7 +493,7 @@
         .header-logo {
             font-size: 18px;
             font-weight: 700;
-            color: #25739B;
+            color: #12305B;
         }
 
         .header-right {
@@ -516,12 +516,12 @@
         }
 
         .dark-mode-toggle:hover {
-            border-color: #25739B;
+            border-color: #12305B;
         }
 
         [data-theme="dark"] .dark-mode-toggle {
-            background: #334155;
-            border-color: #475569;
+            background: #1C2740;
+            border-color: #273453;
         }
 
         .icon-sun, .icon-moon {
@@ -545,6 +545,7 @@
 <script src="../js/page-guard.js"></script>
 
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout" id="app">
         <!-- Header -->
         <header class="app-header">
@@ -565,6 +566,9 @@
             </div>
 
             <div class="header-right">
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
+                    🏠
+                </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
                     <span class="icon-sun">☀️</span>
                     <span class="icon-moon">🌙</span>

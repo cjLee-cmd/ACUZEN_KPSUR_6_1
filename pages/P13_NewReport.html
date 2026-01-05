@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,34 +8,54 @@
     <link rel="stylesheet" href="../css/styles/globals.css">
     <link rel="stylesheet" href="../css/styles/layout.css">
     <style>
+        /* ============================================
+           New Report - Glassmorphism Design
+           ============================================ */
+
         .page-container {
             max-width: 1000px;
             margin: 0 auto;
+            animation: fadeIn 0.6s ease;
         }
 
         .page-header {
             margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-xl);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
         }
 
         .page-title {
             font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            color: transparent;
+            background-clip: text;
             margin-bottom: var(--spacing-xs);
         }
 
         .page-description {
             font-size: 14px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
             line-height: 1.6;
         }
 
-        /* 폼 카드 */
+        /* Form Card - Glass Effect */
         .form-card {
-            background: var(--card-bg);
-            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             padding: var(--spacing-xl);
-            box-shadow: 0 1px 3px var(--card-shadow);
+            box-shadow: var(--glass-shadow);
             margin-bottom: var(--spacing-lg);
         }
 
@@ -52,26 +73,27 @@
             gap: var(--spacing-sm);
             margin-bottom: var(--spacing-lg);
             padding-bottom: var(--spacing-md);
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .section-number {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: var(--gradient-accent);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.25);
         }
 
         .section-title {
             font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: var(--app-text-strong);
         }
 
         .form-row {
@@ -92,47 +114,56 @@
         }
 
         .form-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--color-primary);
             display: flex;
             align-items: center;
             gap: var(--spacing-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .required {
-            color: #EF4444;
+            color: var(--color-error);
         }
 
         .label-badge {
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
             font-size: 10px;
             font-weight: 600;
-            background: rgba(37, 115, 155, 0.1);
-            color: #25739B;
+            background: rgba(31, 78, 140, 0.12);
+            color: var(--color-primary);
         }
 
-        .form-input, .form-select, .form-textarea {
+        .form-input,
+        .form-select,
+        .form-textarea {
             padding: var(--spacing-md);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-md);
             font-size: 14px;
-            transition: all 0.2s ease;
-            background: var(--input-bg);
-            color: var(--text-primary);
+            transition: all 0.3s ease;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            color: var(--app-text-strong);
         }
 
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            border-color: #25739B;
-            box-shadow: 0 0 0 3px rgba(37, 115, 155, 0.1);
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(31, 78, 140, 0.15);
             outline: none;
         }
 
-        .form-input:disabled, .form-select:disabled {
-            background: var(--section-bg);
-            color: var(--text-muted);
+        .form-input:disabled,
+        .form-select:disabled {
+            background: var(--glass-bg-light);
+            color: var(--app-text-muted);
             cursor: not-allowed;
+            opacity: 0.7;
         }
 
         .form-textarea {
@@ -142,21 +173,22 @@
 
         .form-help {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
             line-height: 1.4;
         }
 
-        /* 약품명 선택 */
+        /* Drug Selector - Glass */
         .drug-selector {
             position: relative;
         }
 
         .drug-search-btn {
             padding: var(--spacing-md);
-            border: 2px solid #25739B;
-            border-radius: 8px;
-            background: var(--input-bg);
-            color: #25739B;
+            border: 2px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            color: var(--color-primary);
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
@@ -165,23 +197,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .drug-search-btn:hover {
-            background: rgba(37, 115, 155, 0.05);
+            background: rgba(31, 78, 140, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.15);
         }
 
         .drug-selected {
-            background: rgba(37, 115, 155, 0.1);
-            border-color: #25739B;
+            background: rgba(31, 78, 140, 0.12);
+            border-color: var(--color-primary);
         }
 
-        /* 자동 채워진 정보 */
+        /* Auto-filled Section - Glass */
         .auto-filled-section {
-            background: #F0F9FF;
-            border: 2px solid #BAE6FD;
-            border-radius: 8px;
+            background: rgba(31, 78, 140, 0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(31, 78, 140, 0.2);
+            border-radius: var(--radius-lg);
             padding: var(--spacing-lg);
             margin-top: var(--spacing-lg);
         }
@@ -199,8 +234,8 @@
 
         .auto-filled-title {
             font-size: 14px;
-            font-weight: 600;
-            color: #0369A1;
+            font-weight: 700;
+            color: var(--color-primary);
         }
 
         .auto-filled-grid {
@@ -212,38 +247,40 @@
         .auto-filled-item {
             display: flex;
             justify-content: space-between;
-            padding: var(--spacing-sm);
-            background: var(--input-bg);
-            border-radius: 6px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
         }
 
         .auto-filled-label {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
         }
 
         .auto-filled-value {
             font-size: 13px;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--app-text-strong);
         }
 
-        /* 액션 버튼 */
+        /* Action Buttons */
         .form-actions {
             display: flex;
             justify-content: space-between;
             gap: var(--spacing-md);
             padding-top: var(--spacing-xl);
-            border-top: 2px solid var(--border-color);
+            border-top: 1px solid var(--glass-border);
         }
 
         .btn {
             padding: var(--spacing-md) var(--spacing-xl);
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
             display: flex;
             align-items: center;
@@ -251,34 +288,38 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: var(--gradient-accent);
             color: white;
             flex: 1;
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.25);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(37, 115, 155, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(31, 78, 140, 0.35);
         }
 
         .btn-secondary {
-            background: var(--card-bg);
-            border: 2px solid var(--border-color);
-            color: var(--text-secondary);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--glass-border);
+            color: var(--app-text-normal);
         }
 
         .btn-secondary:hover {
-            background: var(--section-bg);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
         }
 
-        /* 약품명 검색 모달 */
+        /* Modal - Glass */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(7, 22, 29, 0.8);
+            background: rgba(7, 22, 29, 0.85);
+            backdrop-filter: blur(4px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -290,44 +331,63 @@
         }
 
         .modal-content {
-            background: var(--card-bg);
-            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             width: 90%;
             max-width: 800px;
             max-height: 80vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .modal-header {
             padding: var(--spacing-xl);
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .modal-title {
             font-size: 18px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--app-text-strong);
         }
 
         .modal-search {
             padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .search-input {
             width: 100%;
             padding: var(--spacing-md);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-md);
             font-size: 14px;
-            background: var(--input-bg);
-            color: var(--text-primary);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            color: var(--app-text-strong);
+            transition: all 0.3s ease;
         }
 
         .search-input:focus {
-            border-color: #25739B;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(31, 78, 140, 0.15);
             outline: none;
         }
 
@@ -345,179 +405,39 @@
 
         .drug-item {
             padding: var(--spacing-md);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-md);
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: var(--input-bg);
+            transition: all 0.3s ease;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
         }
 
         .drug-item:hover {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.05);
+            border-color: var(--color-primary);
+            background: rgba(31, 78, 140, 0.08);
+            transform: translateX(4px);
         }
 
         .drug-item-name {
             font-size: 14px;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--app-text-strong);
             margin-bottom: 4px;
         }
 
         .drug-item-meta {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
         }
 
         .modal-footer {
             padding: var(--spacing-lg);
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--glass-border);
             text-align: right;
         }
 
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .auto-filled-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-actions {
-                flex-direction: column-reverse;
-            }
-
-            .btn-primary {
-                width: 100%;
-            }
-        }
-
-        /* 다크모드 변수 */
-        :root {
-            --page-bg: #F5F7FA;
-            --card-bg: white;
-            --card-shadow: rgba(0, 0, 0, 0.1);
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --text-muted: #9CA3AF;
-            --border-color: #E5E7EB;
-            --input-bg: white;
-            --section-bg: #F9FAFB;
-        }
-
-        [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
-            --card-shadow: none;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: #334155;
-            --input-bg: #334155;
-            --section-bg: #334155;
-        }
-
-        /* 다크모드 컴포넌트 스타일 */
-        [data-theme="dark"] .page-title,
-        [data-theme="dark"] .section-title,
-        [data-theme="dark"] .form-label,
-        [data-theme="dark"] .drug-item-name,
-        [data-theme="dark"] .auto-filled-value,
-        [data-theme="dark"] .modal-title {
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .page-description,
-        [data-theme="dark"] .form-help,
-        [data-theme="dark"] .drug-item-meta,
-        [data-theme="dark"] .auto-filled-label {
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .form-card {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: 1px solid #475569;
-        }
-
-        [data-theme="dark"] .modal-content {
-            background: #1e293b;
-            border: 1px solid #475569;
-        }
-
-        [data-theme="dark"] .form-input,
-        [data-theme="dark"] .form-select,
-        [data-theme="dark"] .form-textarea,
-        [data-theme="dark"] .search-input {
-            background: var(--input-bg);
-            border-color: var(--border-color);
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .form-input:disabled,
-        [data-theme="dark"] .form-select:disabled {
-            background: #475569;
-            color: var(--text-muted);
-        }
-
-        [data-theme="dark"] .section-header,
-        [data-theme="dark"] .form-actions,
-        [data-theme="dark"] .modal-header,
-        [data-theme="dark"] .modal-search,
-        [data-theme="dark"] .modal-footer {
-            border-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .auto-filled-section {
-            background: rgba(37, 115, 155, 0.15);
-            border-color: rgba(37, 115, 155, 0.4);
-        }
-
-        [data-theme="dark"] .auto-filled-title {
-            color: #60a5fa;
-        }
-
-        [data-theme="dark"] .auto-filled-item {
-            background: var(--input-bg);
-        }
-
-        [data-theme="dark"] .drug-search-btn {
-            background: var(--input-bg);
-            color: #60a5fa;
-            border-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .drug-search-btn:hover {
-            background: rgba(37, 115, 155, 0.2);
-        }
-
-        [data-theme="dark"] .drug-item {
-            border-color: var(--border-color);
-            background: var(--input-bg);
-        }
-
-        [data-theme="dark"] .drug-item:hover {
-            border-color: #60a5fa;
-            background: rgba(37, 115, 155, 0.15);
-        }
-
-        [data-theme="dark"] .btn-secondary {
-            background: var(--input-bg);
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .btn-secondary:hover {
-            background: #475569;
-        }
-
-        [data-theme="dark"] .label-badge {
-            background: rgba(96, 165, 250, 0.15);
-            color: #60a5fa;
-        }
-
-        /* LLM 선택 스타일 */
+        /* LLM Mode Selector - Glass */
         .llm-mode-selector {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -533,22 +453,24 @@
             align-items: center;
             gap: var(--spacing-md);
             padding: var(--spacing-lg);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: var(--card-bg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
         }
 
         .llm-mode-card:hover {
-            border-color: #25739B;
-            box-shadow: 0 4px 12px rgba(37, 115, 155, 0.1);
+            border-color: var(--color-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(31, 78, 140, 0.15);
         }
 
-        .llm-mode-option input:checked + .llm-mode-card {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.05);
-            box-shadow: 0 0 0 4px rgba(37, 115, 155, 0.1);
+        .llm-mode-option input:checked+.llm-mode-card {
+            border-color: var(--color-primary);
+            background: rgba(31, 78, 140, 0.1);
+            box-shadow: 0 0 0 4px rgba(31, 78, 140, 0.1), 0 8px 24px rgba(31, 78, 140, 0.2);
         }
 
         .llm-mode-icon {
@@ -558,28 +480,29 @@
         .llm-mode-name {
             font-size: 15px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--app-text-strong);
             margin-bottom: 4px;
         }
 
         .llm-mode-desc {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
             margin-bottom: 4px;
         }
 
         .llm-mode-cost {
             font-size: 11px;
-            color: #10B981;
+            color: var(--color-success);
             font-weight: 600;
         }
 
         .llm-settings-panel {
             margin-top: var(--spacing-lg);
             padding: var(--spacing-lg);
-            background: var(--section-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
         }
 
         .hybrid-flow {
@@ -599,19 +522,19 @@
         .phase-header {
             font-size: 14px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--app-text-strong);
             margin-bottom: var(--spacing-sm);
         }
 
         .phase-desc {
             font-size: 11px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
             margin-top: var(--spacing-xs);
         }
 
         .hybrid-arrow {
             font-size: 24px;
-            color: #25739B;
+            color: var(--color-primary);
             font-weight: 700;
         }
 
@@ -622,30 +545,61 @@
             justify-content: center;
             gap: var(--spacing-sm);
             padding: var(--spacing-md);
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--radius-md);
             font-size: 13px;
-            color: #059669;
+            color: var(--color-success);
+            font-weight: 500;
         }
 
         .cost-icon {
             font-size: 18px;
         }
 
-        [data-theme="dark"] .llm-mode-card {
-            background: var(--input-bg);
-            border-color: var(--border-color);
+        /* Dark Mode Overrides */
+        [data-theme="dark"] .page-title {
+            background: linear-gradient(135deg, #FFFFFF 0%, #D4D4D4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            background-clip: text;
         }
 
-        [data-theme="dark"] .llm-mode-option input:checked + .llm-mode-card {
-            background: rgba(96, 165, 250, 0.1);
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1);
+        [data-theme="dark"] .page-description,
+        [data-theme="dark"] .form-help,
+        [data-theme="dark"] .auto-filled-label,
+        [data-theme="dark"] .drug-item-meta,
+        [data-theme="dark"] .llm-mode-desc,
+        [data-theme="dark"] .phase-desc {
+            color: var(--app-text-normal);
         }
 
-        [data-theme="dark"] .llm-settings-panel {
-            background: #334155;
-            border-color: #475569;
+        [data-theme="dark"] .form-label {
+            color: var(--app-text-strong);
+        }
+
+        [data-theme="dark"] .section-title,
+        [data-theme="dark"] .modal-title,
+        [data-theme="dark"] .llm-mode-name,
+        [data-theme="dark"] .phase-header,
+        [data-theme="dark"] .auto-filled-value,
+        [data-theme="dark"] .drug-item-name {
+            color: var(--app-text-strong);
+        }
+
+        [data-theme="dark"] .drug-search-btn {
+            color: var(--app-text-strong);
+            border-color: var(--app-border-soft);
+        }
+
+        [data-theme="dark"] .auto-filled-title {
+            color: var(--app-text-strong);
+        }
+
+        [data-theme="dark"] .llm-mode-option input:checked+.llm-mode-card {
+            border-color: var(--app-border-soft);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         [data-theme="dark"] .hybrid-cost-estimate,
@@ -654,7 +608,28 @@
             color: #34d399;
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
+            .page-header {
+                padding: var(--spacing-lg);
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .auto-filled-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
             .llm-mode-selector {
                 grid-template-columns: 1fr;
             }
@@ -669,7 +644,9 @@
         }
     </style>
 </head>
+
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
@@ -683,13 +660,17 @@
 
             <div class="header-center">
                 <div class="breadcrumb">
-                    <span class="breadcrumb-item" onclick="navigateTo('P10_Dashboard.html')" style="cursor: pointer;">대시보드</span>
+                    <span class="breadcrumb-item" onclick="navigateTo('P10_Dashboard.html')"
+                        style="cursor: pointer;">대시보드</span>
                     <span class="breadcrumb-separator">/</span>
                     <span class="breadcrumb-item active">새 보고서 생성</span>
                 </div>
             </div>
 
             <div class="header-right">
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
+                    🏠
+                </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
                     <span class="icon-sun">☀️</span>
                     <span class="icon-moon">🌙</span>
@@ -766,12 +747,14 @@
                                         </div>
                                         <div class="auto-filled-item">
                                             <span class="auto-filled-label">CS4_보고종료날짜</span>
-                                            <input type="date" class="form-input" id="af_cs4" style="width: 150px; font-size: 12px;" onchange="updateReportDates()">
+                                            <input type="date" class="form-input" id="af_cs4"
+                                                style="width: 150px; font-size: 12px;" onchange="updateReportDates()">
                                         </div>
                                         <div class="auto-filled-item">
                                             <span class="auto-filled-label">CS3_보고시작날짜</span>
                                             <span class="auto-filled-value" id="af_cs3">-</span>
-                                            <span style="font-size: 10px; color: #6B7280;">(CS4 - CS24 자동계산)</span>
+                                            <span style="font-size: 10px; color: var(--app-text-normal);">(CS4 - CS24
+                                                자동계산)</span>
                                         </div>
                                         <div class="auto-filled-item">
                                             <span class="auto-filled-label">CS5_국내허가일자</span>
@@ -801,13 +784,8 @@
                                         <label class="form-label">
                                             버전넘버 (CS7) <span class="required">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            class="form-input"
-                                            id="first_approval_country"
-                                            placeholder="예: 1.0"
-                                            required
-                                        >
+                                        <input type="text" class="form-input" id="first_approval_country"
+                                            placeholder="예: 1.0" required>
                                         <div class="form-help">보고서 버전 번호를 입력하세요.</div>
                                     </div>
 
@@ -815,12 +793,7 @@
                                         <label class="form-label">
                                             보고서제출일 (CS6) <span class="required">*</span>
                                         </label>
-                                        <input
-                                            type="date"
-                                            class="form-input"
-                                            id="first_approval_date"
-                                            required
-                                        >
+                                        <input type="date" class="form-input" id="first_approval_date" required>
                                         <div class="form-help">보고서 제출 날짜를 선택하세요.</div>
                                     </div>
                                 </div>
@@ -830,12 +803,7 @@
                                         <label class="form-label">
                                             작성자 <span class="required">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            class="form-input"
-                                            id="author_name"
-                                            required
-                                        >
+                                        <input type="text" class="form-input" id="author_name" required>
                                         <div class="form-help">보고서 작성자 이름</div>
                                     </div>
 
@@ -843,13 +811,8 @@
                                         <label class="form-label">
                                             작성자 직책 <span class="required">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            class="form-input"
-                                            id="author_position"
-                                            placeholder="예: 약물감시팀장"
-                                            required
-                                        >
+                                        <input type="text" class="form-input" id="author_position"
+                                            placeholder="예: 약물감시팀장" required>
                                         <div class="form-help">작성자의 직책</div>
                                     </div>
                                 </div>
@@ -859,7 +822,8 @@
                                         <label class="form-label">
                                             보고주기 (CS24) <span class="required">*</span>
                                         </label>
-                                        <select class="form-select" id="report_period" required onchange="updateReportDates()">
+                                        <select class="form-select" id="report_period" required
+                                            onchange="updateReportDates()">
                                             <option value="">선택하세요</option>
                                             <option value="5" selected>5년</option>
                                             <option value="3">3년</option>
@@ -872,13 +836,8 @@
                                         <label class="form-label">
                                             유효기간 (CS13) <span class="required">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            class="form-input"
-                                            id="submitter"
-                                            placeholder="예: 36개월"
-                                            required
-                                        >
+                                        <input type="text" class="form-input" id="submitter" placeholder="예: 36개월"
+                                            required>
                                         <div class="form-help">의약품 유효기간</div>
                                     </div>
                                 </div>
@@ -898,13 +857,15 @@
                                         </label>
                                         <select class="form-select" id="llm_model" onchange="updateSelectedModelInfo()">
                                             <optgroup label="Google (권장)">
-                                                <option value="gemini-3-flash-preview" selected>Gemini 3 Flash Preview (기본, 무료)</option>
+                                                <option value="gemini-3-flash-preview" selected>Gemini 3 Flash Preview
+                                                    (기본, 무료)</option>
                                                 <option value="gemini-2.0-flash">Gemini 2.0 Flash (무료)</option>
                                                 <option value="gemini-2.0-pro">Gemini 2.0 Pro (~$0.25)</option>
                                                 <option value="gemini-2.5-flash">Gemini 2.5 Flash (~$0.05)</option>
                                             </optgroup>
                                             <optgroup label="Claude (Anthropic)">
-                                                <option value="claude-opus-4-5">Claude Opus 4.5 - 최고 품질 (~$3.00)</option>
+                                                <option value="claude-opus-4-5">Claude Opus 4.5 - 최고 품질 (~$3.00)
+                                                </option>
                                                 <option value="claude-sonnet-3-5">Claude Sonnet 3.5 (~$0.60)</option>
                                                 <option value="claude-haiku-3-5">Claude Haiku 3.5 (~$0.20)</option>
                                             </optgroup>
@@ -928,11 +889,8 @@
                                 <div class="form-row full">
                                     <div class="form-group">
                                         <label class="form-label">보고서 설명</label>
-                                        <textarea
-                                            class="form-textarea"
-                                            id="report_description"
-                                            placeholder="이 보고서에 대한 간단한 설명을 입력하세요..."
-                                        ></textarea>
+                                        <textarea class="form-textarea" id="report_description"
+                                            placeholder="이 보고서에 대한 간단한 설명을 입력하세요..."></textarea>
                                         <div class="form-help">보고서에 대한 메모나 특이사항을 기록할 수 있습니다.</div>
                                     </div>
                                 </div>
@@ -940,7 +898,8 @@
 
                             <!-- Actions -->
                             <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" onclick="navigateTo('P10_Dashboard.html')">
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="navigateTo('P10_Dashboard.html')">
                                     <span>취소</span>
                                 </button>
                                 <button type="submit" class="btn btn-primary">
@@ -1070,12 +1029,7 @@
             </div>
 
             <div class="modal-search">
-                <input
-                    type="text"
-                    class="search-input"
-                    id="drugSearch"
-                    placeholder="성분명 또는 브랜드명으로 검색..."
-                >
+                <input type="text" class="search-input" id="drugSearch" placeholder="성분명 또는 브랜드명으로 검색...">
             </div>
 
             <div class="modal-body">
@@ -1093,7 +1047,7 @@
     <!-- Dark Mode Script -->
     <script>
         // 다크모드 초기화 (페이지 로드 즉시)
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
@@ -1328,13 +1282,27 @@
                 // LLM 설정 가져오기
                 const llmSettings = getLLMSettings();
 
-                // 현재 사용자 정보 가져오기
-                const currentUser = window.authManager?.getCurrentUser();
-                const userId = currentUser?.id || null;
+                // 현재 사용자 정보 가져오기 (세션 복원 보장)
+                let userId = null;
+                if (window.authManager) {
+                    // 세션 체크를 먼저 수행하여 세션 복원 보장
+                    const sessionResult = window.authManager.checkSession();
+                    if (sessionResult.authenticated && sessionResult.user) {
+                        userId = sessionResult.user.id;
+                    }
+                }
+
+                // userId가 없으면 에러 표시 후 진행 중단
+                if (!userId) {
+                    hideLLMLoading();
+                    showToast('로그인 세션이 만료되었습니다. 다시 로그인해주세요.', 'error');
+                    setTimeout(() => navigateTo('P01_Login.html'), 2000);
+                    return;
+                }
 
                 // 보고서명 생성 (고유성 보장을 위해 타임스탬프 추가)
                 const timestamp = Date.now().toString(36).toUpperCase();  // Base36 for shorter unique ID
-                const reportName = `${selectedDrug.brand}_PSUR_${new Date().toISOString().slice(0,7).replace('-','Q')}_${timestamp}`;
+                const reportName = `${selectedDrug.brand}_PSUR_${new Date().toISOString().slice(0, 7).replace('-', 'Q')}_${timestamp}`;
 
                 // user_inputs에 저장할 데이터 구조 (DB 스키마에 맞춤)
                 const userInputs = {
@@ -1382,6 +1350,9 @@
                     const reportId = dbResult.report.id;  // DB에서 받은 UUID 사용
                     console.log('✅ 보고서 DB 저장 완료:', reportId);
 
+                    // 이전 보고서 데이터 및 세션 캐시 삭제
+                    clearPreviousReportData();
+
                     // localStorage에도 캐시 (오프라인/빠른 로드용)
                     const localData = {
                         ...userInputs,
@@ -1401,6 +1372,9 @@
 
                 } catch (error) {
                     console.warn('⚠️ DB 저장 실패, localStorage 폴백 사용:', error.message);
+
+                    // 이전 보고서 데이터 및 세션 캐시 삭제
+                    clearPreviousReportData();
 
                     // DB 저장 실패 시 localStorage만 사용 (오프라인 모드)
                     const fallbackId = `local_${Date.now()}`;
@@ -1428,6 +1402,35 @@
                     }, 1000);
                 }
             });
+        }
+
+        // 이전 보고서 데이터 및 세션 캐시 삭제
+        function clearPreviousReportData() {
+            console.log('[P13] Clearing previous report data and session cache');
+
+            // 1. LLM 세션 캐시 삭제 (모든 llm_session_cache_* 키)
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('llm_session_cache_')) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log('[P13] Removed cache:', key);
+            });
+
+            // 2. 작업 데이터 삭제
+            localStorage.removeItem('uploadedFiles');
+            localStorage.removeItem('convertedMarkdowns');
+            localStorage.removeItem('extractedData');
+            localStorage.removeItem('generatedSections');
+
+            // 3. 현재 보고서 정보 삭제 (새로 생성될 것이므로)
+            localStorage.removeItem('current_report');
+
+            console.log('[P13] Previous report data cleared');
         }
 
         function openDrugSelector() {
@@ -1461,7 +1464,7 @@
             `).join('');
 
             if (filtered.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #9CA3AF; padding: 40px;">검색 결과가 없습니다.</p>';
+                list.innerHTML = '<p style="text-align: center; color: var(--app-text-muted); padding: 40px;">검색 결과가 없습니다.</p>';
             }
         }
 
@@ -1549,4 +1552,5 @@
         }
     </script>
 </body>
+
 </html>

@@ -1,0 +1,546 @@
+# RAW1.2_보고기간시작시점첨부문서_예시1
+
+## 페이지 1
+
+SIAOfLta
+
+30mg
+60mg
+| O[SAHHE AAG StS |
+
+(Rohs 2 2 Bet]
+
+O/Shias
+
+« SAJOLPS 1 SSE : OSA ALAS} SEY ATP) eee ee ee 20.205mg
+(OfSAHTOBA 15mg)
+
++ LAIOHLPSSOB2|D2H | OSAMA SSH TB) een 40.410mg
+(OISAHEO2N 30mg)
+
++ TAIOLPAOOMA|AS : OSAMA SSE BF) --------80,820mg
+(OIZABLOEA 60mg)
+
+(32)
++ SALA Swel ae : SAN
++ SAL S30welTa : SSM
++ SAloL Ae0wel at : EMH
+
+(25-321)
+
+1.UIIOLS AALS SIRO Wi 9 MIAIAIRIESO| OnB! Zh
+2A BAUS Y MAP| Rl
+
+3AM BORIS 9! IARI] APL St8! Zh
+
+(sta)
+0] SHS ALAfo} AbzIgtO| Sah S| HBILCy,
+1.891
+
+1)BBOHS AAAS SAHA IBS Bt MAMBO] Het 2A
+0| $9] AISSL 12 18] GOmgVelct.
+
+JAMS SHSUS VY WMASS A2/ aay SHINS B HAASO|
+eS Hel BA
+HA SUZ] HBP SS DA AS S 0] 2] HYBSE 12! 13] 60mg
+quct.
+
+3)H Al 7A] BS STOIA CHS S St 7A] OS] VOlS 7H Sake] SS.
+O| Sto] HASAS 12! 18] [OmgAUch.
+¢ BSS~BSO| Alatow(15 < CrCL < 50mL/min)
+* AIS < 60kg
+* Pegp MaHMAOIBEARE! SAUCE, oe|Ssooldl, ASALtS)
+
+8g
+
+2, 29] Het
+2.1 CHE SHEOLAY 0] Soo} Tzt
+{)HIEFE! K Betalol|Al 0] ow] Met
+HEH! K Zeal ARE Scto}T SABES SINR. International
+Normalized Ratio)0| 2.5 OfetS tH 0] SF FO1S APSLICH.
+Q)HIEMI K BSI} OK! SPS SSTM(Cly|7 Eel, SMSAPL OMA HEH)
+OAl 0] Soo] TBt
+7S ISLA ABS StholD, STS SSTMle| CHS FO} All| 0] SF
+HOS AABSIUCt.
+Z)HBH SSAUA|O||Al 0] OBO| Mt
+@ MEA aht2\(LMWH)
+LMWH S018 Setota, LMWH2! CHE £0} AlZoll 0] OF FOS ALE
+auch.
+Sols 2te(|0}2(UFH)
+UFH Bo Li SAFOS Sctotaz., AA|Zt Fol] 0] CF EOE ALEILICH,
+2.2 0] SFOUAY CH SHO] Et
+1)0] SFY HIEFE! K ZStalseol Mt
+O| ov HEHE K ZEAE MHoh= Sot BANS SS T7} ois +
+USLIC}, CE HSaAMle Helsh= Shite Ast Sa Sapp ASA
+Of FAIOOF SILICH
+(DOTS Mey
+0} F 6OmgS FO Se! Sixie| BP. Ast SAO wEHP! K Etat
+BHAI O| OS 12 18] 30mg FOILICH. 0] 2 3OmgS Fo Sel Shxho
+BP. AHS SEO] MEH! K Welae} Sa] o| KS 1 13] 15mg FO}
+Stuict.
+HSHO 7/22] A 1AWoll= AA 39] Olt INRS SAS Ao] ASS
+O| GH, O| S40] INR Soll Oixk= SES ALASI5}7| Holl O| OF E04 ZoH]
+AMaHOk SILC}, INR = 2.00] HYMos Cette o| of FS Set
+Sto BIEL! K Zeta AS AIS SIUICH.
+(204/354 eH
+0] FOS SHS} 0] 9 CS FO} APO HB? SS TAC wIEH K
+BSS FOISLICh, INR > 2.00] CMO Salo waz Say]
+3 SHotT viele! K Waal les AISSUC.
+O| SoA WEIS! K ZSta7t Ok STS SS UM|(Cty|7 HEE! AMSA,
+OPAL 29] HS
+0j F SOE Srtolal, 0] Ol +S S04 AlMol SFE SSTA| SHS
+tSUct,
+0| Holl HSH SSD Me
+0| F FOB Setota. 0] ol chs Hof AlMoll way ssSaa SS
+AYSIUCH.
+
+2
+
+>
+
+3
+
+3.21S0H BIA
+AB ABH SAHSO < CrCL < 8OmL/min)olAl 0} 9] BABS Bo
+SA] BSUCL. SSS~SSS| ABOH SAK 15 < CrCk < SOmL/min)ol
+0| 29] ESBS 121 13] JOmgVUch.
+
+4,01 219] BE sie BS
+0| 219] #8 IRS ASO: Sai SA ol IB SSaHot sIol 3 ChSoH
+HUE SY-Sol let SVE, SA SS VBsH7| ofa 1 we
+829] ¢ we BBA CHEILICh
+
+(ARS SO/E STALE]
+1,32
+1)0| $2 BBS] HBS S77 YMMOE AVA! AZ Beis BOW
+F QSLC, Heap CE SSA OAS, 0] tS sel HBO] 7S
+SELOIAHE FOfSHO} ANSSHOOF BILICY, 0] FOR ASsheE Sot HS OL
+SHOME BSE + USLUCL Beles A+ She ARB U/E shot
+EEO] ZA ES BRO] ShZh AOI dared HOM CHB SAW} Wezie|cl,
+2) SHE SHO] SPSS Mois 0] Qo] FOS Scio eels is Ssh
+BAPSHOOF BILICh,
+3) HE HESOl SS SxS] BS, 0] Of FOU AAS! Fol SEW LEIS]
+BEV SIS NSH EHSHOF SILICL,
+
+HCI ZS WHOS lolol SH Ho] S7H Sat
+OAZ HBA AS BS
+Qee AHO Se 8 SA(neoplasm)
+
+GAZ ds] FEA AY
+
+@ HAO b|, A+ Ee ota} es Wet
+SAzO SAU EE UW SS Be
+OAEBAR7! UAL SIE BF
+
+@ S347 |S(arteriovenous malformations)
+® S24 S4F (vascular aneurysms)
+OATH LE ll SEO
+
+NUE SSDS] BAe : 0154S! s{0tE|(Untractionated Heparin, UFH),
+MEAS SIMRO SAME! Se|O}2! S), alltel Fea Echels S),
+BPS SS VA (SHMpe! Chu 7S. SSA! OMA S) SS] CHE
+SSDS BSAle se SP. . 0| Sat ME Mote SSL OES
+SDPEUFH)S 7het SA SAY F= SAH ZhellE((open central venous or
+arterial catheter} FAls}71 Pal F0oHE SPE Mest
+
+8) AMEN HE SSS] DSR Bat
+
+HSISaM HO7} Host a AAEM a|siss "eS Sat
+
+10) SSS~SS A SQUBAS Sat
+
+11) SAMOS SASL SHVAS TE HSUMAASS HOt
+SE HARMS Bat
+
+12) Yea A
+
+3, CHE SIMO ASS] MOSHIAID,
+
+1)OWIESAIASA), SRAL, SEMAN, AGA Soll, HABIROES
+AGHINSAIDs)2t Z0| X/S0l] SHS Tlzh= HSI 0] HS BSske Sat
+
+2)P-gp PENS 0| HS BSsk= Stat
+
+JBSE~SSSA ZH SA
+
+A)2HBA At BIRHALT/AST>2xULN) B= S Weleel> 1.5xULNOl St
+
+5) Sale| SABO] SS vIBONS AAS Sit
+
+O)LHSL| WHOS ls}oj SH 1840] SIS St: MAA TE SAY Sr
+Aol, SAT YAS Ee 7SMOl SAut Be, s20| Wy ee FP ey.
+
+A@S SUBS, ASS, HA Se AAS Ae
+
+QDS AjOt $4340] HS SES! SHMASOl St OLS Hel Olas
+
+AYR Sit
+
+7
+
+4, Oaths
+
+1) Qk Ba} QoF
+O| fol] CHEE CHAS DBO Bas SLALALHOHAL 7 ESIESLICH. HBSS
+ABIM|S SIXKS HHO St ENGAGE AF-TIMI 48 CSAIL AE
+21.1058, AAW SUSAN BI MINES SixKS cHAtoe St Hokusai-
+VTE QALASHO ME 8,29220| HEStSIOISLICh,
+0] SF 6Omg(30mgQZo| YE BSHol| cst Wat &-S 7|24S ENGAGE
+AF-TIMI 48 QA3A18i(7.01 28) 0M] 2.514, Hokusai-VTE Qasal&t
+(4.4182) O1A} 251 YOlSSIch.
+ENGAGE AF-TIMI 48 S/4tA2{oi1A4 0] 2 GOm@(30mges29] Bet Beh)
+SSO SI} S 2.25624(32.2%)01 OMISS Bets] 1 Hokusai- VTE
+USA HOE 1.2492(30.3%)0] SSS SHOWS.
+2HO| SHALE] SFOIAY 0] SF Omg FO} Al BS SSO} HAE 7H
+Best O|AISS Oly AAA SI Ac 5.97), HSA ACH 4. 7/)O1MOO}
+Hokusai-VTE SAME SES 9.0%)0] 7 Soll So suict.
+0] 249] ZSt O/MHISS BIS weal S! IIs HAL OLAOISASLICL.
+2)0ABIg Se
+Of@t HEE 2HO| 3a} CLALAISIHIBIOPS AIMS SIZE LAO St ENGAGE
+AF-TIMI 48 CHAS SI SHS SUSI St MAINS SIS HOS St
+Hokusai-VTE YALAIS))OA] SATIS! OAISS LIE YLICL, OE OLAS
+2} 1St9) (SOC) Be SISHLE7} 7IAHEIO WOO} BLE OH HOHATEE
+CSO] BOl7} ASEIMSLICH ; aS Sapail'> 1/10). Satz 1/100~
+< 1/10), Z&t4] BAe 1/1.000 ~ < 1/100), =BAKl= 1/10.000~
+< 1/1.000), HHP SSAil(< 1/10.000). Y + USNS 7h ARSE
+34 27),
+[_ 7¥BM (System Organ Class)
+Hee BEA Ol
+
+OATH HO/E0 OLEAN S7t
+t BAY OS
+
+| BAIA SE Re OL
+
+217k BA OS
+
+2, +S SixtOH: FOlSHA] DHALALO,
+10] So] Ase! ee BAAKOH aHBILISO| Oe SAF
+YMHOR Sole Ses Bix
+3) 7IAISE BERHCrCL< 15m /min) 31 At EA Bi
+ASALTAOH BY YAOw ojoig= SB osisat zieisl Zale &
+
+5)SS UBOH Sat
+
+#8, 55 3 NBA 88S
+
+MaAl BS | &
+“OSHS BTBE O1SA/S0| Alolst OLS AIIM AISOI SeaSt HES
+BA SUC. A BBS SOM O1Pt OOH A= Sota] SL BPH, SOM|
+OLA OOM Str] QISLICH,
+
+as
+
+JAFALSOIA] 2712# EO] Al 0] SF FOILS YEH! K Ba] SOHO Bet
+BUSA, UBS, HAIL), Ul WALai) 9! VISIO] Cf XI SYSIASUICL
+BA SSS MHHAILt HHS + USUCL SSS BASSE HS, SHB,
+ORAS. FS FE SBS GE HS. SSH A ASS He AAS
+EHS + SUC.
+
+Of So] S FHSSS Y HEME lst Aa} Zo] SSO] SS
+O}F OAHOR LEE SSSO| SISIASLCH
+
+oe ye
+
+5, SEES 9]
+
+1) AIA BOWSIAIZS BI MAWES} Aloe (AHS HE YAS Bt AIS 712K
+SS 2154 cH] AB] SUNS Alot] Bist S SAHOICt 7HSHE|OHOF
+SUCH. C1712 RIR(SIA SHE SALA! BY QAO), B29] $B BEL
+Mas, AS EH) O| A7laHOF Sty B72 ABE APA He QA SE
+Soy Aa SUBUS Le MAASol D7fotoF SUCH.
+
+2) SHOEI SABO| SS wR AILS SIIOILAY 0] SES INRO| 2 Ze]
+21 OfnfPloY Hla] SBAO| BASE APS SSSLICL Cheba olatst Bx
+Bo BF 74212] HH MAYS Hel 9 BH HHS ABolal Bit SNS
+aHOF SLICE,
+
+3) S17 IAPRISE SIRCICI < 15mL/min)oila] Ol 20] FOISK= AS Stat SAH OfE |e!
+BASO| SS SAHA) 0] Of S04 OHS ABoh| Ha SE SSS
+0| OF FO} HM AAHOE|H BAS AMS Sat A7ISS AArHOF SUCH.
+SEBt, 0] Mt FO{ Fol AI7I50| BASHALL sls HOw Mst= SY aa
+ALS (Ol: BEE MS}, BE, SS Sr}O| BSF} SOME Al7lsS AA
+HOF LICH.
+
+4)0| St F044 ZS GAS SALSHOE SILICH, St 1A OLS 0] HS FOlsh=
+SAIS BSP F7/40l 2s SLEZ0| WISLC.
+
+5)0| HS FO| SO! SHA FS SE ASA AAS He US SAS
+Z0|7| Sal 7hsét Wel 0] SF [OHS Sctoh Of oO} 7SAOlA +B FE
+ASM Bag w7| A 24A12! Holl 0] St SOS Sctotof BUCH. HS
+EE USA Meo] WBS Of OF OA FO} S 2AAlzt O|Fz A7/BAl
+OPE SH HH] S712 SAY AlSOl ZSIS Tetalo] Bctohok BUCL.
+
+6)45 SE ASH Bit S BAS AS AEH7| SITIO! HEB O| ONS THEO
+at SILICL SES WE SOt FE HS So] SH FOI} AL HAE] BS.
+HAT ASUS SOjst $ 0| HORS] MS Days + USUC,
+
+7)0| U2 HBF SSA SAO SOSHAtS OHEUCH.
+
+8) SF AY oF A4/ BHI OF) LE AE/SYQ| AAS ALB Sel Slat
+OA] SHMMSBS OS Hat AAA] SO} Al BWA = SPA!
+OLS WOA + We Aso] FE A+ SSO] YS HHO] SLC.
+Oe HHS 44 Sol] SA|-AMO HIE ANS FE Aol] SBS FE
+Osa} HS FO] A| B7/St +t VSLICL FAL-Belel/ BAY ZBI O|
+OfA[St FO} S HOLS 42AlZE Holl AIASHAtE CHILICH, 7HEIEL M71 =
+A4O{S 2AIZE LHOH| O| PFO] CHS YH SOS ofA= OHELICL, 0] HEE lars
+SEE BESS) Z4}O| l= Als AAfOH Ole BIS 4 USUCH. SASOA
+ASIA SANCHO] MB LE ACh SEE Has Olalal SS 2 VS
+ll Chay AHS SLIEVSISHORBILICH, BIOF AIZIS}AY $/Blo| BASIN. Alsst
+AIG Y KIB} BOSLICL SH ANZ AlSOl OA OMAHE SESAME EO
+Bol SALLE Sole Sow SSIMS SHS SOA HES Che
+AAC! SOlssol| CHa TWExsHOF SILICH.
+
+Q)HIRICLY AILS SEXO ASE Chel] FST QE glo] 0] KS SEI AS
+SHAS Atz BHO] $1810] S7HILICH, 0] RS Belsel 2S He Ee ale
+S70 CE AGS Set ACHE SS TAO SOS Defator SUC.
+
+10) SS Setst A SHAS BW SIxHOHA] O| 22} O-PS
+2 HesIz| SMSUct.
+
+11) 0] 22] Ofajay ABT MOm spo} OE AAI Le AW7|OlA| SS F BIS
+SAAT + UE WSS CE HNSHO| Hel S7 Pt Els + VtSUCL.
+AAS, SY LU SCAB! AD} MSE SS W/E ws] BAYS
+2H AS LE AHO Chet Sara! + USLICH. TAGE 0] Ot FO} Al
+AMS UNA D7 | 9} Sia] HV SRwl soa] AWA AAS Soll
+RES TPS Boke AOl wach.
+
+12) 0| S01 5 SH SYS Best SP, 0] 9) Se SOS SEAL
+
+0 SF FHS YAS] Sttohot SUCH SHO! Chet Hele 9] 8 SSO
+Of HABAOR SOF SIICL, Ol Het 7/7 IHK(Oll, SSO] vss),
+BY AM ASS OBS Ons AIS, MMHCHAL, SASH AlalQy. SHA
+(AME WA FE SUysol He} ss ASP Ee A SA Sg) B
+Hapa GS As SRS ABS + MSU
+48 LE T|Ya} ZS WOR AME Gl NAS ABsh= SH BP,
+4-factor ZEES#! 28} S4S(PCC) 50 IU/kgS SA FEI S 30H
+O 0] 29) Ao] SHE|ELIch
+THB! Factor Vila(r-FVila)2| AKBO! Weis + WOLt 0] ES Fojst
+SAS] USA ANS BRE ASPASUCt.
+DREISAIG I BIE}?! KE 0] 9] HST ASO} SHS o|aIA] BS A
+OF OHAFEILICH. 0] HS FO] BOl SxlOll7| HIGAS AM SEHAPAL,
+OWILIHEA)S ASS SHS BSLICL 0] SS FO} FO! SHfOll7| HA
+FISA(GASHAAl, OMTREIL)S ABST BHOILt ANSOl Ol] Chet
+TSP DHE SSUCH, 0] SS SACHS O| 7] WROl] FAO] S24
+28 OEIA| SSC.
+
+13) 0] SS AiO YA40l SSTA SLAS Ble strl YSLCt.
+TAAL} Dist FOL} SS FSat LE o2!AO! APol= anti-Factor Xa
+BENS Sj SU SUS Wise AO] USA Sas clea] SS
+ols 4 véuct.
+
+14) 0] HS SAB! 7|74| AAO] Sto] St74L} OlalBILICh.
+
+oy
+
+q
+
+6.8S8S
+
+1)P-gp Aelia]
+0| $2 SE HStAl(etflux transporter)?! P-gp 7IAAILICh. VSS
+AISIO(/A 0 2} P-gp AiSHMIADIAZAREl COUCH, O2IEROH0 A,
+AGAUS, HUE, SE we)S SS Sst Aa}. 0| Yo] SS s=
+TEB7ASUCH
++ MOBZAREl ; 0] 2 6Omgz} AWIBBARE! 500mgS C8] SS FO}
+
+St Zap, 0] 22] AUC B! Cmaxt= 2421 73% B 747M S7 tI SUCt.
++ SEUCHE ; CEYICE A00mgS 121 28] 722! HHS jot
+
+SoumHOI| 0] 2 GOmgS Ets] BS Est Bah, 0] 22) AUC S! Cmax
+
+2121 85% &! OW S7tolSLict.
+
+OAEZOO|A! : oASLOlO/A! 500mgs 12 48] 2/7 Bs FO}op
+
+£0] 7UmHol] 0] SF GOmgS Ets] HS Horst Aap, 0] 29) AUC H
+
+Cmaxt= 2/24 85% 3! 68%4 S7oiRSUct.
+
++ AEDUS : AEDUS 400mgS 121 13] 72/21 ees Solon S
+AMO! 0| 2t GOmgS Cts] WS FOIst Bap 0] fol AUC 8 Cmax
+212+ 87% B BGM B7stBSUCt.
+
++ FALIG : FLIE! 300mgS FO} 124my S! FO} Aelmpo= 121 18]. FO}
+22M LI ZQIMMOIE 12! 3S] Sofstst FO FUMIoll 0| 9 6OmgS Cts}
+We Eost Bat, 24A\Z' S 0] SO] AUC 8! Cmaxe 2121 77% &
+85M S7SIVSLIC. 0] SS ALIA] AUC 3 Cmaxdll SS OA/z]
+SSH.
+
+HALE! : Wea 240mgS 12! 13] 118 Set BSS oleh Ft
+
+JOLMIol| 0| Sf COmgS Cts] BS Folst Bat, of 2] AUC X Cmax
+
+S537 S7 SABC. 0] Stoll lst tHlekmpka] AUC S! Cmax=
+
+ZZ 16% B! 147M BASISSUCH,
+
+DIQCHE : 0] 260mg 12 13] FO1S OLMIS 400mg 12 18)
+
+OS ASSt Aah 0] S| AUC B! Cmaxt= 2424 40% B! 66% S7t
+
+SIMSLICL, OE YAH! FlstA] YS AOS 2HESIRSLICH.
+
+BHOEAY AREAS SIX}S cAtOm St ENGAGE AF-TIMI 48 SA}
+
+|Af OWIQCHES BS S04st Sx}o} TiAl YS Halo] Og W
+
+FHA Bake FAPIRSLCt.
+
++ HIV CIMSSHE A MSHMHS Retst CHE P-gp AtoHale} 0] SO BS S04
+Off CHOATE SIE! UE QLSLICH,
+
+.
+
+jn 2
+
+on
+
+Qe
+
+2)P-gp =A
+0| 22} P-gp FENIPl ABMS BS Sojst Bah, o| 29] Bat AUC Y
+HEZI7/7} ZASIAT Ololl fe} OSI Sab ZAS TSAO] VSLIC.
+0| 4S CHE P-gp SEA. HUES! 7SSLOPAIZ!, Mew EE
+NIQIE BA HE) HE OHS AS 0] 0] SSSI} YAS + SUCH.
+3)P-gp7 Al
+
++ CBA! : 0] 2 6OmgS 12 18] 1491! Bis SOlSpPPlA| 0] SAMI}
+SRM CIEAIS 12! 28], 13] 0.25m9S BS FOtstn $0] 10LMFE|
+14UAIKhE CIZAIS 12! 13] 0.25mg BS FO4st Bet, 01 22] Cmax
+= 17h B7 tot AD BAMEHHALS| AUC EE ABBASSE Holst HS7}
+SISKESLICE. 0] HoH SlsH CHAS] AUC 8! Cran 212 7% 3! 28%
+SISASUCL. Oe MAHOS Solsia] YS HOS ZHESIMSUC
+
+4) SBATA Y HAGIZOIES ASAINSAIDS)
+
+# O}MIEMAIEIAAHASA) : 0] 2&2 ASA(100mg = 325ma) BE $04 Aj
+2429] ELE FOfol| la SS AlZH0| SASIASLICH, Of a} wSs|
+ASA(325ma)E BE Holst Bah. SA AeHOlAl 0] 22] Cmaxk! AUC
+TE 224 35% Y 324 S7ISIRSUCH, Ohsalo] Depo] OMPEMe| AAT
+(ASA. 325mg)2t 0| 29] BS FOS BES SSUC. Of 2 ASA
+100mg OMS SS SOE SHS AS SHAR SOfoHOF SPUICh.
+QALAISOIAY O| Ot ASA(SZF< 100mg /day). 7IEt SATA
+ElOd- Dla Hir| HBO) WS S047} Scie WS SOlstA| BS SLO
+ula 2 SHO] CHEF Quy OY S7tStAa| Oke O| SF FORD Quel
+FOZ SAB FBOe BYSISSLIC
+
++ S}51AaHa : ENGAGE AF-TIMI 48 SHA ISiOHA4 0] Fa Eloi el etat
+S(O, SSMS) HUSH] HS Foi} tSelAooi 3 Aa
+QD}eIO|| Hla O| 2] SH ABS YUOvt aoe Host SS
+B7tolBScict.
+
++ BIABIZOLEY AGAKNSAIDs) ; 0] 6} LRSM BS SO4 A] 2210}
+SS Sojoll Hist SH AlZ0] SHES LICH, LEZEAIS 0] 29] Cmax
+3! AUCO! SSS O|z/2] EASUCH. SLAtAletolAd 0] Stat} NSAIDs
+HW EOS AS YNHOR Gost SHO] S7SIASUCH. 0] at
+BAe! NSAIDso] BS S0l= ABE] SUC.
+
++ Of Ua} OS SHSARH) QH TE AFA SoHMleto] BS Sofoll Hs
+SHE OS AISPYQIUICH
+
+7, SF SR POM Bt FO]
+ae
+SHOALS] OA SI FSS SAA] YR SSAA O| 2
+MAE SO| BISIASUCH 0] 49] GAA BASS, Sel cst ull
+SE. SBABOA LECH elt Saks DeHo}O} O| SS VSO SOKA
+FELICE St QAI 7'SAO| QE OIE 0] SF Ol S ANS Mlohok SUCH.
+
+2)
+
+SSHOIM| OHA 9! SSNS SeIsIr| elon} SEARO O| HE
+QBOz BUISIISLICL atN 0] 2 +OéoID SOFIE CHELICL
+
+3)
+AIS HALOS 8 OIA TIRE SIBLE Ost B47 Hee aoe &
+AISA 0] Sto] SHON O}RI SIS BIA eUSHESLIC.
+
+8, AO}0H CHEE FO}
+AOS) CH 8 FSIS SRIEI| BRSUCH.
+
+9, DEAN CHSt 0}
+DAA SSS~SSA AAOH15 < CrCl < SOmL/min) ela, f=
+AIS 60kg Ost. DAlD/EE P-goMahal(AO|SSARE!, SLUICE.
+O|ALSO}OA, AEBLHS)St HS SOisK= SSE 121 13] 30mg S04
+7} BAElO| FI Loe aktoe VI AHO| WL] BSUCt.
+
+10, AlZfoH SExtOH CHSt FO}
+ZZ AlBol SIAK5O < CrCL < 8OmL/min), SSS 4/0} SIAK3O < CrCL
+< 50mL/min) 3 BS AlSOH SIAHCrCL < 30mL/min &. SAE ola|
+ASIOA 0] HO] BS AUCE BS Als SAlal Hla 2121 32%, 74% H
+724 B7P SUCH,
+
+=
+
+1, UASAARIONS| 8
+
+0| 22 FXaw Mets22 REERY AZKPT). INR ASHE) oe Bes
+elAcl Al2KaPTT)a WE BE ST ABS SBARILIC. OWE Aewet
+So] Al olelét SAIS BIS Halt Aieloo! WENO SS Oz
+OLAFSILICE. C2} O|@tSt BASE 0| 29] SST ST SLE B ahol
+93st BSuc.
+
+12, HB SOA] Hz]
+4)0| HS alet FOlsk= BS, BAA SS HHO] S7VUct. 0] Hol aks
+F0/0| CHS BAS oS AlePAQILIC
+2)0| Sto CHEE SHSM SSUCH 0] KS wes Fost SS. S45 S017]
+Plot BSS A7| FOSS HO| DAS + VSUCL Ol Os wis FO}
+AO] HE FISH B FA AROSE AOje! Atiol] 274St 2400} O| 2
+2] Ay STM TAIAOR APE AS OFILCL.
+
+13, HBMol Fol
+1)01 2 15mg SIMs 01 SOLA UIEHOIK ZISHRIEE ZHBF Alolgt AISEILIC.
+(SHB S 2. Hwa He 2)
+
+(aes)
+JIL, AS(1~Z0C)O BPIHYAIL.
+
+[2geta)
+
++ BAO 5elel ay : 148
++ BAOLS30NelTe : 288
+« SAL 60NaIIe : 289
+
+[ABB712#)
+WAVESH 367122Uch,
+
+(IEE)
+
+HHIEA] AY EME 1S & BBSALD NYSE Ont Sh MESIAL.
+
+% BIEA| 0f210/9] 20] SA] QE RO APLSHIAIO.
+
+K BOS o7ist BawIS Wt MSU AAS FH) [80] Alt SPSS
+SBA] OOF BILICH, SOF HRA] ANBLes)7 [SO] ALAA ALAS
+SIL AE! RBS SA7aHo PS] TAK AA SAH [Zo S174,
+POSH OFA BI OH MOHAINIS Sal w8t WE + VALICL,
+
+x IRS Zo} es 9 7Ie} XS SIH 0] AHEMO! a1 rIotwel
+OS HAE LYS TSH = OlXISe(http: //ezdrug.mtds.go.kr)— (Ss018)]
+— (AES Bel] Ce ofa HSolAl Sls + lsc.
+
+« HEZSIEIAt
+
+Daiichi Sankyo Europe GmbH
+Zielstattstrasse 48, 81379 Munich, $¥
+
++ HEX}
+Daiichi Sankyo Europe GmbH
+
+Luitpoldstrasse 1. 85276 Pfaffenhofen. Bayern. SY
+
++ SEBO =
+et CEO] OI Ml Ata 45 At S] At
+MBEGA| SEF Sz A7 HANA 198
+TEL : (02)3453+3300
+
+SEEM PIAS | 2015, 08, 31 (01)
+
+
+---
+
+## 버전 정보
+
+- **문서 유형**: RAW1.2
+- **변환 방법**: OCR (Tesseract)
+- **변환일**: 2026-01-04

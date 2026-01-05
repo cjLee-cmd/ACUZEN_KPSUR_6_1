@@ -10,8 +10,9 @@
  */
 
 // ES6 import 대신 window 객체에서 가져오기 (브라우저 스크립트 호환성)
-const supabaseClient = (typeof window !== 'undefined' && window.supabaseClient)
-    ? window.supabaseClient
+// window._sectionEditorSupabase를 직접 사용하여 변수명 충돌 방지
+const _sectionEditorSupabase = (typeof window !== 'undefined' && window._sectionEditorSupabase)
+    ? window._sectionEditorSupabase
     : null;
 
 class SectionEditor {
@@ -71,7 +72,7 @@ class SectionEditor {
         // 1. DB에서 로드 시도 (reportId가 있는 경우)
         if (this.reportId) {
             try {
-                const result = await supabaseClient.getSections(this.reportId);
+                const result = await _sectionEditorSupabase.getSections(this.reportId);
 
                 if (result.success && result.sections.length > 0) {
                     // DB 데이터를 로컬 포맷으로 변환
@@ -422,7 +423,7 @@ class SectionEditor {
         try {
             // 1. DB에 저장 (reportId가 있는 경우)
             if (this.reportId) {
-                const result = await supabaseClient.upsertSection(this.reportId, sectionId, {
+                const result = await _sectionEditorSupabase.upsertSection(this.reportId, sectionId, {
                     name: section.name,
                     content: section.content,
                     version: (section.version || 0) + 1
@@ -493,7 +494,7 @@ class SectionEditor {
                     version: (sec.version || 0) + 1
                 }));
 
-                const result = await supabaseClient.bulkUpsertSections(this.reportId, sectionsToSave);
+                const result = await _sectionEditorSupabase.bulkUpsertSections(this.reportId, sectionsToSave);
 
                 if (result.success) {
                     // DB UUID 업데이트

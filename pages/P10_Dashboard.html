@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,60 +8,30 @@
     <link rel="stylesheet" href="../css/styles/globals.css">
     <link rel="stylesheet" href="../css/styles/layout.css">
     <style>
-        /* 다크모드 변수 */
-        :root {
-            --page-bg: #F5F7FA;
-            --card-bg: white;
-            --card-shadow: rgba(0, 0, 0, 0.1);
-            --card-shadow-hover: rgba(0, 0, 0, 0.15);
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --text-muted: #9CA3AF;
-            --border-color: #E5E7EB;
-            --border-light: #F3F4F6;
-            --table-hover: rgba(37, 115, 155, 0.02);
-            --btn-secondary-bg: white;
-        }
+        /* ============================================
+           Dashboard Glassmorphism + 3D Design
+           ============================================ */
 
-        [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
-            --card-shadow: none;
-            --card-shadow-hover: none;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: #334155;
-            --border-light: #334155;
-            --table-hover: rgba(37, 115, 155, 0.1);
-            --btn-secondary-bg: #334155;
-        }
-
-        /* 다크모드 카드 스타일 통일 */
-        [data-theme="dark"] .stat-card,
-        [data-theme="dark"] .content-card {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: 1px solid #475569;
-        }
-
-        [data-theme="dark"] .stat-card:hover,
-        [data-theme="dark"] .content-card:hover {
-            transform: none;
-            box-shadow: none !important;
-        }
-
-        /* 페이지별 커스텀 스타일 */
+        /* Page Container */
         .page-container {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
+            animation: fadeIn 0.6s ease;
         }
 
+        /* Dashboard Header */
         .dashboard-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
         }
 
         .welcome-section {
@@ -70,14 +41,29 @@
         }
 
         .welcome-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
+            font-size: 26px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
 
-        .welcome-subtitle {
+        [diff_block_start] [data-theme="dark"] .welcome-title {
+            background: linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%);
+        }
+
+        [diff_block_end] [diff_block_start] [data-theme="dark"] .stat-value {
+            background: linear-gradient(135deg, #FFFFFF 0%, #D4D4D4 100%);
+        }
+
+        [diff_block_end] .welcome-subtitle {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
+            font-weight: 500;
         }
 
         .action-buttons {
@@ -85,119 +71,117 @@
             gap: var(--spacing-md);
         }
 
-        .btn-primary, .btn-secondary {
-            padding: var(--spacing-md) var(--spacing-xl);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
+        .action-buttons .btn-primary,
+        .action-buttons .btn-secondary {
+            gap: 0;
+            padding: var(--spacing-md) var(--spacing-2xl);
+            border-radius: var(--radius-full);
+            min-width: 150px;
+            justify-content: center;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(37, 115, 155, 0.3);
-        }
-
-        .btn-secondary {
-            background: var(--btn-secondary-bg);
-            color: #25739B;
-            border: 2px solid #25739B;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(37, 115, 155, 0.1);
-        }
-
-        /* 통계 카드 */
+        /* Stats Grid - 3D Glass Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-lg);
         }
 
         .stat-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 1px 3px var(--card-shadow);
-            transition: all 0.2s ease;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-sm) var(--spacing-md);
+            box-shadow: var(--glass-shadow);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-accent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px var(--card-shadow-hover);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+            border-color: rgba(90, 141, 255, 0.3);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
         }
 
         .stat-header {
             display: flex;
             justify-content: flex-start;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: var(--spacing-xs);
         }
 
         .stat-icon {
-            font-size: 20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .stat-icon.primary {
-            background: rgba(37, 115, 155, 0.1);
-        }
-
-        .stat-icon.success {
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .stat-icon.warning {
-            background: rgba(245, 158, 11, 0.1);
-        }
-
-        .stat-icon.info {
-            background: rgba(59, 130, 246, 0.1);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
         }
 
         .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #25739B;
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            color: transparent;
+            background-clip: text;
             margin-bottom: 4px;
             line-height: 1;
         }
 
+        [data-theme="dark"] .stat-value {
+            background: linear-gradient(135deg, #F8D8FF 0%, #80F0FF 55%, #4ADE80 100%);
+        }
+
         .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--app-text-normal);
+            font-weight: 600;
+            margin-bottom: 4px;
         }
 
         .stat-trend {
             font-size: 11px;
-            color: #10B981;
-            margin-top: 0;
+            color: var(--color-success);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .stat-trend.down {
-            color: #EF4444;
+            color: var(--color-error);
         }
 
-        /* 콘텐츠 섹션 */
+        /* Content Grid */
         .content-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -205,10 +189,13 @@
         }
 
         .content-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: var(--spacing-xl);
-            box-shadow: 0 1px 3px var(--card-shadow);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-lg);
+            box-shadow: var(--glass-shadow);
         }
 
         .card-header {
@@ -216,318 +203,306 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-md);
-            border-bottom: 2px solid var(--border-color);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .card-title {
             font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: var(--app-text-strong);
         }
 
         .card-action {
             font-size: 12px;
-            color: #25739B;
+            color: var(--color-primary);
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            padding: 6px 12px;
+            background: rgba(31, 78, 140, 0.08);
+            border-radius: var(--radius-full);
+            transition: all 0.2s ease;
         }
 
         .card-action:hover {
-            text-decoration: underline;
+            background: rgba(31, 78, 140, 0.15);
+            transform: translateX(4px);
         }
 
-        /* 테이블 */
-        .reports-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .reports-table th {
-            text-align: left;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-bottom: 1px solid var(--border-color);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .reports-table td {
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border-light);
-            font-size: 13px;
-            color: var(--text-primary);
-        }
-
-        .reports-table tr:hover {
-            background: var(--table-hover);
-        }
-
-        .report-name {
-            font-weight: 600;
-            color: #25739B;
-            cursor: pointer;
-        }
-
-        .report-name:hover {
-            text-decoration: underline;
-        }
-
+        /* Status Badge - Glass Style */
         .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: var(--radius-full);
             font-size: 11px;
             font-weight: 600;
+            backdrop-filter: blur(8px);
+            border: 1px solid transparent;
         }
 
         .status-badge.draft {
-            background: rgba(156, 163, 175, 0.1);
-            color: #6B7280;
+            background: rgba(156, 163, 175, 0.12);
+            color: var(--app-text-normal);
+            border-color: rgba(156, 163, 175, 0.2);
         }
 
         .status-badge.in-progress {
-            background: rgba(59, 130, 246, 0.1);
+            background: rgba(59, 130, 246, 0.12);
             color: #3B82F6;
+            border-color: rgba(59, 130, 246, 0.2);
         }
 
         .status-badge.review {
-            background: rgba(245, 158, 11, 0.1);
-            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.2);
         }
 
         .status-badge.qc {
-            background: rgba(168, 85, 247, 0.1);
-            color: #A855F7;
+            background: rgba(168, 85, 247, 0.12);
+            color: #9333ea;
+            border-color: rgba(168, 85, 247, 0.2);
         }
 
         .status-badge.completed {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10B981;
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border-color: rgba(16, 185, 129, 0.2);
         }
 
-        .stage-indicator {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        /* 계속 작성 버튼 */
-        .btn-continue {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
-            color: white;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-
-        .btn-continue:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(37, 115, 155, 0.3);
-        }
-
-        .stage-progress {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .stage-progress-bar {
-            width: 60px;
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .stage-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #25739B 0%, #369EE1 100%);
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-
-        .stage-text {
-            font-size: 11px;
-            color: var(--text-secondary);
-            white-space: nowrap;
-        }
-
-        /* 보고서 카드 그리드 - 컴팩트 버전 */
+        /* Report Cards Grid - 3D Flip Design */
         .reports-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-md);
         }
 
         .report-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px 14px;
-            transition: all 0.2s ease;
+            height: 120px;
+            perspective: 1000px;
             cursor: pointer;
         }
 
-        .report-card:hover {
-            border-color: #25739B;
-            box-shadow: 0 2px 8px rgba(37, 115, 155, 0.12);
+        .report-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
         }
 
-        [data-theme="dark"] .report-card {
-            background: transparent;
-            border-color: #475569;
+        .report-card.flipped .report-card-inner {
+            transform: rotateY(180deg);
         }
 
-        [data-theme="dark"] .report-card:hover {
-            border-color: #25739B;
+        .report-card-front,
+        .report-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .report-card-front {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .report-card:hover .report-card-front {
+            border-color: rgba(90, 141, 255, 0.4);
+            box-shadow: var(--shadow-lg), 0 0 20px rgba(90, 141, 255, 0.15);
+        }
+
+        .report-card-back {
+            background: var(--gradient-primary);
+            color: white;
+            transform: rotateY(180deg);
+            padding: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: var(--spacing-xs);
         }
 
         .report-card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            gap: 8px;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
         }
 
         .report-card-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #25739B;
-            line-height: 1.2;
-            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-primary);
+            line-height: 1.3;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             flex: 1;
         }
 
         .report-card-body {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            flex-direction: column;
+            gap: var(--spacing-xs);
         }
 
         .report-card-info-row {
             display: flex;
             align-items: center;
-            gap: 16px;
-            flex: 1;
+            justify-content: space-between;
         }
 
         .report-card-info {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
         .report-card-label {
-            font-size: 10px;
-            color: var(--text-muted);
+            font-size: 11px;
+            color: var(--app-text-muted);
+            font-weight: 500;
         }
 
         .report-card-value {
-            font-size: 11px;
-            color: var(--text-primary);
-            font-weight: 500;
+            font-size: 12px;
+            color: var(--app-text-strong);
+            font-weight: 600;
         }
 
         .report-card-progress {
             display: flex;
             align-items: center;
-            gap: 8px;
-            min-width: 120px;
+            gap: var(--spacing-xs);
         }
 
         .report-card-progress-bar {
-            width: 50px;
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
+            flex: 1;
+            height: 6px;
+            background: rgba(31, 78, 140, 0.1);
+            border-radius: var(--radius-full);
             overflow: hidden;
-            flex-shrink: 0;
         }
 
         .report-card-progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #25739B 0%, #369EE1 100%);
-            border-radius: 2px;
+            background: var(--gradient-accent);
+            border-radius: var(--radius-full);
+            transition: width 0.5s ease;
         }
 
         .report-card-progress-text {
-            font-size: 10px;
-            color: var(--text-secondary);
+            font-size: 11px;
+            color: var(--color-primary);
+            font-weight: 600;
             white-space: nowrap;
         }
 
-        .report-card-actions {
+        .report-card-footer {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
         }
 
         .report-card-meta {
-            font-size: 10px;
-            color: var(--text-muted);
+            font-size: 11px;
+            color: var(--app-text-muted);
         }
 
-        .report-card .btn-continue {
-            padding: 4px 10px;
+        .btn-continue {
+            padding: 6px 14px;
+            border-radius: var(--radius-md);
             font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: var(--gradient-accent);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.25);
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(31, 78, 140, 0.35);
+        }
+
+        .flip-hint {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-top: var(--spacing-sm);
         }
 
         .reports-empty {
             text-align: center;
-            padding: 30px 20px;
-            color: var(--text-muted);
+            padding: var(--spacing-xl);
+            color: var(--app-text-muted);
+            grid-column: 1 / -1;
         }
 
         .reports-empty-icon {
-            font-size: 36px;
-            margin-bottom: 8px;
+            margin-bottom: var(--spacing-sm);
+            opacity: 0.6;
+            display: flex;
+            justify-content: center;
         }
 
         .reports-empty-text {
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-size: 14px;
+            color: var(--app-text-normal);
         }
 
-        /* 활동 내역 */
+        /* Activity List - Glass Style */
         .activity-list {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-md);
+            gap: var(--spacing-xs);
         }
 
         .activity-item {
             display: flex;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            border-radius: 8px;
-            transition: background 0.2s ease;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
         }
 
         .activity-item:hover {
-            background: var(--table-hover);
+            background: var(--glass-bg-light);
+            border-color: var(--glass-border);
+            transform: translateX(4px);
         }
 
         .activity-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 0;
             flex-shrink: 0;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
         }
 
         .activity-icon.create {
@@ -548,42 +523,31 @@
 
         .activity-content {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .activity-title {
             font-size: 13px;
-            color: var(--text-primary);
-            font-weight: 500;
+            color: var(--app-text-strong);
+            font-weight: 600;
             margin-bottom: 2px;
         }
 
         .activity-time {
             font-size: 11px;
-            color: var(--text-muted);
+            color: var(--app-text-muted);
         }
 
-        .empty-state {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--text-muted);
-        }
-
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: var(--spacing-md);
-        }
-
-        .empty-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        /* 반응형 */
-        @media (max-width: 1024px) {
+        /* Responsive */
+        @media (max-width: 1200px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+        }
 
+        @media (max-width: 1024px) {
             .content-grid {
                 grid-template-columns: 1fr;
             }
@@ -604,13 +568,16 @@
                 width: 100%;
             }
 
-            .btn-primary, .btn-secondary {
+            .btn-primary,
+            .btn-secondary {
                 flex: 1;
             }
         }
     </style>
 </head>
+
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
@@ -629,9 +596,19 @@
             </div>
 
             <div class="header-right">
-                <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드"
+                    aria-label="대시보드로 이동">
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false">
+                        <use href="#icon-home"></use>
+                    </svg>
+                </button>
+                <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환" aria-label="다크모드 전환">
+                    <svg class="mono-icon icon-sun" aria-hidden="true" focusable="false">
+                        <use href="#icon-sun"></use>
+                    </svg>
+                    <svg class="mono-icon icon-moon" aria-hidden="true" focusable="false">
+                        <use href="#icon-moon"></use>
+                    </svg>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -659,11 +636,9 @@
 
                         <div class="action-buttons">
                             <button class="btn-primary" onclick="createNewReport()">
-                                <span>➕</span>
                                 <span>새 보고서 생성</span>
                             </button>
                             <button class="btn-secondary" onclick="navigateTo('P11_ReportList.html')">
-                                <span>📋</span>
                                 <span>전체 보고서</span>
                             </button>
                         </div>
@@ -672,36 +647,28 @@
                     <!-- 통계 카드 -->
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon primary">📊</div>
-                            </div>
+                            <div class="stat-header"></div>
                             <div class="stat-value" id="totalReports">-</div>
                             <div class="stat-label">총 보고서</div>
                             <div class="stat-trend" id="totalTrend">로딩 중...</div>
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon info">🔄</div>
-                            </div>
+                            <div class="stat-header"></div>
                             <div class="stat-value" id="inProgressReports">-</div>
                             <div class="stat-label">진행 중</div>
                             <div class="stat-trend" id="inProgressTrend">로딩 중...</div>
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon warning">⏰</div>
-                            </div>
+                            <div class="stat-header"></div>
                             <div class="stat-value" id="qcReports">-</div>
                             <div class="stat-label">QC 검증 대기</div>
                             <div class="stat-trend" id="qcTrend">로딩 중...</div>
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon success">✅</div>
-                            </div>
+                            <div class="stat-header"></div>
                             <div class="stat-value" id="completedReports">-</div>
                             <div class="stat-label">완료</div>
                             <div class="stat-trend" id="completedTrend">로딩 중...</div>
@@ -720,7 +687,11 @@
                             <div class="reports-grid" id="reportsGrid">
                                 <!-- DB에서 로드됨 -->
                                 <div class="reports-empty">
-                                    <div class="reports-empty-icon">📋</div>
+                                    <div class="reports-empty-icon">
+                                        <svg class="mono-icon icon-clipboard" aria-hidden="true" focusable="false">
+                                            <use href="#icon-clipboard"></use>
+                                        </svg>
+                                    </div>
                                     <div class="reports-empty-text">데이터 로딩 중...</div>
                                 </div>
                             </div>
@@ -734,7 +705,11 @@
 
                             <div class="activity-list" id="activityList">
                                 <div class="activity-item">
-                                    <div class="activity-icon update">🔄</div>
+                                    <div class="activity-icon update">
+                                        <svg class="mono-icon icon-refresh" aria-hidden="true" focusable="false">
+                                            <use href="#icon-refresh"></use>
+                                        </svg>
+                                    </div>
                                     <div class="activity-content">
                                         <div class="activity-title">데이터 로딩 중...</div>
                                         <div class="activity-time">잠시만 기다려 주세요</div>
@@ -760,91 +735,167 @@
 
                 <div class="workflow-stages">
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">🔐</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-lock" aria-hidden="true" focusable="false">
+                                <use href="#icon-lock"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 1</div>
                             <div class="stage-label">로그인</div>
                         </div>
-                        <div class="stage-status">✓</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-check" aria-hidden="true" focusable="false">
+                                <use href="#icon-check"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📋</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-clipboard" aria-hidden="true" focusable="false">
+                                <use href="#icon-clipboard"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 2</div>
                             <div class="stage-label">보고서 상태</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📤</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-upload" aria-hidden="true" focusable="false">
+                                <use href="#icon-upload"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 3</div>
                             <div class="stage-label">파일 업로드</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">🔄</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-sync" aria-hidden="true" focusable="false">
+                                <use href="#icon-sync"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 4</div>
                             <div class="stage-label">MD 변환</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">⚙️</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-gear" aria-hidden="true" focusable="false">
+                                <use href="#icon-gear"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 5</div>
                             <div class="stage-label">데이터 추출</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📄</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-document" aria-hidden="true" focusable="false">
+                                <use href="#icon-document"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 6</div>
                             <div class="stage-label">템플릿 작성</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">✏️</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-pencil" aria-hidden="true" focusable="false">
+                                <use href="#icon-pencil"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 7</div>
                             <div class="stage-label">리뷰</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">✅</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-check" aria-hidden="true" focusable="false">
+                                <use href="#icon-check"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 8</div>
                             <div class="stage-label">QC 검증</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📤</div>
+                        <div class="stage-icon">
+                            <svg class="mono-icon icon-export" aria-hidden="true" focusable="false">
+                                <use href="#icon-export"></use>
+                            </svg>
+                        </div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 9</div>
                             <div class="stage-label">최종 출력</div>
                         </div>
-                        <div class="stage-status">○</div>
+                        <div class="stage-status">
+                            <svg class="mono-icon icon-circle" aria-hidden="true" focusable="false">
+                                <use href="#icon-circle"></use>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Settings Link -->
-                <div style="padding: 16px; margin-top: 20px; border-top: 2px solid #E5E7EB;">
-                    <a href="#" onclick="navigateTo('P91_Settings.html'); return false;" style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #F9FAFB; border-radius: 8px; text-decoration: none; color: #6B7280; font-size: 13px; transition: all 0.2s; cursor: pointer;">
-                        <span style="font-size: 18px;">⚙️</span>
+                <div style="padding: 16px; margin-top: 20px; border-top: 2px solid var(--app-border-soft);">
+                    <a href="#" onclick="navigateTo('P91_Settings.html'); return false;"
+                        style="display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--app-surface-muted); border-radius: 8px; text-decoration: none; color: var(--app-text-normal); font-size: 13px; transition: all 0.2s; cursor: pointer;">
+                        <svg class="mono-icon icon-gear" aria-hidden="true" focusable="false"
+                            style="width: 18px; height: 18px;">
+                            <use href="#icon-gear"></use>
+                        </svg>
                         <span style="font-weight: 600;">시스템 설정</span>
                     </a>
                 </div>
@@ -866,7 +917,7 @@
     <!-- Dark Mode Script -->
     <script>
         // 다크모드 초기화 (페이지 로드 즉시)
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
@@ -879,12 +930,17 @@
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
         }
+
     </script>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
     <!-- JavaScript -->
     <script src="../utils/session.js"></script>
     <script src="../utils/navigation.js"></script>
     <script src="../js/config.js"></script>
+    <script src="../js/supabase-client.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
@@ -918,7 +974,7 @@
                         dropdown = document.createElement('div');
                         dropdown.className = 'user-menu-dropdown';
                         dropdown.style.cssText = 'position:absolute;top:100%;right:0;margin-top:8px;background:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:180px;z-index:1000;';
-                        dropdown.innerHTML = '<div style="padding:8px 0;"><a href="P91_Settings.html" style="display:block;padding:10px 16px;color:#374151;text-decoration:none;">설정</a><a href="#" onclick="clearSessionData();window.location.href=\'P01_Login.html\'" style="display:block;padding:10px 16px;color:#EF4444;text-decoration:none;">로그아웃</a></div>';
+                        dropdown.innerHTML = '<div style="padding:8px 0;"><a href="P91_Settings.html" style="display:block;padding:10px 16px;color:var(--app-text-strong);text-decoration:none;">설정</a><a href="#" onclick="clearSessionData();window.location.href=\'P01_Login.html\'" style="display:block;padding:10px 16px;color:#EF4444;text-decoration:none;">로그아웃</a></div>';
                         userMenu.appendChild(dropdown);
                     }
                     dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
@@ -1008,10 +1064,23 @@
             // Supabase에서 보고서 데이터 로드
             const reports = await loadReportsFromDB();
 
-            // 통계 계산 및 표시
-            if (reports && reports.length > 0) {
+            // 통계 계산 및 표시 (보고서가 0개여도 업데이트)
+            if (reports) {
                 updateStatsFromReports(reports);
-                updateActivityFromReports(reports);
+                if (reports.length > 0) {
+                    updateActivityFromReports(reports);
+                } else {
+                    // 보고서가 없을 때 기본 메시지
+                    document.getElementById('activityList').innerHTML = `
+                        <div class="activity-item">
+                            <div class="activity-icon">${renderMonoIcon('clipboard')}</div>
+                            <div class="activity-content">
+                                <div class="activity-title">보고서가 없습니다</div>
+                                <div class="activity-time">새 보고서를 생성하세요</div>
+                            </div>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -1053,7 +1122,7 @@
             if (recentReports.length === 0) {
                 activityList.innerHTML = `
                     <div class="activity-item">
-                        <div class="activity-icon update">📋</div>
+                        <div class="activity-icon update">${renderMonoIcon('clipboard')}</div>
                         <div class="activity-content">
                             <div class="activity-title">활동 내역이 없습니다</div>
                             <div class="activity-time">새 보고서를 생성해 주세요</div>
@@ -1064,22 +1133,22 @@
             }
 
             const stageActions = {
-                1: { icon: '🔐', iconClass: 'create', title: '로그인' },
-                2: { icon: '📋', iconClass: 'create', title: '보고서 생성됨' },
-                3: { icon: '📤', iconClass: 'update', title: '파일 업로드' },
-                4: { icon: '🔄', iconClass: 'update', title: 'MD 변환 진행' },
-                5: { icon: '⚙️', iconClass: 'update', title: '데이터 추출' },
-                6: { icon: '📄', iconClass: 'update', title: '템플릿 작성' },
-                7: { icon: '✏️', iconClass: 'review', title: '리뷰 진행' },
-                8: { icon: '✅', iconClass: 'complete', title: 'QC 검증' },
-                9: { icon: '📤', iconClass: 'complete', title: '최종 출력' }
+                1: { iconId: 'lock', iconClass: 'create', title: '로그인' },
+                2: { iconId: 'clipboard', iconClass: 'create', title: '보고서 생성됨' },
+                3: { iconId: 'upload', iconClass: 'update', title: '파일 업로드' },
+                4: { iconId: 'sync', iconClass: 'update', title: 'MD 변환 진행' },
+                5: { iconId: 'gear', iconClass: 'update', title: '데이터 추출' },
+                6: { iconId: 'document', iconClass: 'update', title: '템플릿 작성' },
+                7: { iconId: 'pencil', iconClass: 'review', title: '리뷰 진행' },
+                8: { iconId: 'check', iconClass: 'complete', title: 'QC 검증' },
+                9: { iconId: 'export', iconClass: 'complete', title: '최종 출력' }
             };
 
             const statusActions = {
-                'Draft': { icon: '➕', iconClass: 'create', title: '임시 저장됨' },
-                'InReview': { icon: '✏️', iconClass: 'review', title: '리뷰 중' },
-                'QC': { icon: '✅', iconClass: 'complete', title: 'QC 대기' },
-                'Completed': { icon: '🎉', iconClass: 'complete', title: '보고서 완료' }
+                'Draft': { iconId: 'plus', iconClass: 'create', title: '임시 저장됨' },
+                'InReview': { iconId: 'pencil', iconClass: 'review', title: '리뷰 중' },
+                'QC': { iconId: 'check', iconClass: 'complete', title: 'QC 대기' },
+                'Completed': { iconId: 'check', iconClass: 'complete', title: '보고서 완료' }
             };
 
             activityList.innerHTML = recentReports.map(report => {
@@ -1091,15 +1160,16 @@
                 if (status === 'Completed') {
                     action = statusActions['Completed'];
                 } else {
-                    action = stageActions[stage] || statusActions[status] || { icon: '📋', iconClass: 'update', title: '업데이트' };
+                    action = stageActions[stage] || statusActions[status] || { iconId: 'clipboard', iconClass: 'update', title: '업데이트' };
                 }
 
                 const timeAgo = getTimeAgo(report.updated_at);
                 const reportName = report.report_name || '이름 없음';
+                const iconMarkup = renderMonoIcon(action.iconId || 'clipboard');
 
                 return `
                     <div class="activity-item" onclick="navigateTo('P12_ReportDetail.html?id=${report.id}')" style="cursor:pointer;">
-                        <div class="activity-icon ${action.iconClass}">${action.icon}</div>
+                        <div class="activity-icon ${action.iconClass}">${iconMarkup}</div>
                         <div class="activity-content">
                             <div class="activity-title">${action.title}</div>
                             <div class="activity-time">${reportName} · ${timeAgo}</div>
@@ -1127,56 +1197,34 @@
         }
 
         async function loadReportsFromDB() {
-            const SUPABASE_URL = CONFIG?.SUPABASE_URL || 'https://toelnxgizxwbdikskmxa.supabase.co';
-            const SUPABASE_KEY = CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvZWxueGdpenh3YmRpa3NrbXhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMDAyMzUsImV4cCI6MjA3NzU3NjIzNX0.mpBAWTufodmfPUp6nmg7Qez6uygrplK9S91xl8c4mR8';
-
             try {
-                // reports와 products, users를 조인하여 가져오기 (DB만 사용)
-                const response = await fetch(
-                    `${SUPABASE_URL}/rest/v1/reports?select=id,report_name,status,current_stage,user_inputs,updated_at,created_at,products(product_name,ingredient_name),users(name)&order=updated_at.desc&limit=50`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        }
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                // supabaseClient를 사용하여 모든 보고서 조회 (권한 체크는 나중에)
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not loaded');
                 }
 
-                const reports = await response.json();
-                console.log('✅ Dashboard loaded', reports.length, 'reports from DB');
-                renderReportsTable(reports.slice(0, 10)); // 테이블에는 10개만 표시
-                return reports;
+                const result = await window.supabaseClient.getReports();
+
+                if (result.success) {
+                    const reports = result.reports;
+                    console.log('✅ Dashboard loaded', reports.length, 'reports from DB');
+                    renderReportsTable(reports.slice(0, 10)); // 테이블에는 10개만 표시
+                    return reports;
+                } else {
+                    throw new Error(result.error || 'Failed to load reports');
+                }
 
             } catch (error) {
-                console.error('DB 보고서 로드 실패:', error);
+                console.error('❌ DB 보고서 로드 실패:', error.message);
                 renderReportsTable([]);
-
-                // 에러 시 통계 초기화
-                document.getElementById('totalReports').textContent = '0';
-                document.getElementById('inProgressReports').textContent = '0';
-                document.getElementById('qcReports').textContent = '0';
-                document.getElementById('completedReports').textContent = '0';
-                document.getElementById('totalTrend').textContent = 'DB 연결 실패';
-                document.getElementById('inProgressTrend').textContent = '-';
-                document.getElementById('qcTrend').textContent = '-';
-                document.getElementById('completedTrend').textContent = '-';
-
-                document.getElementById('activityList').innerHTML = `
-                    <div class="activity-item">
-                        <div class="activity-icon update">⚠️</div>
-                        <div class="activity-content">
-                            <div class="activity-title">데이터 로드 실패</div>
-                            <div class="activity-time">DB 연결을 확인해 주세요</div>
-                        </div>
-                    </div>
-                `;
-
                 return [];
             }
+        }
+
+        // 카드 플립 토글 함수
+        function toggleFlip(card, event) {
+            if (event) event.stopPropagation();
+            card.classList.toggle('flipped');
         }
 
         function renderReportsTable(reports) {
@@ -1185,7 +1233,7 @@
             if (!reports || reports.length === 0) {
                 grid.innerHTML = `
                     <div class="reports-empty" style="grid-column: 1 / -1;">
-                        <div class="reports-empty-icon">📋</div>
+                        <div class="reports-empty-icon">${renderMonoIcon('clipboard')}</div>
                         <div class="reports-empty-text">등록된 보고서가 없습니다.</div>
                     </div>
                 `;
@@ -1193,8 +1241,8 @@
             }
 
             const stageNames = {
-                1: '로그인', 2: '보고서 생성', 3: '파일 업로드', 4: 'MD 변환',
-                5: '데이터 추출', 6: '섹션 편집', 7: '리뷰', 8: 'QC 검증', 9: '최종 출력'
+                1: '보고서 설정', 2: '통합 처리', 3: '파일 업로드', 4: 'MD 변환',
+                5: '섹션 편집', 6: '데이터 추출', 7: '템플릿 작성', 8: '리뷰', 9: 'QC 검증', 10: '최종 출력'
             };
 
             const statusMap = {
@@ -1204,59 +1252,92 @@
                 'Completed': { class: 'completed', label: '완료' }
             };
 
-            // 스테이지별 이동 페이지 매핑
+            // 스테이지별 이동 페이지 매핑 (PAGE_STAGE_MAP과 동기화)
             const stagePages = {
-                1: 'P12_ReportDetail.html',
-                2: 'P12_ReportDetail.html',
+                1: 'P13_NewReport.html',
+                2: 'P14_UnifiedProcessing.html',
                 3: 'P14_UnifiedProcessing.html',
                 4: 'P14_UnifiedProcessing.html',
-                5: 'P14_UnifiedProcessing.html',
+                5: 'P15_SectionEditor.html',
                 6: 'P15_SectionEditor.html',
-                7: 'P18_Review.html',
-                8: 'P19_QC.html',
-                9: 'P20_Output.html'
+                7: 'P15_SectionEditor.html',
+                8: 'P18_Review.html',
+                9: 'P19_QC.html',
+                10: 'P20_Output.html'
             };
 
             grid.innerHTML = reports.map(report => {
                 const ingredientName = report.user_inputs?.CS0_성분명 || report.products?.ingredient_name || '-';
+                const brandName = report.user_inputs?.CS1_브랜드명 || report.products?.product_name || '-';
                 const stage = report.current_stage || 2;
                 const stageName = stageNames[stage] || '알 수 없음';
                 const status = statusMap[report.status] || { class: 'draft', label: report.status };
                 const updatedAt = report.updated_at ? new Date(report.updated_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '-';
+                const createdAt = report.created_at ? new Date(report.created_at).toLocaleDateString('ko-KR') : '-';
+                const authorName = report.users?.name || '-';
 
-                // 진행률 계산 (총 9단계 기준)
-                const progressPercent = Math.round((stage / 9) * 100);
+                // 진행률 계산 (총 10단계 기준)
+                const progressPercent = Math.round((stage / 10) * 100);
 
                 // 완료되지 않은 상태인지 확인
                 const isInProgress = report.status !== 'Completed';
 
-                // 버튼/상태
-                const actionBtn = isInProgress
-                    ? `<button class="btn-continue" onclick="continueReport('${report.id}', ${stage}); event.stopPropagation();">계속 작성</button>`
-                    : `<span style="color: #10B981; font-size: 11px; font-weight: 600;">완료</span>`;
-
                 return `
-                    <div class="report-card" onclick="navigateTo('P12_ReportDetail.html?id=${report.id}')">
-                        <div class="report-card-header">
-                            <div class="report-card-title" title="${report.report_name}">${report.report_name}</div>
-                            <span class="status-badge ${status.class}">${status.label}</span>
-                        </div>
-                        <div class="report-card-body">
-                            <div class="report-card-info-row">
-                                <div class="report-card-info">
-                                    <span class="report-card-label">성분:</span>
-                                    <span class="report-card-value">${ingredientName}</span>
+                    <div class="report-card" onclick="toggleFlip(this, event)">
+                        <div class="report-card-inner">
+                            <!-- Front Side -->
+                            <div class="report-card-front">
+                                <div class="report-card-header">
+                                    <div class="report-card-title" title="${report.report_name}">${report.report_name}</div>
+                                    <span class="status-badge ${status.class}">${status.label}</span>
                                 </div>
-                                <div class="report-card-progress">
-                                    <div class="report-card-progress-bar">
-                                        <div class="report-card-progress-fill" style="width: ${progressPercent}%"></div>
+                                <div class="report-card-body">
+                                    <div class="report-card-info-row">
+                                        <div class="report-card-info">
+                                            <span class="report-card-label">성분:</span>
+                                            <span class="report-card-value">${ingredientName}</span>
+                                        </div>
                                     </div>
-                                    <span class="report-card-progress-text">${stage}/9 ${stageName}</span>
+                                    <div class="report-card-progress">
+                                        <div class="report-card-progress-bar">
+                                            <div class="report-card-progress-fill" style="width: ${progressPercent}%"></div>
+                                        </div>
+                                        <span class="report-card-progress-text">${stage}/10 ${stageName}</span>
+                                    </div>
+                                </div>
+                                <div class="report-card-footer">
+                                    <span class="report-card-meta">${updatedAt} 수정</span>
+                                    <span style="font-size: 10px; color: var(--app-text-muted);">클릭하여 상세 보기</span>
                                 </div>
                             </div>
-                            <div class="report-card-actions">
-                                <span class="report-card-meta">${updatedAt}</span>
-                                ${actionBtn}
+                            <!-- Back Side -->
+                            <div class="report-card-back">
+                                <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; margin-bottom: 8px;">
+                                    ${renderMonoIcon('clipboard', 'on-dark small-icon')}
+                                    <span>상세 정보</span>
+                                </div>
+                                <div style="font-size: 12px; opacity: 0.9; line-height: 1.6;">
+                                    <div><strong>브랜드:</strong> ${brandName}</div>
+                                    <div><strong>성분:</strong> ${ingredientName}</div>
+                                    <div><strong>작성자:</strong> ${authorName}</div>
+                                    <div><strong>생성일:</strong> ${createdAt}</div>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                    ${isInProgress ? `
+                                        <button class="btn-continue" onclick="continueReport('${report.id}', ${stage}); event.stopPropagation();" style="flex: 1;">
+                                            계속 작성
+                                        </button>
+                                    ` : `
+                                        <span style="display:flex;align-items:center;gap:6px;color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600;">
+                                            ${renderMonoIcon('check', 'on-dark small-icon')}
+                                            완료됨
+                                        </span>
+                                    `}
+                                    <button class="btn-continue" onclick="navigateTo('P12_ReportDetail.html?id=${report.id}'); event.stopPropagation();" style="flex: 1; background: rgba(255,255,255,0.2);">
+                                        상세 보기
+                                    </button>
+                                </div>
+                                <div class="flip-hint">클릭하여 돌아가기</div>
                             </div>
                         </div>
                     </div>
@@ -1265,23 +1346,30 @@
         }
 
         // 보고서 계속 작성 함수
-        function continueReport(reportId, currentStage) {
-            // 스테이지별 이동 페이지 매핑
-            const stagePages = {
-                1: 'P12_ReportDetail.html',
-                2: 'P12_ReportDetail.html',
-                3: 'P14_UnifiedProcessing.html',
-                4: 'P14_UnifiedProcessing.html',
-                5: 'P14_UnifiedProcessing.html',
-                6: 'P15_SectionEditor.html',
-                7: 'P18_Review.html',
-                8: 'P19_QC.html',
-                9: 'P20_Output.html'
-            };
-
-            const targetPage = stagePages[currentStage] || 'P12_ReportDetail.html';
-            navigateTo(`${targetPage}?id=${reportId}`);
+        async function continueReport(reportId, currentStage) {
+            // resumeReport 함수 사용 (navigation.js에서 제공)
+            // 데이터를 로드하고 적절한 스테이지 페이지로 이동
+            if (window.resumeReport) {
+                await window.resumeReport(reportId);
+            } else {
+                // fallback: 기존 방식
+                const stagePages = {
+                    1: 'P12_ReportDetail.html',
+                    2: 'P14_UnifiedProcessing.html',
+                    3: 'P14_UnifiedProcessing.html',
+                    4: 'P14_UnifiedProcessing.html',
+                    5: 'P15_SectionEditor.html',
+                    6: 'P15_SectionEditor.html',
+                    7: 'P15_SectionEditor.html',
+                    8: 'P18_Review.html',
+                    9: 'P19_QC.html',
+                    10: 'P20_Output.html'
+                };
+                const targetPage = stagePages[currentStage] || 'P14_UnifiedProcessing.html';
+                navigateTo(`${targetPage}?reportId=${reportId}`);
+            }
         }
     </script>
 </body>
+
 </html>

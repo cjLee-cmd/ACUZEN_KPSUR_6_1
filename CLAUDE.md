@@ -4,70 +4,98 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**KPSUR AGENT** - Korean pharmaceutical PSUR (Periodic Safety Update Report) automation system. Generates regulatory compliance reports for drug safety surveillance following Korean FDA (MFDS) guidelines.
+**KPSUR AGENT** - Korean pharmaceutical PSUR (Periodic Safety Update Report) automation system for MFDS (식품의약품안전처) regulatory compliance.
 
-**Tech Stack**: Vanilla JS (ES6) + Supabase (Auth/DB/Storage) + Multi-LLM (Claude/OpenAI/Gemini)
+**Tech Stack**: Vanilla JS (ES6 modules) + Supabase (Auth/DB/Storage) + Multi-LLM (Claude/OpenAI/Gemini)
+
+**Deployment**: GitHub Pages (static hosting, no server-side code)
 
 ## Development Commands
 
 ```bash
-# Local server (required for ES6 modules)
+# Local server (REQUIRED - ES6 modules need HTTP server)
 python3 -m http.server 8000
-# or
-npx serve
+# Access: http://localhost:8000
 
-# Access at http://localhost:8000
-
-# Security check before deployment
-./security-check.sh
-
-# Integration verification
-./verify-integration.sh
+# Database migrations (run via Supabase SQL editor)
+# Files in: migrations/*.sql
 ```
+
+## Test Accounts
+
+- **Master**: `main@main.com` / `1111`
+- **Author**: `author@kpsur.test` / `test1234`
 
 ## Architecture
 
-### 9-Stage Workflow Pipeline
+### 5-Stage Workflow (defined in js/config.js)
 ```
-Login → Report Setup → File Upload → MD Conversion → Data Extraction
-                                                            ↓
-Output ← QC Validation ← Review ← Template Writing ←────────┘
+Stage 1: P13_NewReport         → User inputs (CS0-CS24 data)
+Stage 2: P14_Stage2_Processing → File upload + MD convert + Data extraction
+Stage 3: P18_Review            → Section editing (15 sections)
+Stage 4: P19_QC                → Quality validation
+Stage 5: P20_Output            → Word document generation
 ```
 
-### Page Structure (pages/)
-| Stage | Page | Purpose |
-|-------|------|---------|
-| 1 | P01_Login | Authentication (test: main@main.com / 1111) |
-| 2 | P13_NewReport | Report setup + LLM mode selection |
-| 3 | P14_FileUpload | Upload & auto-classify (RAW ID tagging) |
-| 4 | P15_MarkdownConversion | PDF/Excel/Word → Markdown |
-| 5 | P16_DataExtraction | Extract CS/PH/Table data |
-| 6 | P17_TemplateWriting | Populate templates |
-| 7 | P18_Review | Section-by-section editing |
-| 8 | P19_QC | Quality validation (12-item checklist) |
-| 9 | P20_Output | Word document generation |
+### JS Module Layers
 
-### Core JS Modules (js/)
-| Module | Purpose |
-|--------|---------|
-| `multi-llm-client.js` | Claude/OpenAI/Gemini API integration |
-| `hybrid-generator.js` | 2-phase generation (Sonnet draft → Opus refinement) |
-| `file-handler.js` | Upload, RAW ID classification |
-| `markdown-converter.js` | Document → Markdown conversion |
-| `data-extractor.js` | CS/PH/Table data extraction |
-| `qc-validator.js` | Validation rules + manual checklist |
-| `output-generator.js` | docx.js Word export |
-| `cost-tracker.js` | LLM usage cost tracking |
-| `diff-viewer.js` | Original vs generated comparison |
+| Layer | Modules | Purpose |
+|-------|---------|---------|
+| **Config** | `config.js`, `env.js` | Constants, routes, RAW_IDs, STAGES |
+| **Auth** | `auth.js`, `permissions.js`, `page-guard.js` | Session, RBAC (Master/Author/Reviewer/Viewer) |
+| **Database** | `supabase-client.js` | PostgreSQL queries, Storage, Auth |
+| **LLM** | `multi-llm-client.js`, `llm-session-manager.js`, `chat-modal.js` | Claude/OpenAI/Gemini API, session tracking |
+| **Pipeline** | `unified-processor.js`, `psur-generator.js`, `section-editor.js` | End-to-end processing |
+| **File I/O** | `file-handler.js`, `file-storage.js`, `markdown-converter.js` | Upload, RAW ID classification, conversion |
+| **Data** | `data-extractor.js`, `template-writer.js` | CS/PH/Table extraction |
+| **Output** | `output-generator.js`, `qc-validator.js`, `hybrid-generator.js` | Word export, validation |
 
-### Data Flow
+### Global Object Pattern (GitHub Pages Constraint)
+
+All JS modules export to `window` object instead of ES6 exports for GitHub Pages compatibility:
+```javascript
+// Pattern used throughout codebase
+if (typeof window !== 'undefined') {
+    window.CONFIG = CONFIG;
+    window.multiLLMClient = multiLLMClient;
+    window.supabaseClient = supabaseClient;
+}
 ```
-localStorage keys:
-├── uploadedFiles      → File metadata + RAW IDs
-├── convertedMarkdowns → Markdown content per file
-├── extractedData      → CS/PH/Table JSON
-├── generatedSections  → 15 report sections
-└── GOOGLE_API_KEY     → User's API key (per-user storage)
+
+### Database Tables (Supabase PostgreSQL)
+
+| Table | Purpose |
+|-------|---------|
+| `users` | Auth + roles (Master/Author/Reviewer/Viewer) |
+| `products` | Drug master data |
+| `reports` | Workflow state, user_inputs (jsonb), qc_model |
+| `source_documents` | Uploaded files with raw_id classification |
+| `markdown_documents` | Converted markdown content |
+| `extracted_data` | CS/PH/Table data with source tracking |
+| `report_sections` | 15 report sections (00-14) |
+| `llm_dialogs` | LLM usage logging and cost tracking |
+| `llm_sessions` | LLM conversation session management |
+
+### RBAC System (js/permissions.js)
+
+```
+Master (4)   → Full access, user management
+Author (3)   → Create/edit reports, output
+Reviewer (2) → Review, QC approval
+Viewer (1)   → Read-only access
+```
+
+### localStorage Keys
+```
+kpsur_session      → User session data
+current_report     → Active report UUID
+uploadedFiles      → File metadata + RAW IDs
+convertedMarkdowns → Markdown content per file
+extractedData      → CS/PH/Table JSON
+generatedSections  → 15 report sections
+GOOGLE_API_KEY     → User's Gemini API key
+ANTHROPIC_API_KEY  → User's Claude API key
+OPENAI_API_KEY     → User's OpenAI API key
 ```
 
 ## Critical Data Rules
@@ -86,60 +114,67 @@ localStorage keys:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Source Document Classification (RAW IDs)
+## Data Classification
 
-| RAW ID | Document Type |
-|--------|--------------|
-| RAW1 | 최신첨부문서 (Latest attached document) |
+### RAW IDs (Source Document Types)
+| RAW ID | 문서 유형 |
+|--------|----------|
+| RAW1 | 최신첨부문서 |
 | RAW2.1-2.3 | 용법용량/효능효과/사용상의주의사항 |
 | RAW3 | 시판후sales데이터 |
 | RAW4 | 허가현황 |
-| RAW5-7 | 안전성조치 관련 메일/변경 |
+| RAW5-7 | 안전성조치 메일/변경 |
 | RAW12-15 | LineListing (신속보고/정기보고/원시자료) |
 
-## Data Types
+### Data Types
+| Type | Pattern | Examples |
+|------|---------|----------|
+| **CS** | `CS{n}_{한글}` | CS0_성분명, CS5_국내허가일자 |
+| **PH** | `PH{n}_{한글}` | PH4_원시자료서술문, PH11_총괄평가문 |
+| **Table** | `표{n}_{한글}` | 표2_연도별판매량, 표5_신속보고내역 |
 
-1. **CS Data** (~60 variables) - Single values: CS0_성분명, CS1_브랜드명, CS5_국내허가일자
-2. **PH Data** (~10 variables) - Narrative text: PH4_원시자료서술문, PH11_총괄평가문
-3. **Table Data** (7-9 tables) - Structured: 표2_연도별판매량, 표5_신속보고내역
+## LLM Configuration (js/multi-llm-client.js)
 
-Variable pattern: `[CS{n}_{한글}]`, `[PH{n}_{한글}]`, `[표{n}_{한글}]`
+### Available Models
+| Provider | Models | Use Case |
+|----------|--------|----------|
+| **Claude** | Opus 4.5, Sonnet 3.5, Haiku 3.5 | Highest quality, balanced, fast |
+| **OpenAI** | GPT-4o, GPT-4o Mini | General purpose |
+| **Gemini** | gemini-3-pro-preview, gemini-3-flash-preview | Default provider |
 
-## LLM Configuration
+### Hybrid Mode
+Sonnet draft → Opus refinement (61% cost reduction)
 
-**Supported Models**:
-- Claude: Opus 4.5, Sonnet 3.5, Haiku 3.5
-- OpenAI: GPT-4o
-- Google: Gemini 2.0 Flash/Pro
+### API Methods
+```javascript
+// Single message
+await multiLLMClient.generate(prompt, { provider: 'claude', model: 'claude-sonnet-3-5' });
 
-**Hybrid Mode** (recommended): Sonnet draft → Opus refinement for sections 9, 10 (61% cost reduction)
+// With conversation history
+await multiLLMClient.generateWithHistory(systemPrompt, messages, options);
 
-**API Keys**: Stored in localStorage (user-managed via P91_Settings)
+// Legacy compatibility
+await multiLLMClient.sendMessage(prompt, options);
+```
 
-## Key Reference Documents
+## Key Constraints
 
-| Document | Path |
-|----------|------|
-| Workflow Spec | `Ref/RawData_Definition.md` |
-| CS Data Definitions | `Ref/01_CSData_Definition.md` |
-| UI Design Spec | `09_relateDocs/PSUR_UI_Design_Spec.md` |
-| Templates | `90_Test/02_Templates/` (sections 00-14) |
-| Example Outputs | `90_Test/03_Examples/` |
-| Test RAW Data | `data/markdown/RAW*.md` |
+1. **GitHub Pages**: No server-side code; all modules use global window exports
+2. **Regulatory Accuracy**: Official MFDS submissions - pharmaceutical data accuracy is critical
+3. **Korean Language**: All reports follow 식품의약품안전처 guidelines
+4. **Content Preservation**: Markdown conversion must preserve all original content
+5. **User API Keys**: Keys stored in localStorage, managed via P91_Settings
 
-## Testing
+## Page Structure
 
-**Test Accounts**:
-- Master: `main@main.com` / `1111`
-- Author: `author@kpsur.test` / `test1234`
+**Active Pages**:
+- P01-P05: Auth (Login, Signup, Password, SystemCheck)
+- P10-P13: Dashboard, ReportList, ReportDetail, NewReport
+- P14_Stage2_Processing: Unified processing (replaces P14-P17)
+- P15_SectionEditor: Section editing interface
+- P18_Review, P19_QC, P20_Output: Final stages
+- P30_UserManagement, P90_SystemTest, P91_Settings: Admin
 
-**Test Data Location**: `test_files/01_RawData/` and `data/markdown/`
+**Legacy Pages** (prefixed `_OLD_`): P14_OLD_FileUpload, P15_OLD_MarkdownConversion, P16_OLD_DataExtraction, P17_OLD_TemplateWriting
 
-**E2E Test Flow**: See `TESTING.md` for complete test scenarios
-
-## Important Constraints
-
-1. **Regulatory Compliance**: Official MFDS submissions - accuracy is paramount
-2. **Korean Language**: All reports follow MFDS (식품의약품안전처) guidelines
-3. **GitHub Pages Deployment**: No server-side code, ES6 modules with global exports
-4. **Content Preservation**: Markdown conversion must preserve all original content exactly
+## 많이하는 실수/반복되는 실수

@@ -1,10 +1,10 @@
 /**
- * KPSUR Layout Styles
- * 메인 애플리케이션 레이아웃 스타일
+ * KPSUR Layout Styles - Glassmorphism Edition
+ * 메인 애플리케이션 레이아웃 (글래스모피즘 + 3D)
  */
 
 /* ========================================
-   App Layout - 전체 레이아웃 (Fixed Header/Footer)
+   App Layout - 전체 레이아웃
    ======================================== */
 
 html, body {
@@ -18,7 +18,6 @@ html, body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: #F5F7FA;
     overflow: hidden;
 }
 
@@ -26,15 +25,15 @@ html, body {
     display: flex;
     flex: 1;
     overflow: hidden;
-    min-height: 0; /* Important for flex children to scroll */
+    min-height: 0;
 }
 
 .main-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: var(--spacing-lg);
-    min-height: 0; /* Important for flex children to scroll */
+    padding: var(--spacing-xl);
+    min-height: 0;
 }
 
 .main-content.full-width {
@@ -42,19 +41,21 @@ html, body {
 }
 
 /* ========================================
-   Header - 상단 헤더
+   Header - 글래스모피즘 헤더
    ======================================== */
 
 .app-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 60px;
-    min-height: 60px;
-    background: white;
-    border-bottom: 1px solid #E5E7EB;
-    padding: 0 var(--spacing-lg);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    height: 64px;
+    min-height: 64px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 0 var(--spacing-xl);
+    box-shadow: 0 4px 30px rgba(11, 31, 61, 0.08);
     position: relative;
     z-index: 100;
     flex-shrink: 0;
@@ -73,39 +74,43 @@ html, body {
 }
 
 .logo-text {
-    font-size: 18px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+    font-size: 20px;
+    font-weight: 800;
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+
+    color: transparent;
     background-clip: text;
     letter-spacing: -0.5px;
 }
 
 .logo-subtitle {
     font-size: 10px;
-    color: #6B7280;
+    color: var(--app-text-normal);
     font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
 .deployment-badge {
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.3px;
+    backdrop-filter: blur(8px);
 }
 
 .deployment-badge.test {
-    background: rgba(245, 158, 11, 0.1);
-    color: #F59E0B;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .deployment-badge.production {
-    background: rgba(239, 68, 68, 0.1);
-    color: #EF4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .header-center {
@@ -119,20 +124,29 @@ html, body {
     align-items: center;
     gap: var(--spacing-sm);
     font-size: 13px;
+    padding: 8px 16px;
+    background: var(--glass-bg-light);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--glass-border);
 }
 
 .breadcrumb-item {
-    color: #6B7280;
+    color: var(--app-text-normal);
     font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-item:hover {
+    color: var(--color-primary);
 }
 
 .breadcrumb-item.active {
-    color: #25739B;
+    color: var(--color-primary);
     font-weight: 600;
 }
 
 .breadcrumb-separator {
-    color: #D1D5DB;
+    color: #C2CAE3;
 }
 
 .header-right {
@@ -141,31 +155,39 @@ html, body {
     gap: var(--spacing-md);
 }
 
+/* User Menu - 3D Effect */
 .user-menu {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    padding: 6px 10px;
-    border-radius: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--glass-bg-light);
+    border: 1px solid transparent;
+    position: relative;
 }
 
 .user-menu:hover {
-    background: rgba(37, 115, 155, 0.05);
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: var(--gradient-accent);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(31, 78, 140, 0.3);
 }
 
 .user-info {
@@ -177,52 +199,61 @@ html, body {
 .user-name {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: var(--app-text-strong);
 }
 
 .user-role {
     font-size: 11px;
-    color: #6B7280;
+    color: var(--app-text-normal);
 }
 
 .user-position {
     font-size: 10px;
-    color: #9CA3AF;
+    color: var(--app-text-muted);
     margin-top: 1px;
 }
 
 .user-menu-toggle {
     background: none;
     border: none;
-    color: #9CA3AF;
+    color: var(--app-text-muted);
     font-size: 10px;
     padding: 0;
     cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.user-menu:hover .user-menu-toggle {
+    transform: rotate(180deg);
 }
 
 /* ========================================
-   Workflow Sidebar - 우측 진행상황 사이드바
+   Workflow Sidebar - 글래스 사이드바
    ======================================== */
 
 .workflow-sidebar {
     width: 280px;
-    background: white;
-    border-left: 1px solid #E5E7EB;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-left: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    box-shadow: -4px 0 30px rgba(11, 31, 61, 0.05);
 }
 
 .workflow-header {
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid #E5E7EB;
+    padding: var(--spacing-xl);
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .workflow-header h3 {
-    font-size: 14px;
-    font-weight: 600;
-    color: #374151;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--app-text-strong);
     margin-bottom: var(--spacing-md);
+    letter-spacing: -0.3px;
 }
 
 .workflow-progress {
@@ -232,37 +263,42 @@ html, body {
 }
 
 .progress-bar {
-    height: 6px;
-    background: #E5E7EB;
-    border-radius: 3px;
+    height: 8px;
+    background: rgba(31, 78, 140, 0.1);
+    border-radius: var(--radius-full);
     overflow: hidden;
+    box-shadow: var(--shadow-inset);
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
-    border-radius: 3px;
-    transition: width 0.3s ease;
+    background: var(--gradient-accent);
+    border-radius: var(--radius-full);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(90, 141, 255, 0.4);
 }
 
 .progress-text {
     font-size: 12px;
-    color: #6B7280;
+    color: var(--app-text-normal);
     text-align: center;
+    font-weight: 500;
 }
 
 .workflow-stages {
     flex: 1;
-    padding: var(--spacing-sm) 0;
+    padding: var(--spacing-md) 0;
 }
 
+/* Stage Item - 3D Hover */
 .workflow-stage {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
-    padding: var(--spacing-md) var(--spacing-lg);
-    transition: all 0.2s ease;
+    padding: var(--spacing-md) var(--spacing-xl);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    cursor: pointer;
 }
 
 .workflow-stage::before {
@@ -271,43 +307,58 @@ html, body {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 3px;
+    width: 4px;
     background: transparent;
-    transition: background 0.2s ease;
+    border-radius: 0 4px 4px 0;
+    transition: all 0.3s ease;
+}
+
+.workflow-stage:hover {
+    background: rgba(31, 78, 140, 0.05);
+    transform: translateX(4px);
 }
 
 .workflow-stage.completed {
-    opacity: 0.7;
+    opacity: 0.65;
 }
 
 .workflow-stage.completed .stage-icon {
-    filter: grayscale(50%);
+    filter: grayscale(30%);
 }
 
 .workflow-stage.current {
-    background: rgba(37, 115, 155, 0.05);
+    background: rgba(31, 78, 140, 0.08);
 }
 
 .workflow-stage.current::before {
-    background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+    background: var(--gradient-accent);
+    box-shadow: 0 0 12px rgba(90, 141, 255, 0.5);
 }
 
 .workflow-stage.current .stage-label {
-    color: #25739B;
+    color: var(--color-primary);
     font-weight: 600;
 }
 
 .workflow-stage.pending {
-    opacity: 0.4;
+    opacity: 0.45;
 }
 
 .stage-icon {
-    font-size: 20px;
-    width: 28px;
-    height: 28px;
+    font-size: 22px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--glass-bg-light);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.workflow-stage:hover .stage-icon {
+    transform: scale(1.1);
+    background: var(--glass-bg);
 }
 
 .stage-info {
@@ -319,58 +370,64 @@ html, body {
 
 .stage-name {
     font-size: 10px;
-    color: #9CA3AF;
-    font-weight: 500;
+    color: var(--app-text-muted);
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
 }
 
 .stage-label {
     font-size: 13px;
-    color: #374151;
+    color: var(--app-text-strong);
     font-weight: 500;
 }
 
 .stage-status {
-    font-size: 14px;
-    color: #9CA3AF;
+    font-size: 16px;
+    color: var(--app-text-muted);
 }
 
 .workflow-stage.completed .stage-status {
-    color: #10B981;
+    color: var(--color-success);
 }
 
 .workflow-stage.current .stage-status {
-    color: #25739B;
+    color: var(--color-primary);
     animation: pulse 2s ease-in-out infinite;
 }
 
+/* Workflow Footer */
 .workflow-footer {
-    padding: var(--spacing-lg);
-    border-top: 1px solid #E5E7EB;
+    padding: var(--spacing-xl);
+    border-top: 1px solid var(--glass-border);
     text-align: center;
 }
 
 .workflow-footer .medical-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gradient-primary);
     color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 10px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.5px;
+    box-shadow: 0 4px 14px rgba(15, 35, 70, 0.3);
 }
 
 /* ========================================
-   Footer - 하단 푸터
+   Footer - 글래스 푸터
    ======================================== */
 
 .app-footer {
-    height: 40px;
-    min-height: 40px;
-    background: white;
-    border-top: 1px solid #E5E7EB;
+    height: 44px;
+    min-height: 44px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -379,7 +436,196 @@ html, body {
 
 .footer-content {
     font-size: 11px;
-    color: #9CA3AF;
+    color: var(--app-text-muted);
+    letter-spacing: 0.3px;
+}
+
+/* ========================================
+   User Dropdown Menu - Glass
+   ======================================== */
+
+.user-menu {
+    position: relative;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    min-width: 220px;
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.user-dropdown.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: rgba(31, 78, 140, 0.08);
+}
+
+.dropdown-item:first-child {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.dropdown-item:last-child {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.dropdown-icon {
+    font-size: 16px;
+    width: 24px;
+    text-align: center;
+}
+
+.dropdown-label {
+    font-size: 13px;
+    color: var(--app-text-strong);
+    font-weight: 500;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--glass-border);
+    margin: var(--spacing-xs) 0;
+}
+
+/* ========================================
+   Toast Notifications - Glass
+   ======================================== */
+
+.toast-container {
+    position: fixed;
+    top: 84px;
+    right: var(--spacing-xl);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    min-width: 320px;
+    max-width: 420px;
+    opacity: 0;
+    transform: translateX(100px) scale(0.9);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+.toast-icon {
+    font-size: 22px;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 13px;
+    color: var(--app-text-strong);
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.toast-success {
+    border-left: 4px solid var(--color-success);
+}
+
+.toast-error {
+    border-left: 4px solid var(--color-error);
+}
+
+.toast-warning {
+    border-left: 4px solid var(--color-warning);
+}
+
+.toast-info {
+    border-left: 4px solid var(--color-info);
+}
+
+/* ========================================
+   Loading States - Glass
+   ======================================== */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(11, 31, 61, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    padding: var(--spacing-3xl);
+    border-radius: var(--radius-xl);
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    animation: scaleIn 0.3s ease;
+}
+
+.loading-spinner-large {
+    width: 56px;
+    height: 56px;
+    border: 4px solid rgba(31, 78, 140, 0.15);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto var(--spacing-xl);
+}
+
+.loading-text {
+    font-size: 15px;
+    color: var(--app-text-strong);
+    font-weight: 600;
+}
+
+.loading-subtext {
+    font-size: 12px;
+    color: var(--app-text-normal);
+    margin-top: var(--spacing-sm);
 }
 
 /* ========================================
@@ -388,11 +634,11 @@ html, body {
 
 @media (max-width: 1024px) {
     .workflow-sidebar {
-        width: 240px;
+        width: 250px;
     }
 
     .main-content {
-        padding: var(--spacing-md);
+        padding: var(--spacing-lg);
     }
 }
 
@@ -410,238 +656,56 @@ html, body {
     }
 
     .main-content {
-        padding: var(--spacing-sm);
+        padding: var(--spacing-md);
+    }
+
+    .user-info {
+        display: none;
     }
 }
 
 /* ========================================
-   Loading States
-   ======================================== */
-
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(7, 22, 29, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.loading-content {
-    background: white;
-    padding: var(--spacing-xl);
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.loading-spinner-large {
-    width: 60px;
-    height: 60px;
-    border: 4px solid rgba(37, 115, 155, 0.2);
-    border-top-color: #25739B;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto var(--spacing-lg);
-}
-
-.loading-text {
-    font-size: 14px;
-    color: #6B7280;
-    font-weight: 500;
-}
-
-/* ========================================
-   Compact Styles for Medical Software
-   ======================================== */
-
-.compact-header .app-header {
-    height: 50px;
-}
-
-.compact-sidebar .workflow-sidebar {
-    width: 220px;
-}
-
-.compact-content .main-content {
-    padding: var(--spacing-sm);
-}
-
-.compact-stage .workflow-stage {
-    padding: var(--spacing-sm) var(--spacing-md);
-}
-
-/* ========================================
-   User Dropdown Menu
-   ======================================== */
-
-.user-menu {
-    position: relative;
-}
-
-.user-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    min-width: 200px;
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.2s ease;
-    pointer-events: none;
-    z-index: 1000;
-}
-
-.user-dropdown.show {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: all;
-}
-
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md) var(--spacing-lg);
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.dropdown-item:hover {
-    background: rgba(37, 115, 155, 0.05);
-}
-
-.dropdown-item:first-child {
-    border-radius: 8px 8px 0 0;
-}
-
-.dropdown-item:last-child {
-    border-radius: 0 0 8px 8px;
-}
-
-.dropdown-icon {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
-}
-
-.dropdown-label {
-    font-size: 13px;
-    color: #374151;
-    font-weight: 500;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background: #E5E7EB;
-    margin: var(--spacing-xs) 0;
-}
-
-/* ========================================
-   Toast Notifications
-   ======================================== */
-
-.toast-container {
-    position: fixed;
-    top: 80px;
-    right: var(--spacing-xl);
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-}
-
-.toast {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    background: white;
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    min-width: 300px;
-    max-width: 400px;
-    opacity: 0;
-    transform: translateX(100px);
-    transition: all 0.3s ease;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-icon {
-    font-size: 20px;
-}
-
-.toast-message {
-    flex: 1;
-    font-size: 13px;
-    color: #374151;
-    line-height: 1.5;
-}
-
-.toast-success {
-    border-left: 4px solid #10B981;
-}
-
-.toast-error {
-    border-left: 4px solid #EF4444;
-}
-
-.toast-warning {
-    border-left: 4px solid #F59E0B;
-}
-
-.toast-info {
-    border-left: 4px solid #3B82F6;
-}
-
-/* ========================================
-   Loading Subtext
-   ======================================== */
-
-.loading-subtext {
-    font-size: 12px;
-    color: #9CA3AF;
-    margin-top: var(--spacing-sm);
-}
-
-/* ========================================
-   Dark Mode - 다크모드 스타일
+   Dark Mode
    ======================================== */
 
 [data-theme="dark"] .app-layout {
-    background: #1e293b;
+    background: transparent;
 }
 
 [data-theme="dark"] .app-header {
-    background: #1e293b;
-    border-bottom-color: #334155;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    background: var(--glass-bg);
+    border-bottom-color: var(--glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] .logo-subtitle {
     color: #94a3b8;
 }
 
+[data-theme="dark"] .breadcrumb {
+    background: var(--glass-bg-light);
+    border-color: var(--glass-border);
+}
+
 [data-theme="dark"] .breadcrumb-item {
     color: #94a3b8;
 }
 
+[data-theme="dark"] .breadcrumb-item.active {
+    color: var(--color-accent);
+}
+
 [data-theme="dark"] .breadcrumb-separator {
-    color: #475569;
+    color: #273453;
+}
+
+[data-theme="dark"] .user-menu {
+    background: var(--glass-bg-light);
 }
 
 [data-theme="dark"] .user-menu:hover {
-    background: rgba(37, 115, 155, 0.15);
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
 }
 
 [data-theme="dark"] .user-name {
@@ -661,32 +725,49 @@ html, body {
 }
 
 [data-theme="dark"] .workflow-sidebar {
-    background: #1e293b;
-    border-left-color: #334155;
+    background: var(--glass-bg);
+    border-left-color: var(--glass-border);
+    box-shadow: -4px 0 30px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .workflow-header {
+    border-bottom-color: var(--glass-border);
 }
 
 [data-theme="dark"] .workflow-header h3 {
     color: #f1f5f9;
 }
 
+[data-theme="dark"] .progress-bar {
+    background: rgba(90, 141, 255, 0.1);
+}
+
 [data-theme="dark"] .progress-text {
     color: #94a3b8;
 }
 
-[data-theme="dark"] .progress-bar {
-    background: #334155;
+[data-theme="dark"] .workflow-stage:hover {
+    background: rgba(90, 141, 255, 0.08);
 }
 
-[data-theme="dark"] .workflow-stage {
-    border-color: #334155;
+[data-theme="dark"] .workflow-stage.current {
+    background: rgba(90, 141, 255, 0.1);
 }
 
-[data-theme="dark"] .workflow-stage.pending {
-    background: #1e293b;
+[data-theme="dark"] .workflow-stage.current .stage-label {
+    color: var(--color-accent);
+}
+
+[data-theme="dark"] .stage-icon {
+    background: var(--glass-bg-light);
+}
+
+[data-theme="dark"] .workflow-stage:hover .stage-icon {
+    background: var(--glass-bg);
 }
 
 [data-theme="dark"] .stage-name {
-    color: #94a3b8;
+    color: #64748b;
 }
 
 [data-theme="dark"] .stage-label {
@@ -698,52 +779,25 @@ html, body {
 }
 
 [data-theme="dark"] .workflow-footer {
-    border-top-color: #334155;
-}
-
-[data-theme="dark"] .medical-badge {
-    background: #334155;
-    color: #94a3b8;
+    border-top-color: var(--glass-border);
 }
 
 [data-theme="dark"] .app-footer {
-    background: #1e293b;
-    border-top-color: #334155;
+    background: var(--glass-bg);
+    border-top-color: var(--glass-border);
 }
 
 [data-theme="dark"] .footer-content {
     color: #64748b;
 }
 
-[data-theme="dark"] .toast {
-    background: #1e293b;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .toast-message {
-    color: #f1f5f9;
-}
-
-[data-theme="dark"] .loading-subtext {
-    color: #64748b;
-}
-
-[data-theme="dark"] .loading-content {
-    background: #1e293b;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-[data-theme="dark"] .loading-text {
-    color: #94a3b8;
-}
-
 [data-theme="dark"] .user-dropdown {
-    background: #1e293b;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
 }
 
 [data-theme="dark"] .dropdown-item:hover {
-    background: rgba(37, 115, 155, 0.15);
+    background: rgba(90, 141, 255, 0.1);
 }
 
 [data-theme="dark"] .dropdown-label {
@@ -751,60 +805,31 @@ html, body {
 }
 
 [data-theme="dark"] .dropdown-divider {
-    background: #334155;
+    background: var(--glass-border);
 }
 
-[data-theme="dark"] .workflow-header {
-    border-bottom-color: #334155;
+[data-theme="dark"] .toast {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
 }
 
-/* Dark mode toggle button */
-.dark-mode-toggle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: #F3F4F6;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    position: relative;
+[data-theme="dark"] .toast-message {
+    color: #f1f5f9;
 }
 
-.dark-mode-toggle:hover {
-    background: #E5E7EB;
-    transform: scale(1.05);
+[data-theme="dark"] .loading-overlay {
+    background: rgba(15, 23, 42, 0.7);
 }
 
-.dark-mode-toggle .icon-sun,
-.dark-mode-toggle .icon-moon {
-    position: absolute;
-    font-size: 18px;
-    transition: all 0.3s ease;
+[data-theme="dark"] .loading-content {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
 }
 
-.dark-mode-toggle .icon-moon {
-    opacity: 1;
+[data-theme="dark"] .loading-text {
+    color: #f1f5f9;
 }
 
-.dark-mode-toggle .icon-sun {
-    opacity: 0;
-}
-
-[data-theme="dark"] .dark-mode-toggle {
-    background: #334155;
-}
-
-[data-theme="dark"] .dark-mode-toggle:hover {
-    background: #475569;
-}
-
-[data-theme="dark"] .dark-mode-toggle .icon-moon {
-    opacity: 0;
-}
-
-[data-theme="dark"] .dark-mode-toggle .icon-sun {
-    opacity: 1;
+[data-theme="dark"] .loading-subtext {
+    color: #94a3b8;
 }

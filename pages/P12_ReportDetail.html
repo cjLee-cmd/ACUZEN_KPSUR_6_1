@@ -7,112 +7,39 @@
     <link rel="stylesheet" href="../css/styles/globals.css">
     <link rel="stylesheet" href="../css/styles/layout.css">
     <style>
-        /* 다크모드 변수 */
-        :root {
-            --page-bg: #F5F7FA;
-            --card-bg: white;
-            --card-shadow: rgba(0, 0, 0, 0.1);
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --text-muted: #9CA3AF;
-            --border-color: #E5E7EB;
-            --border-light: #F3F4F6;
-            --section-bg: #F9FAFB;
-            --input-bg: white;
-            --timeline-line: #E5E7EB;
-        }
-
-        [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
-            --card-shadow: none;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: #334155;
-            --border-light: #334155;
-            --section-bg: #334155;
-            --input-bg: #334155;
-            --timeline-line: #475569;
-        }
-
-        /* 다크모드 컴포넌트 스타일 */
-        [data-theme="dark"] .detail-header,
-        [data-theme="dark"] .tabs-container {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: 1px solid #475569;
-        }
-
-        [data-theme="dark"] .info-section,
-        [data-theme="dark"] .comment-item {
-            background: var(--section-bg);
-        }
-
-        [data-theme="dark"] .file-item {
-            background: var(--section-bg);
-            border-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .file-item:hover {
-            border-color: #60a5fa;
-        }
-
-        [data-theme="dark"] .btn-secondary {
-            background: var(--section-bg);
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .btn-danger {
-            background: var(--section-bg);
-        }
-
-        [data-theme="dark"] .tab-btn {
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .tab-btn:hover,
-        [data-theme="dark"] .tab-btn.active {
-            color: #60a5fa;
-        }
-
-        [data-theme="dark"] .tabs-nav {
-            border-bottom-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .comment-textarea {
-            background: var(--input-bg);
-            border-color: var(--border-color);
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .timeline::before {
-            background: var(--timeline-line);
-        }
-
-        [data-theme="dark"] .timeline-item::before {
-            background: var(--card-bg);
-            border-color: #60a5fa;
-        }
-
-        [data-theme="dark"] .timeline-item.completed::before {
-            background: #10B981;
-            border-color: #10B981;
-        }
+        /* ========================================
+           Glassmorphism Design System
+           ======================================== */
 
         .page-container {
             max-width: 1400px;
             margin: 0 auto;
         }
 
-        /* 헤더 */
+        /* 애니메이션 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* ========================================
+           Detail Header - Glass Card
+           ======================================== */
         .detail-header {
-            background: var(--card-bg);
-            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             padding: var(--spacing-xl);
             margin-bottom: var(--spacing-lg);
-            box-shadow: 0 1px 3px var(--card-shadow);
+            box-shadow: var(--glass-shadow);
+            animation: fadeInUp 0.5s ease;
         }
 
         .header-top {
@@ -127,7 +54,7 @@
         }
 
         .report-title {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
             color: var(--text-primary);
             margin-bottom: var(--spacing-sm);
@@ -138,8 +65,9 @@
 
         .report-id {
             font-size: 13px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             font-weight: 500;
+            opacity: 0.8;
         }
 
         .header-actions {
@@ -149,11 +77,11 @@
 
         .btn-action {
             padding: var(--spacing-sm) var(--spacing-lg);
-            border-radius: 6px;
+            border-radius: var(--radius-md);
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
             display: flex;
             align-items: center;
@@ -161,25 +89,39 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: var(--gradient-primary);
             color: white;
+            box-shadow: 0 4px 16px rgba(31, 78, 140, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(31, 78, 140, 0.4);
         }
 
         .btn-secondary {
-            background: var(--card-bg);
-            border: 2px solid var(--border-color);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
             color: var(--text-secondary);
         }
 
+        .btn-secondary:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+
         .btn-danger {
-            background: white;
-            border: 2px solid #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: #EF4444;
         }
 
-        .btn-action:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: translateY(-2px);
         }
 
         .header-meta {
@@ -187,18 +129,27 @@
             grid-template-columns: repeat(4, 1fr);
             gap: var(--spacing-lg);
             padding-top: var(--spacing-lg);
-            border-top: 2px solid var(--border-color);
+            border-top: 1px solid var(--glass-border);
         }
 
         .meta-item {
             display: flex;
             flex-direction: column;
             gap: var(--spacing-xs);
+            padding: var(--spacing-md);
+            background: rgba(31, 78, 140, 0.05);
+            border-radius: var(--radius-md);
+            transition: all 0.3s ease;
+        }
+
+        .meta-item:hover {
+            background: rgba(31, 78, 140, 0.1);
+            transform: translateY(-2px);
         }
 
         .meta-label {
             font-size: 11px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -211,30 +162,45 @@
         }
 
         .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
             font-size: 12px;
             font-weight: 600;
+            gap: 4px;
         }
 
         .status-badge.review {
-            background: rgba(245, 158, 11, 0.1);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.15) 100%);
             color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
 
-        /* 탭 네비게이션 */
+        .status-badge.review::before {
+            content: '⏳';
+        }
+
+        /* ========================================
+           Tabs Container - Glass
+           ======================================== */
         .tabs-container {
-            background: var(--card-bg);
-            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             margin-bottom: var(--spacing-lg);
-            box-shadow: 0 1px 3px var(--card-shadow);
+            box-shadow: var(--glass-shadow);
+            animation: fadeInUp 0.5s ease 0.1s both;
+            overflow: hidden;
         }
 
         .tabs-nav {
             display: flex;
-            border-bottom: 2px solid var(--border-color);
-            padding: 0 var(--spacing-lg);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 0 var(--spacing-md);
+            background: rgba(31, 78, 140, 0.03);
         }
 
         .tab-btn {
@@ -246,25 +212,26 @@
             color: var(--text-secondary);
             cursor: pointer;
             position: relative;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .tab-btn:hover {
-            color: #25739B;
+            color: var(--color-primary);
         }
 
         .tab-btn.active {
-            color: #25739B;
+            color: var(--color-primary);
         }
 
         .tab-btn.active::after {
             content: '';
             position: absolute;
-            bottom: -2px;
+            bottom: -1px;
             left: 0;
             right: 0;
-            height: 2px;
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            height: 3px;
+            background: var(--gradient-accent);
+            border-radius: 3px 3px 0 0;
         }
 
         .tab-content {
@@ -274,9 +241,12 @@
 
         .tab-content.active {
             display: block;
+            animation: fadeInUp 0.3s ease;
         }
 
-        /* 정보 그리드 */
+        /* ========================================
+           Info Grid - Glass Cards
+           ======================================== */
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -284,25 +254,45 @@
         }
 
         .info-section {
-            background: var(--section-bg);
-            border-radius: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
             padding: var(--spacing-lg);
+            transition: all 0.3s ease;
+        }
+
+        .info-section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(31, 78, 140, 0.15);
         }
 
         .section-title {
             font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: var(--color-primary);
             margin-bottom: var(--spacing-md);
             padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--gradient-primary);
+            border-radius: 2px;
         }
 
         .info-row {
             display: flex;
             justify-content: space-between;
             padding: var(--spacing-sm) 0;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(31, 78, 140, 0.1);
         }
 
         .info-row:last-child {
@@ -321,43 +311,68 @@
             font-weight: 600;
         }
 
-        /* 타임라인 */
+        /* ========================================
+           Timeline - Enhanced
+           ======================================== */
         .timeline {
             position: relative;
-            padding-left: 30px;
+            padding-left: 36px;
         }
 
         .timeline::before {
             content: '';
             position: absolute;
-            left: 8px;
+            left: 10px;
             top: 0;
             bottom: 0;
             width: 2px;
-            background: var(--timeline-line);
+            background: linear-gradient(to bottom, var(--color-primary) 0%, var(--glass-border) 100%);
         }
 
         .timeline-item {
             position: relative;
             margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(31, 78, 140, 0.1);
         }
 
         .timeline-item::before {
             content: '';
             position: absolute;
-            left: -26px;
-            top: 4px;
+            left: -32px;
+            top: 20px;
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: var(--card-bg);
-            border: 3px solid #25739B;
+            background: white;
+            border: 3px solid var(--color-primary);
             z-index: 1;
+            box-shadow: 0 0 0 4px rgba(31, 78, 140, 0.1);
         }
 
         .timeline-item.completed::before {
-            background: #10B981;
-            border-color: #10B981;
+            background: var(--gradient-primary);
+            border-color: var(--color-primary);
+        }
+
+        .timeline-item.completed::after {
+            content: '✓';
+            position: absolute;
+            left: -28px;
+            top: 20px;
+            font-size: 10px;
+            color: white;
+            z-index: 2;
         }
 
         .timeline-header {
@@ -375,16 +390,21 @@
 
         .timeline-time {
             font-size: 11px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
+            background: rgba(31, 78, 140, 0.1);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
         }
 
         .timeline-desc {
             font-size: 12px;
             color: var(--text-secondary);
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
-        /* 파일 목록 */
+        /* ========================================
+           File List - Glass Cards
+           ======================================== */
         .file-list {
             display: flex;
             flex-direction: column;
@@ -396,26 +416,30 @@
             align-items: center;
             gap: var(--spacing-md);
             padding: var(--spacing-md);
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            transition: all 0.2s ease;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .file-item:hover {
-            border-color: #25739B;
-            box-shadow: 0 2px 8px rgba(37, 115, 155, 0.1);
+            border-color: var(--color-primary);
+            transform: translateY(-2px) translateX(4px);
+            box-shadow: 0 8px 24px rgba(31, 78, 140, 0.15);
         }
 
         .file-icon {
             font-size: 24px;
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(37, 115, 155, 0.1);
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(31, 78, 140, 0.1) 0%, rgba(90, 141, 255, 0.1) 100%);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(31, 78, 140, 0.2);
         }
 
         .file-info {
@@ -431,7 +455,7 @@
 
         .file-meta {
             font-size: 11px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
 
         .file-actions {
@@ -440,21 +464,28 @@
         }
 
         .file-action-btn {
-            padding: 4px 8px;
-            border: none;
-            background: transparent;
-            color: #25739B;
+            padding: 6px 12px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            color: var(--color-primary);
             cursor: pointer;
             font-size: 12px;
+            font-weight: 500;
+            border-radius: var(--radius-md);
             transition: all 0.2s ease;
         }
 
         .file-action-btn:hover {
-            background: rgba(37, 115, 155, 0.1);
-            border-radius: 4px;
+            background: var(--gradient-primary);
+            color: white;
+            border-color: transparent;
         }
 
-        /* 댓글 섹션 */
+        /* ========================================
+           Comments Section - Glass
+           ======================================== */
         .comments-section {
             margin-top: var(--spacing-xl);
         }
@@ -463,18 +494,28 @@
             display: flex;
             gap: var(--spacing-md);
             margin-bottom: var(--spacing-xl);
+            align-items: flex-end;
         }
 
         .comment-textarea {
             flex: 1;
             padding: var(--spacing-md);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
             font-size: 13px;
             resize: vertical;
             min-height: 80px;
-            background: var(--input-bg);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .comment-textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.1);
         }
 
         .comment-list {
@@ -487,15 +528,24 @@
             display: flex;
             gap: var(--spacing-md);
             padding: var(--spacing-lg);
-            background: var(--section-bg);
-            border-radius: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            transition: all 0.3s ease;
+        }
+
+        .comment-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(31, 78, 140, 0.1);
         }
 
         .comment-avatar {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: var(--gradient-primary);
             color: white;
             display: flex;
             align-items: center;
@@ -503,6 +553,7 @@
             font-size: 14px;
             font-weight: 600;
             flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.3);
         }
 
         .comment-content {
@@ -524,7 +575,10 @@
 
         .comment-time {
             font-size: 11px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
+            background: rgba(31, 78, 140, 0.1);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
         }
 
         .comment-text {
@@ -533,6 +587,40 @@
             line-height: 1.6;
         }
 
+        /* ========================================
+           Dark Mode Overrides
+           ======================================== */
+        [data-theme="dark"] .detail-header,
+        [data-theme="dark"] .tabs-container,
+        [data-theme="dark"] .info-section,
+        [data-theme="dark"] .file-item,
+        [data-theme="dark"] .timeline-item,
+        [data-theme="dark"] .comment-item {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
+        [data-theme="dark"] .tabs-nav {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        [data-theme="dark"] .meta-item {
+            background: rgba(71, 85, 105, 0.3);
+        }
+
+        [data-theme="dark"] .comment-textarea {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
+        [data-theme="dark"] .file-action-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
+        /* ========================================
+           Responsive Design
+           ======================================== */
         @media (max-width: 1024px) {
             .info-grid {
                 grid-template-columns: 1fr;
@@ -555,6 +643,7 @@
 
             .btn-action {
                 flex: 1;
+                justify-content: center;
             }
 
             .header-meta {
@@ -563,11 +652,17 @@
 
             .tabs-nav {
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tabs-nav::-webkit-scrollbar {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
@@ -590,6 +685,9 @@
             </div>
 
             <div class="header-right">
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
+                    🏠
+                </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
                     <span class="icon-sun">☀️</span>
                     <span class="icon-moon">🌙</span>

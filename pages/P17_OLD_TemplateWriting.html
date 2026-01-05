@@ -10,7 +10,7 @@
     <style>
         /* 다크모드 변수 */
         :root {
-            --page-bg: #F5F7FA;
+            --page-bg: #F2F5FC;
             --card-bg: white;
             --card-shadow: rgba(0, 0, 0, 0.1);
             --text-primary: #07161D;
@@ -24,16 +24,16 @@
         }
 
         [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
+            --page-bg: #0B1730;
+            --card-bg: #0B1730;
             --card-shadow: none;
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            --border-color: #334155;
-            --section-bg: #334155;
-            --input-bg: #334155;
-            --info-bg: rgba(37, 115, 155, 0.2);
+            --border-color: #1C2740;
+            --section-bg: #1C2740;
+            --input-bg: #1C2740;
+            --info-bg: rgba(31, 78, 140, 0.2);
             --info-text: #94a3b8;
         }
 
@@ -42,19 +42,19 @@
         [data-theme="dark"] .template-panel,
         [data-theme="dark"] .progress-stats {
             background: transparent !important;
-            border-color: #475569;
+            border-color: #273453;
         }
 
         [data-theme="dark"] .section-item {
-            background: #334155;
+            background: #1C2740;
         }
 
         [data-theme="dark"] .section-item:hover {
-            background: #475569;
+            background: #273453;
         }
 
         [data-theme="dark"] .section-item.active {
-            background: rgba(37, 115, 155, 0.3);
+            background: rgba(31, 78, 140, 0.3);
         }
 
         [data-theme="dark"] .section-item.completed {
@@ -87,8 +87,8 @@
         }
 
         [data-theme="dark"] .data-mapping-item {
-            background: #334155;
-            border-color: #475569;
+            background: #1C2740;
+            border-color: #273453;
         }
 
         [data-theme="dark"] .data-mapping-item.filled {
@@ -153,7 +153,7 @@
 
         .section-item.active {
             background: var(--info-bg);
-            border-left-color: #25739B;
+            border-left-color: #12305B;
         }
 
         .section-item.completed {
@@ -232,7 +232,7 @@
 
         .template-info {
             background: var(--info-bg);
-            border-left: 4px solid #25739B;
+            border-left: 4px solid #12305B;
             padding: 12px;
             margin-bottom: 12px;
             border-radius: 4px;
@@ -339,7 +339,7 @@
         .preview-panel h2 {
             font-size: 16px;
             font-weight: 600;
-            color: #25739B;
+            color: #12305B;
             margin: 16px 0 8px 0;
         }
 
@@ -357,7 +357,7 @@
         }
 
         .preview-panel th {
-            background: #25739B;
+            background: #12305B;
             color: white;
             padding: 8px;
             text-align: left;
@@ -450,7 +450,7 @@
         .progress-stat-value {
             font-size: 20px;
             font-weight: 600;
-            color: #25739B;
+            color: #12305B;
         }
 
         .progress-stat-label {
@@ -461,6 +461,7 @@
     </style>
 </head>
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout" id="app">
         <!-- Header -->
         <header class="app-header">

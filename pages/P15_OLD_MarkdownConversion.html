@@ -17,14 +17,14 @@
     <style>
         /* 다크모드 변수 */
         :root {
-            --page-bg: #F5F7FA;
+            --page-bg: #F2F5FC;
             --card-bg: white;
             --card-shadow: rgba(0, 0, 0, 0.1);
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --text-muted: #9CA3AF;
-            --border-color: #E5E7EB;
-            --section-bg: #F9FAFB;
+            --text-primary: var(--app-text-strong);
+            --text-secondary: var(--app-text-normal);
+            --text-muted: var(--app-text-muted);
+            --border-color: var(--app-border-soft);
+            --section-bg: var(--app-surface-muted);
             --input-bg: white;
             /* 경고색 - 주황색 계열 (눈에 편함) */
             --warning-bg: #FFFBEB;
@@ -34,19 +34,19 @@
             /* 상태 색상 */
             --status-success: #10B981;
             --status-error: #F59E0B;
-            --status-pending: #D1D5DB;
+            --status-pending: #C2CAE3;
         }
 
         [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
+            --page-bg: #0B1730;
+            --card-bg: #0B1730;
             --card-shadow: none;
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            --border-color: #334155;
-            --section-bg: #334155;
-            --input-bg: #334155;
+            --border-color: #1C2740;
+            --section-bg: #1C2740;
+            --input-bg: #1C2740;
             /* 경고색 - 다크모드 (주황색 계열) */
             --warning-bg: #451a03;
             --warning-border: #b45309;
@@ -64,7 +64,7 @@
         [data-theme="dark"] .log-section {
             background: transparent !important;
             box-shadow: none !important;
-            border: 1px solid #475569;
+            border: 1px solid #273453;
         }
 
         .page-container {
@@ -173,24 +173,24 @@
         }
 
         .file-item:hover {
-            background: rgba(37, 115, 155, 0.05);
+            background: rgba(31, 78, 140, 0.05);
         }
 
         [data-theme="dark"] .file-item:hover {
-            background: rgba(37, 115, 155, 0.15);
+            background: rgba(31, 78, 140, 0.15);
         }
 
         .file-item.active {
-            background: rgba(37, 115, 155, 0.1);
-            border-left: 3px solid #25739B;
+            background: rgba(31, 78, 140, 0.1);
+            border-left: 3px solid #12305B;
         }
 
         [data-theme="dark"] .file-item.active {
-            background: rgba(37, 115, 155, 0.2);
+            background: rgba(31, 78, 140, 0.2);
         }
 
         .file-item.converting {
-            background: rgba(37, 115, 155, 0.05);
+            background: rgba(31, 78, 140, 0.05);
         }
 
         .file-item-icon {
@@ -222,7 +222,7 @@
 
         .file-item-raw {
             font-size: 10px;
-            color: #25739B;
+            color: #12305B;
             font-weight: 600;
         }
 
@@ -277,11 +277,11 @@
         }
 
         .preview-tab:hover {
-            color: #25739B;
+            color: #12305B;
         }
 
         .preview-tab.active {
-            color: #25739B;
+            color: #12305B;
         }
 
         .preview-tab.active::after {
@@ -291,7 +291,7 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: linear-gradient(135deg, #12305B 0%, #1F4E8C 100%);
         }
 
         .preview-content {
@@ -337,7 +337,7 @@
         .markdown-preview h3 {
             margin-top: var(--spacing-lg);
             margin-bottom: var(--spacing-md);
-            color: #25739B;
+            color: #12305B;
         }
 
         .markdown-preview p {
@@ -501,13 +501,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: linear-gradient(135deg, #12305B 0%, #1F4E8C 100%);
             color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(37, 115, 155, 0.3);
+            box-shadow: 0 8px 16px rgba(31, 78, 140, 0.3);
         }
 
         .btn-primary:disabled {
@@ -542,6 +542,7 @@
     </style>
 </head>
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">

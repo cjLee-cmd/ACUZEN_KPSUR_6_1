@@ -587,6 +587,242 @@ ${draft}
     async generateContent(prompt, options = {}) {
         return this.sendMessage(prompt, options);
     }
+
+    // =====================================================
+    // History-enabled API Methods (세션 대화 지원)
+    // =====================================================
+
+    /**
+     * Claude API with conversation history
+     * @param {string} systemPrompt - 시스템 프롬프트
+     * @param {Array} messages - 대화 히스토리 [{role: 'user'|'assistant', content: string}]
+     * @param {Object} options - 추가 옵션
+     */
+    async callClaudeWithHistory(systemPrompt, messages, options = {}) {
+        const apiKey = this.getApiKey('claude');
+        if (!apiKey) throw new Error('Anthropic API 키가 설정되지 않았습니다.');
+
+        const model = options.model || LLM_PROVIDERS.claude.defaultModel;
+        const modelInfo = LLM_PROVIDERS.claude.models[model];
+
+        // messages 배열 검증 및 정규화
+        const normalizedMessages = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+        }));
+
+        const requestBody = {
+            model: model,
+            max_tokens: options.maxTokens || modelInfo.maxTokens,
+            temperature: options.temperature || 0.3,
+            messages: normalizedMessages
+        };
+
+        // system 프롬프트가 있으면 추가
+        if (systemPrompt) {
+            requestBody.system = systemPrompt;
+        }
+
+        const response = await fetch(LLM_PROVIDERS.claude.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Claude API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        const text = data.content?.[0]?.text || '';
+
+        const inputTokens = data.usage?.input_tokens || 0;
+        const outputTokens = data.usage?.output_tokens || 0;
+        const cost = this.estimateCost('claude', model, inputTokens, outputTokens);
+        this.totalCost += cost;
+
+        return {
+            success: true,
+            text,
+            model,
+            provider: 'claude',
+            usage: { inputTokens, outputTokens },
+            cost
+        };
+    }
+
+    /**
+     * OpenAI API with conversation history
+     * @param {string} systemPrompt - 시스템 프롬프트
+     * @param {Array} messages - 대화 히스토리 [{role: 'user'|'assistant', content: string}]
+     * @param {Object} options - 추가 옵션
+     */
+    async callOpenAIWithHistory(systemPrompt, messages, options = {}) {
+        const apiKey = this.getApiKey('openai');
+        if (!apiKey) throw new Error('OpenAI API 키가 설정되지 않았습니다.');
+
+        const model = options.model || LLM_PROVIDERS.openai.defaultModel;
+        const modelInfo = LLM_PROVIDERS.openai.models[model];
+
+        // OpenAI는 system role 메시지를 첫 번째로 추가
+        const allMessages = [];
+        if (systemPrompt) {
+            allMessages.push({ role: 'system', content: systemPrompt });
+        }
+
+        // 대화 히스토리 추가
+        messages.forEach(msg => {
+            allMessages.push({
+                role: msg.role,
+                content: msg.content
+            });
+        });
+
+        const response = await fetch(LLM_PROVIDERS.openai.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: model,
+                max_tokens: options.maxTokens || modelInfo.maxTokens,
+                temperature: options.temperature || 0.3,
+                messages: allMessages
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`OpenAI API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content || '';
+
+        const inputTokens = data.usage?.prompt_tokens || 0;
+        const outputTokens = data.usage?.completion_tokens || 0;
+        const cost = this.estimateCost('openai', model, inputTokens, outputTokens);
+        this.totalCost += cost;
+
+        return {
+            success: true,
+            text,
+            model,
+            provider: 'openai',
+            usage: { inputTokens, outputTokens },
+            cost
+        };
+    }
+
+    /**
+     * Gemini API with conversation history
+     * @param {string} systemPrompt - 시스템 프롬프트
+     * @param {Array} messages - 대화 히스토리 [{role: 'user'|'assistant', content: string}]
+     * @param {Object} options - 추가 옵션
+     */
+    async callGeminiWithHistory(systemPrompt, messages, options = {}) {
+        const apiKey = this.getApiKey('google');
+        if (!apiKey) throw new Error('Google API 키가 설정되지 않았습니다.');
+
+        const model = options.model || LLM_PROVIDERS.google.defaultModel;
+        const modelInfo = LLM_PROVIDERS.google.models[model];
+        const apiVersion = modelInfo?.apiVersion || 'v1beta';
+        const baseUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models`;
+        const url = `${baseUrl}/${model}:generateContent?key=${apiKey}`;
+
+        // Gemini 형식으로 변환: role은 'user' 또는 'model'
+        const contents = messages.map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const requestBody = {
+            contents: contents,
+            generationConfig: {
+                temperature: options.temperature || 0.3,
+                maxOutputTokens: options.maxTokens || 8192
+            }
+        };
+
+        // systemInstruction 추가 (Gemini 1.5+ 지원)
+        if (systemPrompt) {
+            requestBody.systemInstruction = {
+                parts: [{ text: systemPrompt }]
+            };
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Gemini API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        const inputTokens = data.usageMetadata?.promptTokenCount || 0;
+        const outputTokens = data.usageMetadata?.candidatesTokenCount || 0;
+        const cost = this.estimateCost('google', model, inputTokens, outputTokens);
+        this.totalCost += cost;
+
+        return {
+            success: true,
+            text,
+            model,
+            provider: 'google',
+            usage: { inputTokens, outputTokens },
+            cost
+        };
+    }
+
+    /**
+     * 통합 히스토리 호출 메서드
+     * @param {string} systemPrompt - 시스템 프롬프트
+     * @param {Array} messages - 대화 히스토리
+     * @param {Object} options - provider, model 등 옵션
+     */
+    async generateWithHistory(systemPrompt, messages, options = {}) {
+        const provider = options.provider || 'claude';
+        const startTime = Date.now();
+
+        try {
+            let result;
+
+            switch (provider) {
+                case 'claude':
+                case 'anthropic':
+                    result = await this.callClaudeWithHistory(systemPrompt, messages, options);
+                    break;
+                case 'openai':
+                    result = await this.callOpenAIWithHistory(systemPrompt, messages, options);
+                    break;
+                case 'google':
+                case 'gemini':
+                    result = await this.callGeminiWithHistory(systemPrompt, messages, options);
+                    break;
+                default:
+                    throw new Error(`지원하지 않는 provider: ${provider}`);
+            }
+
+            result.latency = Date.now() - startTime;
+            return result;
+
+        } catch (error) {
+            console.error(`[MultiLLMClient] ${provider} with history error:`, error);
+            throw error;
+        }
+    }
 }
 
 // Singleton instance

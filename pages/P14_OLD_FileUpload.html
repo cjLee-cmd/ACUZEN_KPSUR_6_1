@@ -15,31 +15,31 @@
     <style>
         /* 다크모드 변수 */
         :root {
-            --page-bg: #F5F7FA;
+            --page-bg: #F2F5FC;
             --card-bg: white;
             --card-shadow: rgba(0, 0, 0, 0.1);
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --text-muted: #9CA3AF;
-            --border-color: #E5E7EB;
+            --text-primary: var(--app-text-strong);
+            --text-secondary: var(--app-text-normal);
+            --text-muted: var(--app-text-muted);
+            --border-color: var(--app-border-soft);
             --input-bg: white;
-            --section-bg: #F9FAFB;
-            --dropzone-bg: #F9FAFB;
-            --dropzone-border: #D1D5DB;
+            --section-bg: var(--app-surface-muted);
+            --dropzone-bg: var(--app-surface-muted);
+            --dropzone-border: #C2CAE3;
         }
 
         [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
+            --page-bg: #0B1730;
+            --card-bg: #0B1730;
             --card-shadow: none;
             --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            --border-color: #334155;
-            --input-bg: #334155;
-            --section-bg: #334155;
-            --dropzone-bg: #334155;
-            --dropzone-border: #475569;
+            --border-color: #1C2740;
+            --input-bg: #1C2740;
+            --section-bg: #1C2740;
+            --dropzone-bg: #1C2740;
+            --dropzone-border: #273453;
         }
 
         /* 다크모드 컴포넌트 스타일 */
@@ -47,7 +47,7 @@
         [data-theme="dark"] .raw-id-guide {
             background: transparent !important;
             box-shadow: none !important;
-            border: 1px solid #475569;
+            border: 1px solid #273453;
         }
 
         [data-theme="dark"] .dropzone {
@@ -58,7 +58,7 @@
         [data-theme="dark"] .dropzone:hover,
         [data-theme="dark"] .dropzone.drag-over {
             border-color: #60a5fa;
-            background: rgba(37, 115, 155, 0.15);
+            background: rgba(31, 78, 140, 0.15);
         }
 
         [data-theme="dark"] .file-item {
@@ -67,12 +67,12 @@
         }
 
         [data-theme="dark"] .file-item:hover {
-            background: rgba(37, 115, 155, 0.1);
+            background: rgba(31, 78, 140, 0.1);
             border-color: #60a5fa;
         }
 
         [data-theme="dark"] .file-icon {
-            background: #475569;
+            background: #273453;
         }
 
         [data-theme="dark"] .raw-id-item {
@@ -80,22 +80,22 @@
         }
 
         [data-theme="dark"] .rawid-popup {
-            background: #1e293b;
-            border: 1px solid #475569;
+            background: #0B1730;
+            border: 1px solid #273453;
         }
 
         [data-theme="dark"] .rawid-popup-header {
-            background: #334155;
+            background: #1C2740;
             border-color: var(--border-color);
             color: var(--text-primary);
         }
 
         [data-theme="dark"] .rawid-popup-item:hover {
-            background: rgba(37, 115, 155, 0.15);
+            background: rgba(31, 78, 140, 0.15);
         }
 
         [data-theme="dark"] .rawid-popup-item.selected {
-            background: rgba(37, 115, 155, 0.2);
+            background: rgba(31, 78, 140, 0.2);
         }
 
         [data-theme="dark"] .rawid-popup-item-code {
@@ -112,8 +112,8 @@
 
 
         [data-theme="dark"] .modal-content {
-            background: #1e293b;
-            border: 1px solid #475569;
+            background: #0B1730;
+            border: 1px solid #273453;
         }
 
         [data-theme="dark"] .modal-header {
@@ -135,12 +135,12 @@
 
         [data-theme="dark"] .raw-id-option:hover {
             border-color: #60a5fa;
-            background: rgba(37, 115, 155, 0.15);
+            background: rgba(31, 78, 140, 0.15);
         }
 
         [data-theme="dark"] .raw-id-option.selected {
             border-color: #60a5fa;
-            background: rgba(37, 115, 155, 0.2);
+            background: rgba(31, 78, 140, 0.2);
         }
 
         [data-theme="dark"] .raw-id-option-code {
@@ -154,7 +154,7 @@
         }
 
         [data-theme="dark"] .btn-secondary:hover {
-            background: #475569;
+            background: #273453;
         }
 
         .page-container {
@@ -214,13 +214,13 @@
         }
 
         .dropzone:hover {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.02);
+            border-color: #12305B;
+            background: rgba(31, 78, 140, 0.02);
         }
 
         .dropzone.drag-over {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.05);
+            border-color: #12305B;
+            background: rgba(31, 78, 140, 0.05);
         }
 
         .dropzone-icon {
@@ -272,7 +272,7 @@
         .file-item:hover {
             background: var(--card-bg);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            border-color: #25739B;
+            border-color: #12305B;
         }
 
         .file-icon {
@@ -312,8 +312,8 @@
             border-radius: 12px;
             font-size: 11px;
             font-weight: 600;
-            background: rgba(37, 115, 155, 0.1);
-            color: #25739B;
+            background: rgba(31, 78, 140, 0.1);
+            color: #12305B;
             transition: all 0.2s ease;
             pointer-events: none;
         }
@@ -368,18 +368,18 @@
         }
 
         .rawid-popup-item:hover {
-            background: rgba(37, 115, 155, 0.1);
+            background: rgba(31, 78, 140, 0.1);
         }
 
         .rawid-popup-item.selected {
-            background: rgba(37, 115, 155, 0.15);
-            border-left: 3px solid #25739B;
+            background: rgba(31, 78, 140, 0.15);
+            border-left: 3px solid #12305B;
         }
 
         .rawid-popup-item-code {
             font-size: 12px;
             font-weight: 700;
-            color: #25739B;
+            color: #12305B;
             min-width: 60px;
         }
 
@@ -476,7 +476,7 @@
             font-size: 10px;
             font-weight: 600;
             background: rgba(156, 163, 175, 0.1);
-            color: #6B7280;
+            color: var(--app-text-normal);
         }
 
         .raw-id-list {
@@ -528,7 +528,7 @@
         .btn-classify {
             width: 100%;
             padding: var(--spacing-md);
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: linear-gradient(135deg, #12305B 0%, #1F4E8C 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -544,7 +544,7 @@
 
         .btn-classify:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(37, 115, 155, 0.3);
+            box-shadow: 0 8px 16px rgba(31, 78, 140, 0.3);
         }
 
         .btn-classify:disabled {
@@ -575,7 +575,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: linear-gradient(135deg, #12305B 0%, #1F4E8C 100%);
             color: white;
             flex: 1;
         }
@@ -645,19 +645,19 @@
         }
 
         .raw-id-option:hover {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.05);
+            border-color: #12305B;
+            background: rgba(31, 78, 140, 0.05);
         }
 
         .raw-id-option.selected {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.1);
+            border-color: #12305B;
+            background: rgba(31, 78, 140, 0.1);
         }
 
         .raw-id-option-code {
             font-size: 12px;
             font-weight: 700;
-            color: #25739B;
+            color: #12305B;
             margin-bottom: 4px;
         }
 
@@ -692,6 +692,7 @@
     </style>
 </head>
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
@@ -823,7 +824,7 @@
                                         <div class="progress-fill" id="uploadProgress" style="width: 0%"></div>
                                     </div>
                                 </div>
-                                <div style="font-size: 11px; color: #6B7280; text-align: center;">
+                                <div style="font-size: 11px; color: var(--app-text-normal); text-align: center;">
                                     <span id="uploadedRequired">0</span> / <span id="totalRequired">9</span> 필수 파일
                                 </div>
                             </div>
@@ -1135,7 +1136,7 @@
             document.getElementById('fileCount').textContent = uploadedFiles.length;
 
             if (uploadedFiles.length === 0) {
-                fileList.innerHTML = '<p style="text-align: center; color: #9CA3AF; padding: 20px;">업로드된 파일이 없습니다</p>';
+                fileList.innerHTML = '<p style="text-align: center; color: var(--app-text-muted); padding: 20px;">업로드된 파일이 없습니다</p>';
                 return;
             }
 

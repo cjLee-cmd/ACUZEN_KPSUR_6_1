@@ -7,133 +7,47 @@
     <link rel="stylesheet" href="../css/styles/globals.css">
     <link rel="stylesheet" href="../css/styles/layout.css">
     <style>
-        /* 다크모드 변수 */
-        :root {
-            --page-bg: #F5F7FA;
-            --card-bg: white;
-            --card-shadow: rgba(0, 0, 0, 0.1);
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --text-muted: #9CA3AF;
-            --border-color: #E5E7EB;
-            --border-light: #F3F4F6;
-            --table-header-bg: #F9FAFB;
-            --input-bg: white;
-        }
-
-        [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
-            --card-shadow: none;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: #334155;
-            --border-light: #334155;
-            --table-header-bg: #334155;
-            --input-bg: #334155;
-        }
-
-        /* 다크모드 컴포넌트 스타일 */
-        [data-theme="dark"] .filter-section,
-        [data-theme="dark"] .table-container {
-            background: var(--card-bg);
-            box-shadow: none;
-            border: 1px solid var(--border-color);
-        }
-
-        [data-theme="dark"] .filter-input,
-        [data-theme="dark"] .filter-select {
-            background: var(--input-bg);
-            border-color: var(--border-color);
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .filter-chip {
-            background: var(--input-bg);
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .filter-chip:hover {
-            border-color: #25739B;
-            color: #60a5fa;
-        }
-
-        [data-theme="dark"] .btn-reset {
-            background: var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .view-toggle {
-            background: var(--border-color);
-        }
-
-        [data-theme="dark"] .view-btn {
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .view-btn.active {
-            background: var(--input-bg);
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .reports-table th {
-            background: var(--table-header-bg);
-            color: var(--text-secondary);
-            border-bottom-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .reports-table td {
-            color: var(--text-primary);
-            border-bottom-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .reports-table tr:hover {
-            background: rgba(37, 115, 155, 0.1);
-        }
-
-        [data-theme="dark"] .page-btn {
-            background: var(--input-bg);
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-        }
-
-        [data-theme="dark"] .page-btn:hover:not(:disabled) {
-            border-color: #60a5fa;
-            color: #60a5fa;
-        }
-
-        [data-theme="dark"] .pagination {
-            border-top-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .table-header {
-            border-bottom-color: var(--border-color);
-        }
+        /* ============================================
+           Report List - Glassmorphism Design
+           ============================================ */
 
         .page-container {
             max-width: 1400px;
             margin: 0 auto;
+            animation: fadeIn 0.6s ease;
         }
 
+        /* Page Header - Glass Effect */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-xl);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
         }
 
         .page-title-section h1 {
             font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            color: transparent;
+            background-clip: text;
             margin-bottom: var(--spacing-xs);
         }
 
         .page-subtitle {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
+            font-weight: 500;
         }
 
         .header-actions {
@@ -141,33 +55,16 @@
             gap: var(--spacing-md);
         }
 
-        .btn-primary {
-            padding: var(--spacing-md) var(--spacing-xl);
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(37, 115, 155, 0.3);
-        }
-
-        /* 필터 섹션 */
+        /* Filter Section - Glass */
         .filter-section {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: var(--spacing-lg);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
             margin-bottom: var(--spacing-lg);
-            box-shadow: 0 1px 3px var(--card-shadow);
+            box-shadow: var(--glass-shadow);
         }
 
         .filter-row {
@@ -186,24 +83,28 @@
         }
 
         .filter-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .filter-input, .filter-select {
             padding: var(--spacing-sm) var(--spacing-md);
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-md);
             font-size: 13px;
-            transition: all 0.2s ease;
-            background: var(--input-bg);
-            color: var(--text-primary);
+            transition: all 0.3s ease;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            color: var(--app-text-strong);
         }
 
         .filter-input:focus, .filter-select:focus {
-            border-color: #25739B;
+            border-color: var(--color-primary);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.15);
         }
 
         .filter-chips {
@@ -213,26 +114,29 @@
         }
 
         .filter-chip {
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: 2px solid var(--border-color);
-            background: var(--card-bg);
-            color: var(--text-secondary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid var(--glass-border);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            color: var(--app-text-normal);
         }
 
         .filter-chip:hover {
-            border-color: #25739B;
-            color: #25739B;
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateY(-2px);
         }
 
         .filter-chip.active {
-            background: linear-gradient(135deg, #25739B 0%, #369EE1 100%);
+            background: var(--gradient-accent);
             color: white;
             border-color: transparent;
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.3);
         }
 
         .filter-actions {
@@ -242,29 +146,44 @@
 
         .btn-filter {
             padding: var(--spacing-sm) var(--spacing-lg);
-            border-radius: 6px;
+            border-radius: var(--radius-md);
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             border: none;
         }
 
         .btn-apply {
-            background: #25739B;
+            background: var(--gradient-accent);
             color: white;
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.25);
+        }
+
+        .btn-apply:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(31, 78, 140, 0.35);
         }
 
         .btn-reset {
-            background: var(--border-color);
-            color: var(--text-secondary);
+            background: var(--glass-bg-light);
+            color: var(--app-text-normal);
+            border: 2px solid var(--glass-border);
         }
 
-        /* 테이블 컨테이너 */
+        .btn-reset:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        /* Table Container - Glass */
         .table-container {
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px var(--card-shadow);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
             overflow: hidden;
         }
 
@@ -273,18 +192,19 @@
             justify-content: space-between;
             align-items: center;
             padding: var(--spacing-lg);
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
+            background: var(--glass-bg-light);
         }
 
         .table-title {
             font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: var(--app-text-strong);
         }
 
         .table-count {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
         }
 
         .table-actions {
@@ -294,31 +214,36 @@
         }
 
         .view-toggle {
-            display: flex;
-            gap: 4px;
-            background: var(--border-light);
-            padding: 4px;
-            border-radius: 6px;
+            display: inline-flex;
+            gap: 6px;
+            background: var(--glass-bg-light);
+            padding: 6px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-sm);
         }
 
         .view-btn {
-            padding: 6px 12px;
+            padding: 8px 20px;
             border: none;
             background: transparent;
-            border-radius: 4px;
+            border-radius: var(--radius-full);
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s ease;
-            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            transition: all 0.25s ease;
+            color: var(--app-text-normal);
+            min-width: 70px;
         }
 
         .view-btn.active {
-            background: var(--card-bg);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            color: var(--text-primary);
+            background: var(--gradient-accent);
+            color: white;
+            box-shadow: 0 6px 18px rgba(18, 48, 91, 0.35);
         }
 
-        /* 테이블 */
+        /* Table */
         .reports-table {
             width: 100%;
             border-collapse: collapse;
@@ -327,13 +252,13 @@
         .reports-table th {
             text-align: left;
             font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
+            font-weight: 700;
+            color: var(--color-primary);
             padding: var(--spacing-md) var(--spacing-lg);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            background: var(--table-header-bg);
+            background: var(--glass-bg-light);
             position: sticky;
             top: 0;
         }
@@ -341,91 +266,115 @@
         .reports-table th.sortable {
             cursor: pointer;
             user-select: none;
+            transition: all 0.2s ease;
         }
 
         .reports-table th.sortable:hover {
-            color: #25739B;
+            color: var(--color-primary-dark);
+            background: rgba(31, 78, 140, 0.05);
         }
 
         .sort-icon {
             margin-left: 4px;
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--app-text-muted);
         }
 
         .sort-icon.active {
-            color: #25739B;
+            color: var(--color-primary);
         }
 
         .reports-table td {
             padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--glass-border);
             font-size: 13px;
-            color: var(--text-primary);
+            color: var(--app-text-strong);
+            transition: all 0.2s ease;
+        }
+
+        .reports-table tr {
+            transition: all 0.3s ease;
         }
 
         .reports-table tr:hover {
-            background: rgba(37, 115, 155, 0.02);
+            background: rgba(31, 78, 140, 0.05);
+            transform: scale(1.005);
+        }
+
+        .reports-table tr:hover td {
+            border-bottom-color: rgba(31, 78, 140, 0.2);
         }
 
         .report-name {
             font-weight: 600;
-            color: #25739B;
+            color: var(--color-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
+            transition: all 0.2s ease;
         }
 
         .report-name:hover {
-            text-decoration: underline;
+            color: var(--color-primary-dark);
         }
 
         .urgent-badge {
             display: inline-block;
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: #EF4444;
+            background: var(--color-error);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
             animation: pulse 2s ease-in-out infinite;
         }
 
+        /* Status Badge - Glass Style */
         .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: var(--radius-full);
             font-size: 11px;
             font-weight: 600;
+            backdrop-filter: blur(8px);
+            border: 1px solid transparent;
         }
 
         .status-badge.draft {
-            background: rgba(156, 163, 175, 0.1);
-            color: #6B7280;
+            background: rgba(156, 163, 175, 0.12);
+            color: var(--app-text-normal);
+            border-color: rgba(156, 163, 175, 0.2);
         }
 
         .status-badge.in-progress {
-            background: rgba(59, 130, 246, 0.1);
+            background: rgba(59, 130, 246, 0.12);
             color: #3B82F6;
+            border-color: rgba(59, 130, 246, 0.2);
         }
 
         .status-badge.review {
-            background: rgba(245, 158, 11, 0.1);
-            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.2);
         }
 
         .status-badge.qc {
-            background: rgba(168, 85, 247, 0.1);
-            color: #A855F7;
+            background: rgba(168, 85, 247, 0.12);
+            color: #9333ea;
+            border-color: rgba(168, 85, 247, 0.2);
         }
 
         .status-badge.completed {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10B981;
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border-color: rgba(16, 185, 129, 0.2);
         }
 
         .stage-text {
             font-size: 11px;
-            color: var(--text-muted);
+            color: var(--app-text-normal);
+            font-weight: 500;
         }
 
         .action-buttons {
@@ -434,31 +383,35 @@
         }
 
         .action-btn {
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: none;
-            background: transparent;
+            padding: 6px 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .action-btn:hover {
-            background: rgba(37, 115, 155, 0.1);
+            background: rgba(31, 78, 140, 0.1);
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
         }
 
-        /* 페이지네이션 */
+        /* Pagination - Glass */
         .pagination {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: var(--spacing-lg);
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--glass-border);
+            background: var(--glass-bg-light);
         }
 
         .pagination-info {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: var(--app-text-normal);
         }
 
         .pagination-controls {
@@ -468,24 +421,28 @@
 
         .page-btn {
             padding: var(--spacing-sm) var(--spacing-md);
-            border: 1px solid var(--border-color);
-            background: var(--card-bg);
-            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s ease;
-            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: var(--app-text-normal);
         }
 
         .page-btn:hover:not(:disabled) {
-            border-color: #25739B;
-            color: #25739B;
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateY(-2px);
         }
 
         .page-btn.active {
-            background: #25739B;
+            background: var(--gradient-accent);
             color: white;
-            border-color: #25739B;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(31, 78, 140, 0.25);
         }
 
         .page-btn:disabled {
@@ -493,7 +450,50 @@
             cursor: not-allowed;
         }
 
+        /* Dark Mode Overrides */
+        [data-theme="dark"] .page-title-section h1 {
+            background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+
+            -webkit-text-fill-color: transparent;
+
+            color: transparent;
+            background-clip: text;
+        }
+
+        [data-theme="dark"] .page-subtitle,
+        [data-theme="dark"] .filter-label,
+        [data-theme="dark"] .table-count,
+        [data-theme="dark"] .filter-chip,
+        [data-theme="dark"] .view-btn,
+        [data-theme="dark"] .pagination-info,
+        [data-theme="dark"] .page-btn,
+        [data-theme="dark"] .stage-text {
+            color: var(--color-text-secondary);
+        }
+
+        [data-theme="dark"] .filter-input,
+        [data-theme="dark"] .filter-select {
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--color-text-primary);
+        }
+
+        [data-theme="dark"] .reports-table th {
+            color: #60a5fa;
+        }
+
+        [data-theme="dark"] .report-name {
+            color: #60a5fa;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-md);
+            }
+
             .filter-row {
                 flex-direction: column;
             }
@@ -513,6 +513,7 @@
     </style>
 </head>
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
@@ -533,6 +534,9 @@
             </div>
 
             <div class="header-right">
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
+                    🏠
+                </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
                     <span class="icon-sun">☀️</span>
                     <span class="icon-moon">🌙</span>
@@ -1036,6 +1040,9 @@
                     <td>${report.date}</td>
                     <td>
                         <div class="action-buttons">
+                            ${report.status === 'draft' || report.status === 'in-progress'
+                                ? `<button class="action-btn" onclick="window.resumeReport('${report.id}')" title="계속 작성" style="background: var(--primary-color); color: white;">▶️</button>`
+                                : ''}
                             <button class="action-btn" onclick="window.viewReport('${report.id}')" title="보기">👁️</button>
                             <button class="action-btn" onclick="window.editReport('${report.id}')" title="편집">✏️</button>
                             <button class="action-btn" onclick="window.deleteReport('${report.id}')" title="삭제">🗑️</button>
@@ -1050,14 +1057,16 @@
 
         function getStageName(stage) {
             const stages = {
-                2: '보고서 상태',
+                1: '보고서 설정',
+                2: '통합 처리',
                 3: '파일 업로드',
                 4: 'MD 변환',
-                5: '데이터 추출',
-                6: '템플릿 작성',
-                7: '리뷰',
-                8: 'QC 검증',
-                9: '최종 출력'
+                5: '섹션 편집',
+                6: '데이터 추출',
+                7: '템플릿 작성',
+                8: '리뷰',
+                9: 'QC 검증',
+                10: '최종 출력'
             };
             return stages[stage] || '';
         }

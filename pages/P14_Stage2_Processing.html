@@ -8,51 +8,31 @@
     <link rel="stylesheet" href="../css/styles/layout.css">
     <link rel="stylesheet" href="../css/styles/components.css">
     <style>
-        :root {
-            --page-bg: #F5F7FA;
-            --card-bg: white;
-            --text-primary: #07161D;
-            --text-secondary: #64748b;
-            --border-color: #e2e8f0;
-            --accent-color: #25739B;
-        }
-
-        [data-theme="dark"] {
-            --page-bg: #1e293b;
-            --card-bg: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border-color: #334155;
-        }
+        /* ========================================
+           Glassmorphism Design System
+           ======================================== */
 
         body {
-            background: var(--page-bg);
+            background: var(--bg-primary);
             min-height: 100vh;
         }
 
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 24px;
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border-color);
+        /* 애니메이션 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .header-logo {
-            font-size: 18px;
-            font-weight: 700;
-            color: #25739B;
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
-        .dark-mode-toggle {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 12px;
-            cursor: pointer;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
+        /* Stage Container */
         .stage-container {
             max-width: 900px;
             margin: 40px auto;
@@ -62,17 +42,19 @@
         .stage-header {
             text-align: center;
             margin-bottom: 40px;
+            animation: fadeInUp 0.5s ease;
         }
 
         .stage-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #25739B, #122E4E);
+            background: var(--gradient-primary);
             color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
+            padding: 10px 24px;
+            border-radius: var(--radius-full);
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(31, 78, 140, 0.3);
         }
 
         .stage-title {
@@ -88,33 +70,44 @@
             line-height: 1.6;
         }
 
-        /* Upload Area */
+        /* ========================================
+           Upload Card - Glassmorphism
+           ======================================== */
         .upload-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             padding: 40px;
             margin-bottom: 24px;
+            box-shadow: var(--glass-shadow);
+            animation: fadeInUp 0.5s ease 0.1s both;
         }
 
         .upload-zone {
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
+            border: 2px dashed var(--glass-border);
+            border-radius: var(--radius-lg);
             padding: 60px 40px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
-            background: var(--page-bg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
         }
 
         .upload-zone:hover, .upload-zone.dragover {
-            border-color: #25739B;
-            background: rgba(37, 115, 155, 0.05);
+            border-color: var(--color-primary);
+            background: rgba(31, 78, 140, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(31, 78, 140, 0.15);
         }
 
         .upload-icon {
             font-size: 64px;
             margin-bottom: 16px;
+            filter: drop-shadow(0 4px 8px rgba(31, 78, 140, 0.2));
         }
 
         .upload-title {
@@ -138,15 +131,18 @@
         }
 
         .format-badge {
-            background: rgba(37, 115, 155, 0.1);
-            color: #25739B;
-            padding: 4px 12px;
-            border-radius: 12px;
+            background: rgba(31, 78, 140, 0.15);
+            color: var(--color-primary);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            border: 1px solid rgba(31, 78, 140, 0.2);
         }
 
-        /* File List */
+        /* ========================================
+           File List - Glass Cards
+           ======================================== */
         .file-list {
             margin-top: 24px;
         }
@@ -155,14 +151,32 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 16px;
-            background: var(--page-bg);
-            border-radius: 8px;
+            padding: 14px 16px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
             margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            border-color: var(--color-primary);
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(31, 78, 140, 0.1);
         }
 
         .file-icon {
-            font-size: 24px;
+            font-size: 28px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(31, 78, 140, 0.1) 0%, rgba(90, 141, 255, 0.1) 100%);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(31, 78, 140, 0.2);
         }
 
         .file-info {
@@ -171,7 +185,7 @@
 
         .file-name {
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-primary);
         }
 
@@ -181,37 +195,69 @@
         }
 
         .file-remove {
-            background: none;
-            border: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: #ef4444;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        /* Action Button */
+        .file-remove:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* ========================================
+           Action Button - 3D Glass
+           ======================================== */
         .action-section {
             text-align: center;
             margin-top: 32px;
         }
 
         .btn-process {
-            background: linear-gradient(135deg, #25739B, #122E4E);
+            background: var(--gradient-primary);
             color: white;
             border: none;
-            padding: 16px 48px;
+            padding: 18px 52px;
             font-size: 16px;
             font-weight: 600;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(31, 78, 140, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-process::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
         }
 
         .btn-process:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 115, 155, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(31, 78, 140, 0.4);
+        }
+
+        .btn-process:hover:not(:disabled)::before {
+            left: 100%;
         }
 
         .btn-process:disabled {
@@ -219,7 +265,9 @@
             cursor: not-allowed;
         }
 
-        /* Progress Modal */
+        /* ========================================
+           Progress Modal - Glass
+           ======================================== */
         .progress-modal {
             display: none;
             position: fixed;
@@ -227,7 +275,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 10000;
             align-items: center;
             justify-content: center;
@@ -238,13 +288,17 @@
         }
 
         .progress-content {
-            background: var(--card-bg);
-            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             padding: 40px;
             width: 90%;
             max-width: 500px;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.3s ease;
         }
 
         .progress-header {
@@ -263,7 +317,9 @@
             color: var(--text-secondary);
         }
 
-        /* Steps */
+        /* ========================================
+           Steps - Glass Cards
+           ======================================== */
         .progress-steps {
             margin-bottom: 32px;
         }
@@ -273,23 +329,27 @@
             align-items: center;
             gap: 16px;
             padding: 16px;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             margin-bottom: 8px;
-            background: var(--page-bg);
-            transition: all 0.3s;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
         }
 
         .step-item.active {
-            background: rgba(37, 115, 155, 0.1);
-            border: 1px solid #25739B;
+            background: rgba(31, 78, 140, 0.15);
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(31, 78, 140, 0.1);
         }
 
         .step-item.completed {
-            background: rgba(16, 185, 129, 0.1);
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10B981;
         }
 
         .step-item.error {
-            background: rgba(239, 68, 68, 0.1);
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
         }
 
         .step-icon {
@@ -299,30 +359,30 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            background: var(--border-color);
+            font-size: 16px;
+            font-weight: 600;
+            background: var(--glass-bg);
             color: var(--text-secondary);
+            border: 2px solid var(--glass-border);
         }
 
         .step-item.active .step-icon {
-            background: #25739B;
+            background: var(--gradient-primary);
             color: white;
+            border-color: var(--color-primary);
             animation: pulse 1.5s infinite;
         }
 
         .step-item.completed .step-icon {
-            background: #10B981;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white;
+            border-color: #10B981;
         }
 
         .step-item.error .step-icon {
-            background: #ef4444;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            border-color: #ef4444;
         }
 
         .step-info {
@@ -343,63 +403,86 @@
         }
 
         .step-item.active .step-status {
-            color: #25739B;
+            color: var(--color-primary);
         }
 
         .step-item.completed .step-status {
             color: #10B981;
         }
 
-        /* Overall Progress Bar */
+        /* ========================================
+           Progress Bar - Glass
+           ======================================== */
         .overall-progress {
             margin-bottom: 24px;
+            padding: 1rem;
+            background: rgba(31, 78, 140, 0.05);
+            border-radius: var(--radius-lg);
         }
 
         .progress-bar-container {
-            height: 8px;
-            background: var(--border-color);
-            border-radius: 4px;
+            height: 10px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-full);
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #25739B, #10B981);
-            border-radius: 4px;
-            transition: width 0.5s ease;
+            background: linear-gradient(90deg, var(--color-primary) 0%, #10B981 100%);
+            border-radius: var(--radius-full);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
 
         .progress-percentage {
             font-size: 14px;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--color-primary);
         }
 
         /* Spinner */
         .spinner {
             width: 24px;
             height: 24px;
-            border: 3px solid var(--border-color);
-            border-top-color: #25739B;
+            border: 3px solid var(--glass-border);
+            border-top-color: var(--color-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         /* Cancel button */
         .btn-cancel {
-            background: transparent;
-            border: 1px solid var(--border-color);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
             color: var(--text-secondary);
             padding: 10px 24px;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 14px;
+            font-weight: 500;
             margin-top: 16px;
+            transition: all 0.2s ease;
         }
 
         .btn-cancel:hover {
@@ -407,18 +490,24 @@
             color: #ef4444;
         }
 
-        /* Info Section */
+        /* ========================================
+           Info Section - Glass
+           ======================================== */
         .info-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
             padding: 24px;
+            box-shadow: var(--glass-shadow);
+            animation: fadeInUp 0.5s ease 0.2s both;
         }
 
         .info-title {
             font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: var(--color-primary);
             margin-bottom: 16px;
             display: flex;
             align-items: center;
@@ -435,40 +524,72 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 12px;
-            background: var(--page-bg);
-            border-radius: 6px;
+            padding: 10px 14px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
             font-size: 13px;
             color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .raw-item:hover {
+            border-color: var(--color-primary);
+            transform: translateX(2px);
         }
 
         .raw-item-id {
             font-weight: 600;
-            color: #25739B;
+            color: var(--color-primary);
         }
 
-        /* Footer */
-        .app-footer {
-            text-align: center;
+        /* Test Input Option */
+        .test-input-option {
+            margin-top: 24px;
             padding: 20px;
-            color: var(--text-secondary);
-            font-size: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: var(--radius-lg);
+            border: 1px dashed var(--glass-border);
         }
 
-        [data-theme="dark"] .upload-zone {
-            background: #334155;
+        .test-input-option label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
         }
 
-        [data-theme="dark"] .progress-content {
-            background: #1e293b;
+        .test-input-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--color-primary);
         }
 
-        [data-theme="dark"] .step-item {
-            background: #334155;
+        /* ========================================
+           Dark Mode Overrides
+           ======================================== */
+        [data-theme="dark"] .upload-card,
+        [data-theme="dark"] .upload-zone,
+        [data-theme="dark"] .file-item,
+        [data-theme="dark"] .info-section,
+        [data-theme="dark"] .raw-item,
+        [data-theme="dark"] .progress-content,
+        [data-theme="dark"] .step-item,
+        [data-theme="dark"] .test-input-option {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
+        [data-theme="dark"] .upload-zone:hover,
+        [data-theme="dark"] .upload-zone.dragover {
+            background: rgba(31, 78, 140, 0.2);
         }
     </style>
 </head>
 <body>
+    <script src="../js/mono-icons.js" data-icon-sprite="../assets/icons/mono-icons.svg"></script>
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
@@ -489,6 +610,9 @@
             </div>
 
             <div class="header-right">
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
+                    🏠
+                </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
                     <span class="icon-sun">☀️</span>
                     <span class="icon-moon">🌙</span>
