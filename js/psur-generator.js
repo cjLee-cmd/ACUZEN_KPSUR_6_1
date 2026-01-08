@@ -79,7 +79,7 @@ const PSURGenerator = {
 
     // API 설정
     apiKey: null,
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
 
     // 테스트 데이터 관련
@@ -101,6 +101,9 @@ const PSURGenerator = {
 
     // 생성된 전체 보고서
     generatedFullReport: null,
+
+    // Line Listing 분석 결과
+    lineListingAnalysis: null,
 
     // 2-Pass 섹션 정의
     PHASE2_SECTIONS: [
@@ -179,9 +182,10 @@ const PSURGenerator = {
         ];
 
         const basePaths = [
+            '../02_relateDocs/02_Templates/',
+            './02_relateDocs/02_Templates/',
             '../Ref/Templates/',
-            './Ref/Templates/',
-            '../03_Template/02_Sections/'
+            './Ref/Templates/'
         ];
 
         for (const file of templateFiles) {
@@ -394,22 +398,22 @@ const PSURGenerator = {
     },
 
     /**
-     * UserPrompt 템플릿 로드 (UserPrompt-3.md)
+     * UserPrompt 템플릿 로드 (UserPrompt.md)
      */
     async loadUserPromptTemplate() {
         if (this.userPromptTemplateLoaded && this.userPromptTemplate) {
             return this.userPromptTemplate;
         }
 
-        console.log('[PSURGenerator] Loading UserPrompt-3.md...');
+        console.log('[PSURGenerator] Loading UserPrompt.md...');
 
         const paths = [
-            '../01_Context/UserPrompt-3.md',
-            './01_Context/UserPrompt-3.md',
-            '/01_Context/UserPrompt-3.md',
+            '../01_Context/UserPrompt.md',
+            './01_Context/UserPrompt.md',
+            '/01_Context/UserPrompt.md',
             // Fallback paths
-            '../UserPrompt-3.md',
-            './UserPrompt-3.md'
+            '../UserPrompt.md',
+            './UserPrompt.md'
         ];
 
         for (const path of paths) {
@@ -426,7 +430,7 @@ const PSURGenerator = {
             }
         }
 
-        console.warn('[PSURGenerator] UserPrompt-3.md not found');
+        console.warn('[PSURGenerator] UserPrompt.md not found');
         return null;
     },
 
@@ -469,11 +473,144 @@ const PSURGenerator = {
     },
 
     /**
+     * Line Listing 파일 감지 (RAW12-15)
+     * @param {Array} convertedMarkdowns - 변환된 마크다운 배열
+     * @returns {Array} Line Listing 파일들
+     */
+    detectLineListingFiles(convertedMarkdowns) {
+        const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+        return convertedMarkdowns.filter(file => {
+            const rawId = file.rawId || file.assignedRawId || '';
+            return lineListingRawIds.includes(rawId);
+        });
+    },
+
+    /**
+     * Line Listing 분석 실행 (싱글샷)
+     * @param {Array} lineListingFiles - Line Listing 파일들
+     * @param {Object} options - LLM 옵션
+     * @param {Function} onProgress - 진행 콜백
+     * @returns {Object} 분석 결과
+     */
+    async runLineListingAnalysis(lineListingFiles, options = {}, onProgress = null) {
+        if (!window.extractLineListings) {
+            console.warn('[PSURGenerator] extractLineListings 모듈이 로드되지 않았습니다.');
+            return null;
+        }
+
+        if (!lineListingFiles || lineListingFiles.length === 0) {
+            console.log('[PSURGenerator] Line Listing 파일이 없습니다.');
+            return null;
+        }
+
+        console.log(`[PSURGenerator] ${lineListingFiles.length}개 Line Listing 파일 분석 시작...`);
+
+        if (onProgress) {
+            onProgress({ step: 'linelisting', message: 'Line Listing 분석 중...' });
+        }
+
+        try {
+            // 모든 Line Listing 파일에서 데이터 추출
+            let allAeData = [];
+            let allCausData = [];
+
+            for (const file of lineListingFiles) {
+                const markdownContent = file.markdown || file.content || '';
+                if (markdownContent) {
+                    const parsed = window.extractLineListings.parseMarkdownTable(markdownContent);
+                    allAeData = allAeData.concat(parsed.aeData || []);
+                    allCausData = allCausData.concat(parsed.causData || []);
+                }
+            }
+
+            if (allAeData.length === 0) {
+                console.log('[PSURGenerator] Line Listing 데이터가 비어있습니다.');
+                return null;
+            }
+
+            console.log(`[PSURGenerator] AE: ${allAeData.length}건, Causality: ${allCausData.length}건 추출됨`);
+
+            // 싱글샷 LLM 분석 실행
+            const result = await window.extractLineListings.analyzeWithLLMSingleShot(
+                allAeData,
+                allCausData,
+                options,
+                (progress) => {
+                    if (onProgress) {
+                        onProgress({
+                            step: 'linelisting',
+                            message: `Line Listing 분석: ${progress.status}`,
+                            progress: progress.current
+                        });
+                    }
+                }
+            );
+
+            if (result.success) {
+                console.log(`[PSURGenerator] Line Listing 분석 완료: ${result.processedCount}건 처리됨`);
+                this.lineListingAnalysis = result;
+
+                // localStorage에 저장
+                try {
+                    localStorage.setItem('lineListingAnalysis', JSON.stringify({
+                        cs59Summary: result.cs59Summary,
+                        reportMarkdown: result.reportMarkdown,
+                        statistics: result.statistics,
+                        analyzedAt: new Date().toISOString()
+                    }));
+                } catch (e) {
+                    console.warn('[PSURGenerator] Line Listing 분석 결과 저장 실패:', e);
+                }
+
+                return result;
+            }
+
+            return null;
+
+        } catch (error) {
+            console.error('[PSURGenerator] Line Listing 분석 오류:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Line Listing 분석 결과를 프롬프트에 추가
+     * @param {string} combinedMarkdown - 통합된 마크다운
+     * @returns {string} Line Listing 분석 결과가 추가된 마크다운
+     */
+    appendLineListingToMarkdown(combinedMarkdown) {
+        if (!this.lineListingAnalysis || !this.lineListingAnalysis.reportMarkdown) {
+            return combinedMarkdown;
+        }
+
+        const llSection = `
+
+---
+
+## [Line Listing 분석 결과]
+
+### 통계 요약
+- 총 건수: ${this.lineListingAnalysis.statistics.total}건
+- 중대한 이상사례: ${this.lineListingAnalysis.statistics.seriousYes}건
+- 중대하지 않은 이상사례: ${this.lineListingAnalysis.statistics.seriousNo}건
+- Certain/Probable 인과성: ${this.lineListingAnalysis.statistics.certainProbable}건
+
+### CS59 별첨3 요약 테이블
+${this.lineListingAnalysis.reportMarkdown}
+
+---
+
+`;
+        return combinedMarkdown + llSection;
+    },
+
+    /**
      * 전체 PSUR 보고서 생성 (단일 API 호출)
      * @param {Object} options - 생성 옵션
      * @param {Array} options.convertedMarkdowns - 변환된 마크다운 배열
      * @param {string} options.userInputData - 사용자 입력 데이터
      * @param {boolean} options.useTestData - 테스트 데이터 사용 여부
+     * @param {boolean} options.skipLineListingAnalysis - Line Listing 분석 스킵 여부
      * @param {Function} options.onProgress - 진행 콜백
      */
     async generateFullReport(options = {}) {
@@ -481,6 +618,7 @@ const PSURGenerator = {
             convertedMarkdowns = [],
             userInputData = '',
             useTestData = false,
+            skipLineListingAnalysis = false,
             onProgress = null
         } = options;
 
@@ -502,22 +640,43 @@ const PSURGenerator = {
             await this.loadUserPromptTemplate();
         }
 
+        // === Line Listing 분석 (먼저 실행) ===
+        if (!skipLineListingAnalysis) {
+            const lineListingFiles = this.detectLineListingFiles(convertedMarkdowns);
+            if (lineListingFiles.length > 0) {
+                console.log(`[PSURGenerator] ${lineListingFiles.length}개 Line Listing 파일 감지됨`);
+                if (onProgress) onProgress({ step: 'linelisting', message: 'Line Listing 분석 시작...' });
+
+                await this.runLineListingAnalysis(lineListingFiles, {
+                    provider: 'google',
+                    model: 'gemini-3-flash-preview'
+                }, onProgress);
+
+                if (this.lineListingAnalysis) {
+                    console.log('[PSURGenerator] Line Listing 분석 완료, 본문 생성 진행');
+                }
+            }
+        }
+
         // 마크다운 통합 (항상 필요)
         if (onProgress) onProgress({ step: 'combine', message: '마크다운 통합 중...' });
-        const combinedMarkdown = this.combineAllMarkdowns(convertedMarkdowns);
+        let combinedMarkdown = this.combineAllMarkdowns(convertedMarkdowns);
+
+        // Line Listing 분석 결과 추가
+        combinedMarkdown = this.appendLineListingToMarkdown(combinedMarkdown);
 
         let prompt;
 
         // UserPrompt 로드 성공 시: 불필요한 로드 스킵
         if (this.userPromptTemplate) {
-            console.log('[PSURGenerator] UserPrompt-2.md 사용 - 추가 로드 스킵');
+            console.log('[PSURGenerator] UserPrompt.md 사용 - 추가 로드 스킵');
             if (onProgress) onProgress({ step: 'prompt', message: '프롬프트 생성 중 (UserPrompt 모드)...' });
 
-            // UserPrompt-2.md에 모든 정보가 포함되어 있으므로 추가 로드 불필요
+            // UserPrompt.md에 모든 정보가 포함되어 있으므로 추가 로드 불필요
             prompt = this.buildFullReportPrompt(combinedMarkdown, '', '', '');
         } else {
             // Fallback: 모든 리소스 로드
-            console.warn('[PSURGenerator] UserPrompt-2.md 로드 실패 - Fallback 모드');
+            console.warn('[PSURGenerator] UserPrompt.md 로드 실패 - Fallback 모드');
 
             // 템플릿 로드
             if (!this.templatesLoaded || Object.keys(this.templates).length === 0) {
@@ -593,12 +752,12 @@ const PSURGenerator = {
 
     /**
      * 전체 보고서 생성용 프롬프트
-     * UserPrompt-2.md 템플릿을 사용하고 {{RAW_DATA_PLACEHOLDER}}를 교체
+     * UserPrompt.md 템플릿을 사용하고 {{RAW_DATA_PLACEHOLDER}}를 교체
      */
     buildFullReportPrompt(combinedMarkdown, userInputData, templatesText, examplesText = '') {
-        // UserPrompt-2.md 템플릿이 로드되어 있으면 사용
+        // UserPrompt.md 템플릿이 로드되어 있으면 사용
         if (this.userPromptTemplate) {
-            console.log('[PSURGenerator] Using UserPrompt-2.md template with placeholder replacement');
+            console.log('[PSURGenerator] Using UserPrompt.md template with placeholder replacement');
 
             // 플레이스홀더를 실제 원시자료로 교체
             const prompt = this.userPromptTemplate.replace(
@@ -960,7 +1119,7 @@ ${examplesText.substring(0, 35000)}
             '14': '별첨'
         };
 
-        // === JSON 응답 처리 (UserPrompt-2.md 형식) ===
+        // === JSON 응답 처리 (UserPrompt.md 형식) ===
         try {
             // markdown code block 제거
             let cleanText = responseText.trim();
