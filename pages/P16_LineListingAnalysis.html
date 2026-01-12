@@ -184,7 +184,7 @@
         }
 
         /* Allow clicks to pass through to parent upload-zone */
-        .upload-zone > * {
+        .upload-zone>* {
             pointer-events: none;
         }
 
@@ -549,6 +549,150 @@
             color: var(--text-primary);
             font-size: 0.875rem;
         }
+
+        /* Footer Navigation */
+        .footer-nav {
+            position: fixed;
+            bottom: 0;
+            left: var(--sidebar-width, 280px);
+            right: var(--workflow-sidebar-width, 280px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-top: 1px solid var(--glass-border);
+            z-index: 100;
+        }
+
+        .footer-info {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-nav {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-nav-prev {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-nav-prev:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateX(-2px);
+        }
+
+        .btn-nav-next {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-nav-next:hover:not(:disabled) {
+            transform: translateY(-2px) translateX(2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        /* ========================================
+           Dark Mode Overrides (Deep Slate Theme)
+           ======================================== */
+        [data-theme="dark"] .section-card,
+        [data-theme="dark"] .footer-nav,
+        [data-theme="dark"] .btn-nav-prev {
+            background: var(--glass-bg);
+            border-color: var(--glass-border);
+        }
+
+        [data-theme="dark"] .file-card {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: var(--glass-border);
+        }
+
+        [data-theme="dark"] .file-card:hover,
+        [data-theme="dark"] .file-card.selected {
+            background: rgba(96, 165, 250, 0.15);
+            /* Electric Blue Tint */
+            border-color: var(--color-primary);
+        }
+
+        [data-theme="dark"] .upload-zone {
+            border-color: var(--glass-border);
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .upload-zone:hover {
+            border-color: var(--color-primary);
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        [data-theme="dark"] .log-container {
+            background: #0f172a;
+            /* Darker Slate */
+            border: 1px solid var(--glass-border);
+        }
+
+        [data-theme="dark"] .report-preview {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--glass-border);
+        }
+
+        [data-theme="dark"] .btn-secondary {
+            background: transparent;
+            border-color: var(--glass-border);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+            background: rgba(148, 163, 184, 0.1);
+            border-color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .results-container {
+            border-color: var(--glass-border);
+        }
+
+        [data-theme="dark"] .results-table th {
+            background: rgba(51, 65, 85, 0.9);
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        [data-theme="dark"] .results-table td {
+            border-bottom-color: var(--glass-border);
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .results-table tr:hover {
+            background: rgba(96, 165, 250, 0.05);
+        }
+
+        [data-theme="dark"] .tab-button {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .tab-button:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .tab-button.active {
+            color: var(--color-primary);
+            background: rgba(96, 165, 250, 0.1);
+        }
     </style>
 </head>
 
@@ -719,6 +863,19 @@
             </div>
         </div>
     </main>
+
+    <!-- Footer Navigation -->
+    <footer class="footer-nav">
+        <button class="btn-nav btn-nav-prev" onclick="goToPreviousStage()">
+            ← 이전: 통합 처리
+        </button>
+        <div class="footer-info" id="footerInfo">
+            Line Listing 분석
+        </div>
+        <button class="btn-nav btn-nav-next" onclick="goToNextStage()">
+            다음: 섹션 에디터 →
+        </button>
+    </footer>
 
     <!-- Chat Modal Container -->
     <div id="chatModalContainer"></div>

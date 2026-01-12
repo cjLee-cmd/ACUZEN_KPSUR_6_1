@@ -1,6 +1,11 @@
 /**
  * Markdown Converter
  * 소스 문서를 마크다운으로 변환
+ *
+ * NOTE: 핵심 변환 로직은 js/core/markdown-transform-core.js에 캡슐화되어 있습니다.
+ *       변환 로직 수정이 필요한 경우 해당 core 모듈을 확인하세요.
+ *
+ * @requires MarkdownTransformCore - Core transformation module (sealed)
  */
 
 // DateHelper fallback (config.js에서 이미 선언된 경우 재선언하지 않음)
@@ -14,6 +19,28 @@ if (!window.DateHelper) {
         }
     };
 }
+
+// Core 모듈 의존성 확인
+(function checkCoreDependency() {
+    const checkInterval = setInterval(() => {
+        if (typeof window.MarkdownTransformCore !== 'undefined') {
+            clearInterval(checkInterval);
+            if (window.MarkdownTransformCore.verifyIntegrity()) {
+                console.log('✅ MarkdownTransformCore integrity verified');
+            } else {
+                console.error('⚠️ MarkdownTransformCore integrity check failed!');
+            }
+        }
+    }, 100);
+
+    // 5초 후 타임아웃
+    setTimeout(() => {
+        clearInterval(checkInterval);
+        if (typeof window.MarkdownTransformCore === 'undefined') {
+            console.warn('⚠️ MarkdownTransformCore not loaded. Using fallback methods.');
+        }
+    }, 5000);
+})();
 
 class MarkdownConverter {
     constructor() {
@@ -304,9 +331,30 @@ class MarkdownConverter {
 
     /**
      * Fallback 파일 읽기 (fileHandler 없을 때)
-     * PDF는 텍스트 추출 → 품질 검증 → OCR fallback 순서로 처리
+     *
+     * ⚠️ NOTE: 핵심 변환 로직은 MarkdownTransformCore 모듈에 캡슐화되어 있습니다.
+     *         변환 로직 수정이 필요하면 js/core/markdown-transform-core.js를 확인하세요.
+     *
+     * @param {File} file - 읽을 파일
+     * @returns {Promise<Object>} 추출된 텍스트와 메타데이터
      */
     async fallbackReadFile(file) {
+        // Core 모듈이 로드되어 있으면 Core 모듈 사용 (권장)
+        if (typeof window.MarkdownTransformCore !== 'undefined') {
+            return await window.MarkdownTransformCore.readFile(file);
+        }
+
+        // Core 모듈이 없으면 레거시 fallback (deprecated)
+        console.warn('⚠️ MarkdownTransformCore not available. Using legacy fallback.');
+        return await this._legacyReadFile(file);
+    }
+
+    /**
+     * 레거시 파일 읽기 (Core 모듈 미사용 시 fallback)
+     * @deprecated Core 모듈 사용 권장
+     * @private
+     */
+    async _legacyReadFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
 
         // PDF - 텍스트 추출 후 품질 검증, 필요시 OCR
@@ -406,8 +454,31 @@ class MarkdownConverter {
 
     /**
      * 텍스트를 기본 마크다운으로 변환 (LLM 없을 때)
+     *
+     * ⚠️ NOTE: 핵심 변환 로직은 MarkdownTransformCore 모듈에 캡슐화되어 있습니다.
+     *         변환 로직 수정이 필요하면 js/core/markdown-transform-core.js를 확인하세요.
+     *
+     * @param {string} text - 변환할 텍스트
+     * @param {string} fileName - 원본 파일명
+     * @returns {string} 마크다운 형식의 텍스트
      */
     textToBasicMarkdown(text, fileName) {
+        // Core 모듈이 로드되어 있으면 Core 모듈 사용 (권장)
+        if (typeof window.MarkdownTransformCore !== 'undefined') {
+            return window.MarkdownTransformCore.convertToBasicMarkdown(text, fileName);
+        }
+
+        // Core 모듈이 없으면 레거시 fallback (deprecated)
+        console.warn('⚠️ MarkdownTransformCore not available. Using legacy conversion.');
+        return this._legacyTextToMarkdown(text, fileName);
+    }
+
+    /**
+     * 레거시 텍스트 → 마크다운 변환 (Core 모듈 미사용 시 fallback)
+     * @deprecated Core 모듈 사용 권장
+     * @private
+     */
+    _legacyTextToMarkdown(text, fileName) {
         const ext = fileName.split('.').pop().toLowerCase();
         let markdown = `# ${fileName}\n\n`;
         markdown += `> 자동 변환됨 (${new Date().toISOString()})\n\n`;

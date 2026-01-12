@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>약물감시 데이터 처리 시스템 (PV Data Processor)</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Marked (Markdown Parser) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">💊</span>
+                <h1>PV Data Processor</h1>
+            </div>
+            <p class="subtitle">이상감시 보고서 데이터 자동화 도구</p>
+        </header>
+
+        <main class="main-content">
+            <section class="upload-section">
+                <div class="card">
+                    <h2>데이터 업로드</h2>
+                    <p class="description">라인리스팅 엑셀 파일(.xlsx)을 업로드하세요.</p>
+
+                    <!-- File Input (Moved outside to prevent bubbling issues) -->
+                    <input type="file" id="file-input" accept=".xlsx, .xls" hidden>
+
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-content">
+                            <span class="icon">📂</span>
+                            <p>파일을 드래그하거나 클릭하여 선택하세요</p>
+                            <p class="file-name" id="file-name"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card status-card">
+                    <h2>처리 상태</h2>
+                    <div id="status-log" class="status-log">
+                        <div class="log-item info">대기 중... 파일을 업로드해주세요.</div>
+                    </div>
+                </div>
+
+                <div class="card settings-card">
+                    <h2>설정 (LLM)</h2>
+                    <div class="input-group">
+                        <label for="api-key">Google Gemini API Key</label>
+                        <input type="password" id="api-key" placeholder="Enter your API Key here" class="input-field">
+                    </div>
+                    <div class="row">
+                        <div class="input-group half">
+                            <label for="model-name">모델명</label>
+                            <select id="model-name" class="input-field">
+                                <option value="gemini-3-flash-preview" selected>Gemini 3 Flash Preview (Thinking)
+                                </option>
+                                <option value="gemini-3-flash">Gemini 3 Flash (Fast)</option>
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Stable Fast)</option>
+                            </select>
+                        </div>
+                        <div class="input-group half">
+                            <label for="temperature">Temperature</label>
+                            <input type="number" id="temperature" value="0.2" step="0.1" min="0" max="1"
+                                class="input-field">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card action-card">
+                    <button id="process-btn" class="btn primary" disabled>데이터 처리 및 Seriousness 평가</button>
+                    <button id="download-btn" class="btn secondary" disabled>결과 다운로드 (Result.xlsx + .md)</button>
+                </div>
+
+                <!-- Chat Section -->
+                <div class="card chat-card" id="chat-card">
+                    <div class="section-header">
+                        <h2>데이터 Q&A</h2>
+                        <button id="chat-expand-btn" class="base-btn" title="전체화면">⤢</button>
+                    </div>
+                    <div id="chat-history" class="chat-history">
+                        <div class="chat-message system">
+                            데이터 처리 후 질문할 수 있습니다.
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="질문을 입력하세요..." disabled>
+                        <button id="chat-send-btn" disabled>➤</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>상세 로그 (LLM)</h2>
+                    <details>
+                        <summary>요청 내용 (Prompt)</summary>
+                        <textarea id="log-request" class="code-viewer" readonly></textarea>
+                    </details>
+                    <details style="margin-top: 10px;">
+                        <summary>응답 내용 (Response)</summary>
+                        <textarea id="log-response" class="code-viewer" readonly></textarea>
+                    </details>
+                </div>
+            </section>
+
+            <section class="preview-section">
+                <!-- Report Preview -->
+                <div class="card">
+                    <div class="section-header">
+                        <h2>보고서 미리보기 (Result.md)</h2>
+                    </div>
+                    <div id="report-preview" class="report-viewer markdown-body"></div>
+                </div>
+
+                <!-- Table Preview -->
+                <div class="card full-height">
+                    <div class="section-header">
+                        <h2>데이터 미리보기 (Result.xlsx)</h2>
+                        <span class="badge" id="row-count">0 rows</span>
+                    </div>
+                    <div class="table-container">
+                        <table id="result-table">
+                            <thead>
+                                <tr>
+                                    <th>데이터를 업로드하면 미리보기가 표시됩니다.</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>&copy; 2026 ACUZEN PV Team. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

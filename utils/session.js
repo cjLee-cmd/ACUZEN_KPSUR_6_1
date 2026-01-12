@@ -4,7 +4,7 @@
  */
 
 const SESSION_KEY = 'kpsur_session';
-const SESSION_TIMEOUT = 8 * 60 * 60 * 1000; // 8시간
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24시간 (auth.js, page-guard.js와 통일)
 
 /**
  * 세션 데이터 로드
@@ -19,13 +19,20 @@ function loadSessionData() {
 
         const session = JSON.parse(sessionStr);
 
+        // rememberMe가 true면 타임아웃 체크 건너뜀 (auth.js와 동일한 로직)
+        if (session.rememberMe) {
+            return session;
+        }
+
         // 세션 타임아웃 체크
-        if (session.timestamp) {
+        if (session.timestamp || session.loginTime) {
             const now = Date.now();
-            const elapsed = now - session.timestamp;
+            // timestamp 또는 loginTime 기준으로 체크 (auth.js 호환)
+            const sessionTime = session.timestamp || new Date(session.loginTime).getTime();
+            const elapsed = now - sessionTime;
 
             if (elapsed > SESSION_TIMEOUT) {
-                console.warn('Session expired');
+                console.warn('Session expired (24h timeout)');
                 clearSessionData();
                 return null;
             }

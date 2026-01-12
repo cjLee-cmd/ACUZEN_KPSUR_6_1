@@ -41,14 +41,21 @@ class LLMSessionManager {
 
         console.log('[LLMSessionManager] Initializing session for report:', reportId);
 
-        // 1. DB에서 기존 세션 조회
+        // 1. DB에서 기존 세션 조회 (local_ ID는 DB 조회 생략)
         let existingSession = null;
-        try {
-            if (window.supabaseClient) {
-                existingSession = await window.supabaseClient.getLLMSession(reportId);
+        const isLocalReport = reportId.startsWith('local_');
+
+        if (!isLocalReport) {
+            try {
+                if (window.supabaseClient) {
+                    const dbResult = await window.supabaseClient.getLLMSession(reportId);
+                    if (dbResult && dbResult.success && dbResult.session) {
+                        existingSession = dbResult.session;
+                    }
+                }
+            } catch (error) {
+                console.warn('[LLMSessionManager] DB session lookup failed:', error);
             }
-        } catch (error) {
-            console.warn('[LLMSessionManager] DB session lookup failed:', error);
         }
 
         // 2. DB에 세션이 있으면 복원
@@ -143,21 +150,24 @@ class LLMSessionManager {
         this.currentTokens = 0;
         this.sequenceNumber = 0;
 
-        // DB에 세션 저장
-        try {
-            if (window.supabaseClient) {
-                const dbResult = await window.supabaseClient.createLLMSession(reportId, {
-                    sessionId: sessionId,
-                    systemPrompt: this.systemPrompt,
-                    modelName: modelName
-                });
+        // DB에 세션 저장 (local_ ID는 DB 저장 생략)
+        const isLocalReport = reportId.startsWith('local_');
+        if (!isLocalReport) {
+            try {
+                if (window.supabaseClient) {
+                    const dbResult = await window.supabaseClient.createLLMSession(reportId, {
+                        sessionId: sessionId,
+                        systemPrompt: this.systemPrompt,
+                        modelName: modelName
+                    });
 
-                if (dbResult) {
-                    this.currentSession.id = dbResult.id;
+                    if (dbResult && dbResult.success && dbResult.session) {
+                        this.currentSession.id = dbResult.session.id;
+                    }
                 }
+            } catch (error) {
+                console.warn('[LLMSessionManager] Failed to save session to DB:', error);
             }
-        } catch (error) {
-            console.warn('[LLMSessionManager] Failed to save session to DB:', error);
         }
 
         // 캐시 저장
@@ -251,13 +261,20 @@ class LLMSessionManager {
      * 메시지 전송 (히스토리 포함)
      * @param {string} userMessage - 사용자 메시지
      * @param {Object} options - 추가 옵션
+     *   - dialogType: 대화 유형 ('chat' | 'psur_generation') - 기본값 'chat'
+     *   - skipHistory: true면 메모리 히스토리에 추가하지 않음 (대용량 프롬프트용) - 기본값 false
+     *   - provider: LLM 제공자
+     *   - model: 모델명
+     *   - temperature: 온도
      */
     async sendMessage(userMessage, options = {}) {
         if (!this.currentSession) {
             throw new Error('세션이 초기화되지 않았습니다. initSession()을 먼저 호출하세요.');
         }
 
-        // 사용자 메시지 추가
+        const { dialogType = 'chat', skipHistory = false } = options;
+
+        // 사용자 메시지 엔트리 생성
         this.sequenceNumber++;
         const userEntry = {
             role: 'user',
@@ -265,30 +282,46 @@ class LLMSessionManager {
             sequenceNumber: this.sequenceNumber,
             timestamp: new Date().toISOString()
         };
-        this.messages.push(userEntry);
 
-        // 토큰 트리밍 (필요시)
-        await this.trimContextIfNeeded();
+        // skipHistory가 false일 때만 메모리에 추가
+        if (!skipHistory) {
+            this.messages.push(userEntry);
+            // 토큰 트리밍 (필요시)
+            await this.trimContextIfNeeded();
+        }
 
         // LLM API 호출
         const provider = options.provider || this.getProviderFromModel(this.currentSession.modelName);
+        const model = options.model || this.currentSession.modelName;
 
         try {
-            const result = await window.multiLLMClient.generateWithHistory(
-                this.systemPrompt,
-                this.messages.map(m => ({ role: m.role, content: m.content })),
-                {
+            let result;
+
+            if (skipHistory) {
+                // skipHistory=true: 히스토리 없이 단일 메시지 전송 (PSUR 생성 등 대용량)
+                result = await window.multiLLMClient.generate(userMessage, {
                     provider: provider,
-                    model: options.model || this.currentSession.modelName,
+                    model: model,
                     temperature: options.temperature || 0.3
-                }
-            );
+                });
+            } else {
+                // 히스토리 포함 전송 (일반 채팅)
+                result = await window.multiLLMClient.generateWithHistory(
+                    this.systemPrompt,
+                    this.messages.map(m => ({ role: m.role, content: m.content })),
+                    {
+                        provider: provider,
+                        model: model,
+                        temperature: options.temperature || 0.3
+                    }
+                );
+            }
 
             if (!result.success) {
                 throw new Error(result.error || 'LLM 응답 실패');
             }
 
-            // 어시스턴트 응답 추가
+            // 어시스턴트 응답 엔트리 생성
             this.sequenceNumber++;
             const assistantEntry = {
                 role: 'assistant',
@@ -296,16 +329,21 @@ class LLMSessionManager {
                 sequenceNumber: this.sequenceNumber,
                 timestamp: new Date().toISOString()
             };
-            this.messages.push(assistantEntry);
 
-            // 토큰 업데이트
-            this.currentTokens += (result.usage?.inputTokens || 0) + (result.usage?.outputTokens || 0);
+            // skipHistory가 false일 때만 메모리에 추가
+            if (!skipHistory) {
+                this.messages.push(assistantEntry);
+                // 토큰 업데이트 (히스토리 누적 시에만)
+                this.currentTokens += (result.usage?.inputTokens || 0) + (result.usage?.outputTokens || 0);
+            }
 
-            // DB에 저장
-            await this.saveMessageToDb(userEntry, assistantEntry, result.usage);
+            // DB에는 항상 저장 (dialogType으로 구분)
+            await this.saveMessageToDb(userEntry, assistantEntry, result.usage, dialogType);
 
-            // 캐시 업데이트
-            this.saveToCache();
+            // 캐시 업데이트 (히스토리 변경 시에만)
+            if (!skipHistory) {
+                this.saveToCache();
+            }
 
             return {
                 success: true,
@@ -315,11 +353,124 @@ class LLMSessionManager {
             };
 
         } catch (error) {
-            // 실패 시 사용자 메시지 롤백
-            this.messages.pop();
+            // 실패 시 롤백 (히스토리에 추가한 경우에만)
+            if (!skipHistory) {
+                this.messages.pop();
+            }
             this.sequenceNumber--;
             throw error;
         }
+    }
+
+    /**
+     * 스트리밍 메시지 전송
+     * @param {string} userMessage - 사용자 메시지
+     * @param {Function} onChunk - 청크 콜백 (chunk, fullText) => {}
+     * @param {Object} options - 옵션
+     */
+    async sendMessageStream(userMessage, onChunk, options = {}) {
+        if (!this.currentSession) {
+            throw new Error('세션이 초기화되지 않았습니다. initSession()을 먼저 호출하세요.');
+        }
+
+        const { dialogType = 'chat', skipHistory = false } = options;
+
+        // 사용자 메시지 엔트리 생성
+        this.sequenceNumber++;
+        const userEntry = {
+            role: 'user',
+            content: userMessage,
+            sequenceNumber: this.sequenceNumber,
+            timestamp: new Date().toISOString()
+        };
+
+        // skipHistory가 false일 때만 메모리에 추가
+        if (!skipHistory) {
+            this.messages.push(userEntry);
+            await this.trimContextIfNeeded();
+        }
+
+        // LLM API 호출
+        const provider = options.provider || this.getProviderFromModel(this.currentSession.modelName);
+        const model = options.model || this.currentSession.modelName;
+
+        try {
+            // 히스토리가 있으면 컨텍스트 빌드
+            let prompt = userMessage;
+            if (!skipHistory && this.messages.length > 1) {
+                prompt = this.buildPromptWithHistory(userMessage);
+            }
+
+            // 스트리밍 API 호출
+            const result = await window.multiLLMClient.generateStream(
+                prompt,
+                {
+                    provider: provider,
+                    model: model,
+                    temperature: options.temperature || 0.3
+                },
+                onChunk
+            );
+
+            if (!result.success) {
+                throw new Error(result.error || 'LLM 스트리밍 응답 실패');
+            }
+
+            // 어시스턴트 응답 엔트리 생성
+            this.sequenceNumber++;
+            const assistantEntry = {
+                role: 'assistant',
+                content: result.text,
+                sequenceNumber: this.sequenceNumber,
+                timestamp: new Date().toISOString()
+            };
+
+            // skipHistory가 false일 때만 메모리에 추가
+            if (!skipHistory) {
+                this.messages.push(assistantEntry);
+                this.currentTokens += (result.usage?.inputTokens || 0) + (result.usage?.outputTokens || 0);
+            }
+
+            // DB에는 항상 저장
+            await this.saveMessageToDb(userEntry, assistantEntry, result.usage, dialogType);
+
+            // 캐시 업데이트
+            if (!skipHistory) {
+                this.saveToCache();
+            }
+
+            return {
+                success: true,
+                text: result.text,
+                usage: result.usage,
+                cost: result.cost
+            };
+
+        } catch (error) {
+            // 실패 시 롤백
+            if (!skipHistory) {
+                this.messages.pop();
+            }
+            this.sequenceNumber--;
+            throw error;
+        }
+    }
+
+    /**
+     * 히스토리 포함 프롬프트 빌드
+     */
+    buildPromptWithHistory(userMessage) {
+        let prompt = this.systemPrompt ? `${this.systemPrompt}\n\n` : '';
+        prompt += '=== 이전 대화 ===\n';
+
+        // 최근 6개 메시지만 포함
+        const recentMessages = this.messages.slice(-6);
+        recentMessages.forEach(m => {
+            prompt += `${m.role === 'user' ? '사용자' : 'AI'}: ${m.content}\n\n`;
+        });
+
+        prompt += `사용자: ${userMessage}\n\nAI:`;
+        return prompt;
     }
 
     /**
@@ -361,9 +512,32 @@ class LLMSessionManager {
 
     /**
      * DB에 메시지 저장
+     * local_ ID인 경우 localStorage에도 저장
+     * @param {Object} userEntry - 사용자 메시지 엔트리
+     * @param {Object} assistantEntry - 어시스턴트 응답 엔트리
+     * @param {Object} usage - 토큰 사용량
+     * @param {string} dialogType - 대화 유형 ('chat' | 'psur_generation')
      */
-    async saveMessageToDb(userEntry, assistantEntry, usage = {}) {
-        if (!window.supabaseClient || !this.currentSession.id) {
+    async saveMessageToDb(userEntry, assistantEntry, usage = {}, dialogType = 'chat') {
+        const reportId = this.currentSession?.reportId;
+
+        // local_ ID인 경우 localStorage에 저장
+        if (reportId && reportId.startsWith('local_')) {
+            this.saveToLocalPSURDialogs(reportId, {
+                userMessage: userEntry.content,
+                assistantMessage: assistantEntry.content,
+                dialogType: dialogType,
+                inputTokens: usage.inputTokens || 0,
+                outputTokens: usage.outputTokens || 0,
+                modelName: this.currentSession?.modelName,
+                createdAt: new Date().toISOString()
+            });
+            console.log(`[LLMSessionManager] Message saved to localStorage (type: ${dialogType})`);
+            return;  // local_ ID는 DB 저장 생략
+        }
+
+        // UUID인 경우 DB에 저장
+        if (!window.supabaseClient || !this.currentSession?.id) {
             return;
         }
 
@@ -375,13 +549,34 @@ class LLMSessionManager {
                     sequenceNumber: userEntry.sequenceNumber,
                     userMessage: userEntry.content,
                     assistantMessage: assistantEntry.content,
-                    dialogType: 'chat',
+                    dialogType: dialogType,
                     inputTokens: usage.inputTokens || 0,
                     outputTokens: usage.outputTokens || 0
                 }
             );
+
+            console.log(`[LLMSessionManager] Message saved to DB (type: ${dialogType})`);
         } catch (error) {
             console.warn('[LLMSessionManager] Failed to save message to DB:', error);
+        }
+    }
+
+    /**
+     * localStorage에 PSUR 대화 기록 저장
+     * @param {string} reportId - 로컬 보고서 ID
+     * @param {Object} record - 저장할 레코드
+     */
+    saveToLocalPSURDialogs(reportId, record) {
+        try {
+            const key = `psur_dialogs_${reportId}`;
+            const existing = JSON.parse(localStorage.getItem(key) || '[]');
+            existing.push(record);
+
+            // 최대 50개까지만 저장 (오래된 것부터 삭제)
+            const trimmed = existing.slice(-50);
+            localStorage.setItem(key, JSON.stringify(trimmed));
+        } catch (error) {
+            console.warn('[LLMSessionManager] Failed to save to localStorage:', error);
         }
     }
 
@@ -471,12 +666,12 @@ class LLMSessionManager {
             return 'gpt-4o';
         }
         if (googleKey) {
-            return 'gemini-2.0-flash';
+            return 'gemini-3-flash-preview';
         }
 
         // 기본값 (키가 없어도 일단 설정)
-        console.warn('[LLMSessionManager] No API key found, defaulting to gemini-2.0-flash');
-        return 'gemini-2.0-flash';
+        console.warn('[LLMSessionManager] No API key found, defaulting to gemini-3-flash-preview');
+        return 'gemini-3-flash-preview';
     }
 
     /**

@@ -12,6 +12,7 @@
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
     <script src="../js/multi-llm-client.js?v=2"></script>
+    <script src="../utils/user-menu.js"></script>
     <style>
         /* ========== Glassmorphism System Test Page Styles ========== */
 
@@ -558,8 +559,8 @@
                     <h3 style="font-size: 14px; font-weight: 600; margin-bottom: var(--spacing-md);">테스트할 모델 선택</h3>
                     <div class="model-grid">
                         <label class="model-checkbox">
-                            <input type="checkbox" value="gemini-2.0-flash" checked>
-                            <span>Gemini 3 Flash</span>
+                            <input type="checkbox" value="gemini-3-flash-preview" checked>
+                            <span>Gemini 3 Flash (기본)</span>
                         </label>
                         <label class="model-checkbox">
                             <input type="checkbox" value="gemini-2.5-flash">
@@ -789,7 +790,10 @@
                         </div>
                     `;
                 } else {
-                    bodyEl.innerHTML = `<div style="color:#DC2626;font-size:13px;">${data.error}</div>`;
+                    bodyEl.innerHTML = `
+                        <div style="color:#DC2626;font-size:13px;">${data.error}</div>
+                        <a href="P91_Settings.html" style="display:inline-block;margin-top:8px;color:var(--color-primary);font-size:12px;text-decoration:underline;">API Key 설정하기 →</a>
+                    `;
                 }
             }
 

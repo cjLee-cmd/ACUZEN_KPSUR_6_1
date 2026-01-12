@@ -14,6 +14,7 @@ class ChatModal {
     constructor() {
         this.isOpen = false;
         this.isMinimized = false;
+        this.isMaximized = false;
         this.isLoading = false;
         this.currentContext = null;  // 현재 섹션 컨텍스트
 
@@ -81,6 +82,9 @@ class ChatModal {
                     <div class="chat-header-actions">
                         <button class="chat-header-btn" id="chat-minimize-btn" title="최소화">
                             &#8722;
+                        </button>
+                        <button class="chat-header-btn" id="chat-maximize-btn" title="최대화">
+                            &#9744;
                         </button>
                         <button class="chat-header-btn" id="chat-close-btn" title="닫기">
                             &#10005;
@@ -168,6 +172,7 @@ class ChatModal {
             sendBtn: document.getElementById('chat-send-btn'),
             floatingBtn: document.getElementById('chat-floating-btn'),
             minimizeBtn: document.getElementById('chat-minimize-btn'),
+            maximizeBtn: document.getElementById('chat-maximize-btn'),
             closeBtn: document.getElementById('chat-close-btn'),
             tokenProgress: document.getElementById('chat-token-progress'),
             tokenText: document.getElementById('chat-token-text'),
@@ -197,6 +202,12 @@ class ChatModal {
         this.elements.minimizeBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleMinimize();
+        });
+
+        // 최대화 버튼
+        this.elements.maximizeBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleMaximize();
         });
 
         // 닫기 버튼
@@ -267,12 +278,19 @@ class ChatModal {
      * 모달 닫기
      */
     close() {
-        this.elements.modal?.classList.remove('active', 'minimized');
+        this.elements.modal?.classList.remove('active', 'minimized', 'maximized');
         this.elements.overlay?.classList.remove('active');
         this.elements.floatingBtn?.classList.remove('hidden');
 
         this.isOpen = false;
         this.isMinimized = false;
+        this.isMaximized = false;
+
+        // 최대화 버튼 아이콘 복원
+        if (this.elements.maximizeBtn) {
+            this.elements.maximizeBtn.innerHTML = '&#9744;';
+            this.elements.maximizeBtn.title = '최대화';
+        }
     }
 
     /**
@@ -290,7 +308,33 @@ class ChatModal {
     }
 
     /**
-     * 메시지 전송 처리
+     * 최대화 토글
+     */
+    toggleMaximize() {
+        this.isMaximized = !this.isMaximized;
+
+        if (this.isMaximized) {
+            this.elements.modal?.classList.add('maximized');
+            this.elements.modal?.classList.remove('minimized');
+            this.isMinimized = false;
+            // 버튼 아이콘 변경 (복원)
+            if (this.elements.maximizeBtn) {
+                this.elements.maximizeBtn.innerHTML = '&#9635;';
+                this.elements.maximizeBtn.title = '복원';
+            }
+        } else {
+            this.elements.modal?.classList.remove('maximized');
+            // 버튼 아이콘 변경 (최대화)
+            if (this.elements.maximizeBtn) {
+                this.elements.maximizeBtn.innerHTML = '&#9744;';
+                this.elements.maximizeBtn.title = '최대화';
+            }
+        }
+        this.scrollToBottom();
+    }
+
+    /**
+     * 메시지 전송 처리 (스트리밍 지원)
      */
     async handleSend() {
         const message = this.elements.input?.value?.trim();
@@ -305,31 +349,94 @@ class ChatModal {
 
         // 로딩 표시
         this.setLoading(true);
-        this.showTypingIndicator();
+
+        // 스트리밍 메시지 요소 생성
+        const streamingEl = this.createStreamingMessage();
 
         try {
-            // 세션 매니저로 메시지 전송
-            const result = await window.llmSessionManager.sendMessage(message);
+            // 스트리밍 API 호출
+            const result = await window.llmSessionManager.sendMessageStream(
+                message,
+                (chunk, fullText) => {
+                    // 청크가 올 때마다 UI 업데이트
+                    this.updateStreamingMessage(streamingEl, fullText);
+                }
+            );
 
-            // 타이핑 인디케이터 제거
-            this.hideTypingIndicator();
+            // 스트리밍 완료 - 최종화
+            this.finalizeStreamingMessage(streamingEl, result.text);
 
-            if (result.success) {
-                // 어시스턴트 응답 표시
-                this.addMessage('assistant', result.text);
-
-                // 토큰 사용량 업데이트
-                this.updateTokenUsage();
-            } else {
-                this.showError(result.error || '응답 생성에 실패했습니다.');
-            }
+            // 토큰 사용량 업데이트
+            this.updateTokenUsage();
 
         } catch (error) {
-            this.hideTypingIndicator();
+            // 에러 시 스트리밍 메시지 제거
+            this.removeStreamingMessage(streamingEl);
             this.showError(error.message);
         } finally {
             this.setLoading(false);
         }
+    }
+
+    /**
+     * 스트리밍 메시지 요소 생성
+     */
+    createStreamingMessage() {
+        // 빈 상태 숨기기
+        this.elements.emptyState?.classList.add('hidden');
+        if (this.elements.emptyState) {
+            this.elements.emptyState.style.display = 'none';
+        }
+
+        // 스트리밍 메시지 요소 생성
+        const messageEl = document.createElement('div');
+        messageEl.className = 'chat-message assistant streaming';
+        messageEl.innerHTML = `
+            <div class="chat-message-content"><span class="streaming-cursor">▊</span></div>
+            <div class="chat-message-time">${this.formatTime(new Date())}</div>
+        `;
+
+        this.elements.body?.appendChild(messageEl);
+        this.scrollToBottom();
+        return messageEl;
+    }
+
+    /**
+     * 스트리밍 메시지 업데이트
+     */
+    updateStreamingMessage(el, text) {
+        const contentEl = el?.querySelector('.chat-message-content');
+        if (contentEl) {
+            // 포맷팅된 내용 + 커서
+            contentEl.innerHTML = this.formatContent(text) + '<span class="streaming-cursor">▊</span>';
+        }
+        this.scrollToBottom();
+    }
+
+    /**
+     * 스트리밍 완료 - 최종화
+     */
+    finalizeStreamingMessage(el, text) {
+        if (!el) return;
+
+        // streaming 클래스 제거
+        el.classList.remove('streaming');
+
+        // 최종 내용 설정 (커서 제거)
+        const contentEl = el.querySelector('.chat-message-content');
+        if (contentEl) {
+            contentEl.innerHTML = this.formatContent(text);
+        }
+
+        // 메시지 카운트 업데이트
+        this.updateMessageCount();
+    }
+
+    /**
+     * 스트리밍 메시지 제거 (에러 시)
+     */
+    removeStreamingMessage(el) {
+        el?.remove();
     }
 
     /**
@@ -354,8 +461,10 @@ class ChatModal {
         switch (action) {
             case 'why':
                 // 현재 컨텍스트가 있으면 포함
-                if (this.currentContext) {
-                    message = `다음 내용에 대해 왜 이렇게 작성했는지 설명해주세요:\n\n"${this.currentContext.substring(0, 500)}..."`;
+                const context = this.getCurrentContext();
+                if (context) {
+                    const contextPreview = typeof context === 'string' ? context.substring(0, 500) : JSON.stringify(context).substring(0, 500);
+                    message = `다음 내용에 대해 왜 이렇게 작성했는지 설명해주세요:\n\n"${contextPreview}..."`;
                 } else {
                     message = '이전 답변에서 왜 그렇게 답변했는지 설명해주세요.';
                 }
@@ -366,8 +475,9 @@ class ChatModal {
                 break;
 
             case 'reference':
-                message = '이 섹션 작성에 참조할 수 있는 규정이나 가이드라인이 있나요?';
-                break;
+                // PSUR 생성 컨텍스트 조회
+                await this.showPSURGenerationContext();
+                return;  // 입력 필드에 메시지를 넣지 않음
         }
 
         if (message) {
@@ -375,6 +485,123 @@ class ChatModal {
             this.autoResizeInput();
             this.elements.input.focus();
         }
+    }
+
+    /**
+     * PSUR 생성 컨텍스트 조회 및 표시
+     * DB에서 psur_generation 타입의 대화를 조회하여 표시
+     * local_ ID인 경우 localStorage에서 조회
+     */
+    async showPSURGenerationContext() {
+        const reportId = this.getReportId();
+        if (!reportId) {
+            this.showError('보고서 ID를 찾을 수 없습니다.');
+            return;
+        }
+
+        this.setLoading(true);
+
+        try {
+            // local_ 접두사인 경우 localStorage에서 조회
+            if (reportId.startsWith('local_')) {
+                console.log('[ChatModal] Local report detected, checking localStorage');
+                const localDialogs = this.getLocalPSURDialogs(reportId);
+
+                if (localDialogs && localDialogs.length > 0) {
+                    this.displayPSURContext(localDialogs, true);
+                    return;
+                } else {
+                    this.addMessage('assistant', `📋 **PSUR 생성 기록이 없습니다.**\n\n로컬 보고서(${reportId})에서 저장된 PSUR 생성 기록을 찾을 수 없습니다.\n\nPSUR 섹션을 생성하면 자동으로 기록됩니다.`);
+                    return;
+                }
+            }
+
+            // UUID인 경우 DB에서 조회
+            if (!window.supabaseClient) {
+                this.showError('데이터베이스 연결이 없습니다.');
+                return;
+            }
+
+            const result = await window.supabaseClient.getLLMDialogsByType(reportId, 'psur_generation');
+
+            if (!result.success) {
+                this.showError('PSUR 생성 기록을 조회하는데 실패했습니다.');
+                return;
+            }
+
+            const dialogs = result.dialogs || [];
+
+            if (dialogs.length === 0) {
+                // PSUR 생성 기록이 없음
+                this.addMessage('assistant', `📋 **PSUR 생성 기록이 없습니다.**\n\n이 보고서에서 아직 PSUR 섹션이 생성되지 않았거나, 생성 기록이 저장되지 않았습니다.\n\nPSUR 섹션을 생성하려면 [P14_UnifiedProcessing] 페이지에서 파일을 업로드하고 PSUR 생성을 실행하세요.`);
+                return;
+            }
+
+            this.displayPSURContext(dialogs, false);
+
+        } catch (error) {
+            console.error('[ChatModal] PSUR context lookup failed:', error);
+            this.showError('PSUR 생성 기록 조회 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    /**
+     * localStorage에서 PSUR 대화 기록 조회
+     * @param {string} reportId - 로컬 보고서 ID (local_ 접두사)
+     */
+    getLocalPSURDialogs(reportId) {
+        try {
+            const key = `psur_dialogs_${reportId}`;
+            const data = localStorage.getItem(key);
+            if (data) {
+                const dialogs = JSON.parse(data);
+                // 최신순 정렬
+                return dialogs.sort((a, b) =>
+                    new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)
+                );
+            }
+            return [];
+        } catch (error) {
+            console.warn('[ChatModal] Failed to load local PSUR dialogs:', error);
+            return [];
+        }
+    }
+
+    /**
+     * PSUR 생성 컨텍스트 표시
+     * @param {Array} dialogs - 대화 기록 배열
+     * @param {boolean} isLocal - localStorage에서 가져온 경우 true
+     */
+    displayPSURContext(dialogs, isLocal = false) {
+        const latestDialog = dialogs[0];
+        const createdAt = new Date(latestDialog.created_at || latestDialog.createdAt).toLocaleString('ko-KR');
+        const promptPreview = (latestDialog.user_message || latestDialog.userMessage || '').substring(0, 500);
+        const responsePreview = (latestDialog.assistant_message || latestDialog.assistantMessage || '').substring(0, 800);
+        const inputTokens = latestDialog.input_tokens || latestDialog.inputTokens || 0;
+        const outputTokens = latestDialog.output_tokens || latestDialog.outputTokens || 0;
+
+        const sourceLabel = isLocal ? '(로컬 저장)' : '(DB 저장)';
+
+        const contextMessage = `📖 **PSUR 생성 컨텍스트** ${sourceLabel} (${createdAt})
+
+**사용된 프롬프트 (일부):**
+\`\`\`
+${promptPreview}...
+\`\`\`
+
+**LLM 응답 (일부):**
+\`\`\`
+${responsePreview}...
+\`\`\`
+
+총 ${dialogs.length}개의 PSUR 생성 기록이 있습니다.
+토큰 사용량: 입력 ${inputTokens.toLocaleString()}, 출력 ${outputTokens.toLocaleString()}
+
+💡 더 자세한 내용이 필요하시면 질문해주세요.`;
+
+        this.addMessage('assistant', contextMessage);
     }
 
     /**
@@ -658,6 +885,31 @@ class ChatModal {
      */
     setContext(context) {
         this.currentContext = context;
+    }
+
+    /**
+     * 컨텍스트 프로바이더 설정 (동적 컨텍스트용)
+     * @param {Function} provider - 컨텍스트를 반환하는 함수
+     */
+    setContextProvider(provider) {
+        this.contextProvider = provider;
+    }
+
+    /**
+     * 현재 컨텍스트 가져오기
+     * @returns {string|null} 현재 컨텍스트
+     */
+    getCurrentContext() {
+        // 동적 프로바이더가 있으면 호출
+        if (this.contextProvider && typeof this.contextProvider === 'function') {
+            try {
+                return this.contextProvider();
+            } catch (e) {
+                console.warn('[ChatModal] Context provider error:', e);
+            }
+        }
+        // 정적 컨텍스트 반환
+        return this.currentContext;
     }
 
     /**

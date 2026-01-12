@@ -967,6 +967,33 @@ class SupabaseClient {
     }
 
     /**
+     * 보고서의 LLM 대화 로그 조회 (타입별 필터링)
+     * @param {string} reportId - 보고서 UUID
+     * @param {string} dialogType - 대화 유형 ('chat' | 'psur_generation')
+     */
+    async getLLMDialogsByType(reportId, dialogType) {
+        await this.init();
+
+        try {
+            const { data, error } = await this.client
+                .from('llm_dialogs')
+                .select('*')
+                .eq('report_id', reportId)
+                .eq('dialog_type', dialogType)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            console.log(`✅ Retrieved ${data.length} LLM dialogs (type: ${dialogType}) for report ${reportId}`);
+            return { success: true, dialogs: data };
+
+        } catch (error) {
+            console.error('❌ Get LLM dialogs by type failed:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
      * LLM 비용 통계 조회
      * @param {string} reportId - 보고서 UUID (null이면 전체)
      */
@@ -1031,7 +1058,7 @@ class SupabaseClient {
                 report_id: reportId,
                 session_id: sessionId,
                 system_prompt: data.systemPrompt || null,
-                model_name: data.model || 'claude-sonnet-3-5',
+                model_name: data.modelName || data.model || 'claude-sonnet-3-5',
                 context_window_tokens: 0,
                 max_context_tokens: data.maxTokens || 200000,
                 status: 'active'
@@ -1173,13 +1200,11 @@ class SupabaseClient {
                 report_id: reportId,
                 sequence_number: sequenceNumber,
                 dialog_type: data.dialogType || 'chat',
-                model: data.model,
+                model_name: data.modelName || data.model || 'unknown',
                 user_message: data.userMessage,
                 assistant_message: data.assistantMessage,
                 input_tokens: data.inputTokens || 0,
-                output_tokens: data.outputTokens || 0,
-                cost_usd: data.costUsd || 0,
-                duration_ms: data.durationMs || 0
+                output_tokens: data.outputTokens || 0
             };
 
             const { data: result, error } = await this.client

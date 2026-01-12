@@ -5,52 +5,69 @@
 
 /* ========== Design Tokens ========== */
 :root {
-  /* Primary Colors - Deep Blue Palette */
-  --color-primary: #12305B;
-  --color-primary-dark: #081A3A;
-  --color-primary-deeper: #030A1B;
-  --color-accent: #1F4E8C;
-  --color-accent-light: #5A8DFF;
+  /* Primary Colors - Premium Black / Zinc Palette */
+  --color-primary: #18181B;
+  /* Zinc 900 */
+  --color-primary-dark: #09090B;
+  /* Zinc 950 */
+  --color-primary-deeper: #000000;
+  --color-accent: #52525B;
+  /* Zinc 600 */
+  --color-accent-light: #A1A1AA;
+  /* Zinc 400 */
   --color-white: #FFFFFF;
-  --color-dark: #07161D;
+  --color-dark: #09090B;
 
-  /* Typography + Surface Tokens */
-  --app-text-strong: var(--app-text-strong);
-  --app-text-normal: var(--app-text-normal);
-  --app-text-muted: var(--app-text-muted);
-  --app-border-soft: var(--app-border-soft);
-  --app-surface-muted: var(--app-surface-muted);
+  /* Typography + Surface Tokens (Base Definitions) */
+  --app-text-strong: #09090B;
+  --app-text-normal: #3F3F46;
+  /* Zinc 700 */
+  --app-text-muted: #71717A;
+  /* Zinc 500 */
+  --app-border-soft: #E4E4E7;
+  /* Zinc 200 */
+  --app-surface-muted: #F4F4F5;
+  /* Zinc 100 */
 
-  /* Semantic Colors */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
+  /* Compatibility Mappings for P14-P20 Pages */
+  --text-primary: var(--app-text-strong);
+  --text-secondary: var(--app-text-normal);
+  --text-tertiary: var(--app-text-muted);
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FAFAFA;
+  /* Zinc 50 */
+
+  /* Semantic Colors - Slightly desaturated for elegance */
+  --color-success: #059669;
+  /* Emerald 600 */
+  --color-warning: #D97706;
+  /* Amber 600 */
+  --color-error: #DC2626;
+  /* Red 600 */
+  --color-info: #2563EB;
+  /* Blue 600 (kept as distinct accent) */
 
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-bg-light: rgba(255, 255, 255, 0.6);
-  --glass-bg-medium: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px rgba(11, 31, 61, 0.15);
-  --glass-blur: blur(12px);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-bg-light: rgba(255, 255, 255, 0.7);
+  --glass-bg-medium: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(24, 24, 27, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  --glass-blur: blur(16px);
 
   /* 3D Effects */
   --perspective: 1000px;
-  --transition-3d: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-3d: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
   --hover-lift: translateY(-4px);
-  --hover-scale: scale(1.02);
+  --hover-scale: scale(1.01);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #081A3A 0%, #12305B 50%, #1F4E8C 100%);
-  --gradient-accent: linear-gradient(135deg, #12305B 0%, #1F4E8C 100%);
-  --gradient-glow: radial-gradient(ellipse at center, rgba(90, 141, 255, 0.3) 0%, transparent 70%);
+  /* Gradients - Monochrome / Sophisticated */
+  --gradient-primary: linear-gradient(135deg, #18181B 0%, #27272A 100%);
+  --gradient-accent: linear-gradient(135deg, #18181B 0%, #3F3F46 100%);
+  --gradient-glow: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.05) 0%, transparent 70%);
   --gradient-mesh:
-    radial-gradient(at 40% 20%, rgba(90, 141, 255, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(15, 35, 70, 0.1) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(31, 78, 140, 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 50%, rgba(90, 141, 255, 0.08) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(15, 35, 70, 0.1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(0, 0, 0, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(0, 0, 0, 0.03) 0px, transparent 50%);
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -62,25 +79,25 @@
   --spacing-3xl: 48px;
 
   /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(11, 31, 61, 0.08);
-  --shadow-md: 0 4px 16px rgba(11, 31, 61, 0.12);
-  --shadow-lg: 0 8px 32px rgba(11, 31, 61, 0.16);
-  --shadow-xl: 0 16px 48px rgba(11, 31, 61, 0.2);
-  --shadow-glow: 0 0 40px rgba(90, 141, 255, 0.3);
-  --shadow-inset: inset 0 2px 4px rgba(11, 31, 61, 0.06);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.05);
+  --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* ========== Base Reset ========== */
 *,
-*::before,
-*::after {
+*:before,
+*:after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -92,7 +109,8 @@ body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 14px;
   color: var(--app-text-strong);
-  background: var(--gradient-mesh), linear-gradient(180deg, #EEF2FB 0%, #F5F7FD 50%, #FBFCFF 100%);
+  background: #FAFAFA;
+  /* Zinc 50 */
   background-attachment: fixed;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -796,25 +814,56 @@ textarea::placeholder {
 
 /* ========== Dark Mode ========== */
 [data-theme="dark"] {
-  --glass-bg: rgba(28, 28, 28, 0.85);
-  --glass-bg-light: rgba(28, 28, 28, 0.6);
-  --glass-bg-medium: rgba(28, 28, 28, 0.75);
-  --glass-border: rgba(80, 80, 80, 0.4);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  /* 1. Background & Surface (Premium Black) */
+  --glass-bg: rgba(9, 9, 11, 0.85);
+  /* Zinc 950 base */
+  --glass-bg-light: rgba(24, 24, 27, 0.8);
+  /* Zinc 900 */
+  --glass-bg-medium: rgba(9, 9, 11, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+
+  /* 2. Typography (High Contrast) */
   --app-text-strong: #FFFFFF;
-  --app-text-normal: #D4D4D4;
-  --app-text-muted: #A3A3A3;
-  --app-border-soft: #404040;
+  --app-text-normal: #E4E4E7;
+  /* Zinc 200 */
+  --app-text-muted: #A1A1AA;
+  /* Zinc 400 */
+  --app-border-soft: #3F3F46;
+  /* Zinc 700 */
   --app-surface-muted: rgba(255, 255, 255, 0.05);
+
+  /* 3. Brand Colors (Monochrome/Silver for Dark Mode) */
+  --color-primary: #F4F4F5;
+  /* Zinc 100 - High brightness for text/icons */
+  --color-primary-dark: #E4E4E7;
+  --color-accent: #A1A1AA;
+  /* Zinc 400 */
+  --color-accent-light: #52525B;
+
+  /* 4. Semantic Colors */
+  --color-success: #34D399;
+  /* Emerald 400 */
+  --color-warning: #FBBF24;
+  /* Amber 400 */
+  --color-error: #F87171;
+  /* Red 400 */
+  --color-info: #60A5FA;
+  /* Blue 400 */
+
+  /* 5. Compatibility Mappings (CRITICAL FOR READABILITY) */
+  --text-primary: var(--app-text-strong);
+  --text-secondary: var(--app-text-normal);
+  --text-tertiary: var(--app-text-muted);
+  --bg-primary: #000000;
+  --bg-secondary: #09090B;
+  /* Zinc 950 */
 }
 
 [data-theme="dark"] body,
 [data-theme="dark"] html {
-  background:
-    radial-gradient(at 40% 20%, rgba(80, 80, 80, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(50, 50, 50, 0.2) 0px, transparent 50%),
-    linear-gradient(180deg, #121212 0%, #1e1e1e 100%);
-  color: #e5e5e5;
+  background: #000000;
+  color: #F4F4F5;
 }
 
 [data-theme="dark"] .glass-card {
@@ -823,7 +872,7 @@ textarea::placeholder {
 }
 
 [data-theme="dark"] .glass-card:hover {
-  border-color: rgba(160, 160, 160, 0.4);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 [data-theme="dark"] .flip-card-front {
@@ -834,41 +883,44 @@ textarea::placeholder {
 [data-theme="dark"] input,
 [data-theme="dark"] textarea,
 [data-theme="dark"] select {
-  background: rgba(40, 40, 40, 0.6);
-  border-color: rgba(80, 80, 80, 0.4);
-  color: #e5e5e5;
+  background: rgba(24, 24, 27, 0.8);
+  /* Zinc 900 */
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #F4F4F5;
 }
 
 [data-theme="dark"] input:focus,
 [data-theme="dark"] textarea:focus,
 [data-theme="dark"] select:focus {
-  border-color: #a0a0a0;
-  box-shadow: 0 0 0 4px rgba(160, 160, 160, 0.15);
-  background: var(--glass-bg);
+  border-color: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  background: #18181B;
 }
 
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder {
-  color: #737373;
+  color: #71717A;
 }
 
 [data-theme="dark"] .btn-secondary {
-  background: var(--glass-bg);
-  border-color: rgba(160, 160, 160, 0.3);
-  color: #e5e5e5;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #F4F4F5;
 }
 
 [data-theme="dark"] .btn-secondary:hover {
-  background: rgba(160, 160, 160, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #FFFFFF;
 }
 
 [data-theme="dark"] .dark-mode-toggle {
-  background: rgba(50, 50, 50, 0.6);
-  border-color: rgba(80, 80, 80, 0.4);
+  background: rgba(24, 24, 27, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 [data-theme="dark"] .dark-mode-toggle:hover {
-  background: rgba(100, 100, 100, 0.2);
+  background: rgba(39, 39, 42, 1);
+  border-color: #FFFFFF;
 }
 
 [data-theme="dark"] .dark-mode-toggle .icon-sun {
@@ -880,26 +932,32 @@ textarea::placeholder {
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-track {
-  background: rgba(40, 40, 40, 0.5);
+  background: #09090B;
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #404040 0%, #2a2a2a 100%);
+  background: #3F3F46;
+  border-radius: 4px;
 }
 
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #52525B;
+}
+
+/* Badge Updates for Dark Mode */
 [data-theme="dark"] .badge-primary {
-  background: rgba(90, 141, 255, 0.15);
-  border-color: rgba(90, 141, 255, 0.3);
-  color: var(--color-accent);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
 }
 
-/* ========== Selection ========== */
+/* Selection */
 ::selection {
-  background: rgba(31, 78, 140, 0.3);
-  color: var(--app-text-strong);
+  background: rgba(24, 24, 27, 0.2);
+  color: #000;
 }
 
 [data-theme="dark"] ::selection {
-  background: rgba(90, 141, 255, 0.4);
-  color: white;
+  background: rgba(255, 255, 255, 0.3);
+  color: #FFF;
 }

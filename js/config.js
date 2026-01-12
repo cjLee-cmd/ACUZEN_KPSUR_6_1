@@ -39,6 +39,40 @@ const CONFIG = {
         'RAW15': '정기보고LineListing'
     },
 
+    // PSUR 섹션별 데이터 의존성 (섹션 생성에 필요한 RAW 파일 정의)
+    SECTION_DATA_DEPENDENCIES: {
+        "04": {
+            name: "전세계판매허가현황",
+            required: ["RAW4"],
+            optional: [],
+            description: "허가현황 데이터 (국가별 승인 정보)"
+        },
+        "05": {
+            name: "안전성조치",
+            required: ["RAW7"],
+            optional: ["RAW5", "RAW6"],
+            description: "안전성 조치 이력 (허가팀 메일, 변경 내역)"
+        },
+        "07": {
+            name: "환자노출",
+            required: ["RAW3"],
+            optional: [],
+            description: "시판 후 판매 데이터 (노출 환자 수 계산용)"
+        },
+        "08": {
+            name: "개별증례병력",
+            required: ["RAW14"],
+            optional: ["RAW12", "RAW13", "RAW15"],
+            description: "이상사례 Line Listing (국내외 신속보고, 원시자료, 정기보고)"
+        },
+        "09": {
+            name: "시험",
+            required: [],
+            optional: ["RAW8", "RAW17"],
+            description: "임상 시험 데이터 (회사 주관 임상, IIT/NIS)"
+        }
+    },
+
     // 워크플로우 단계 (신규 5-Stage 구조)
     STAGES: {
         LOGIN: 0,
@@ -67,7 +101,10 @@ const CONFIG = {
         STAGE1_USER_INPUT: 'P13_NewReport.html',
 
         // Stage 2: Raw Data 처리 (통합)
-        STAGE2_PROCESSING: 'P14_Stage2_Processing.html',
+        STAGE2_PROCESSING: 'P14_UnifiedProcessing.html',
+
+        // Stage 2.5: Line Listing 분석
+        LINE_LISTING_ANALYSIS: 'P16_LineListingAnalysis.html',
 
         // Stage 3: 결과 보기 및 편집
         STAGE3_REVIEW: 'P18_Review.html',
@@ -84,7 +121,7 @@ const CONFIG = {
 
         // Legacy (하위 호환)
         NEW_REPORT: 'P13_NewReport.html',
-        FILE_UPLOAD: 'P14_Stage2_Processing.html',
+        FILE_UPLOAD: 'P14_UnifiedProcessing.html',
         REVIEW: 'P18_Review.html',
         QC: 'P19_QC.html',
         OUTPUT: 'P20_Output.html'

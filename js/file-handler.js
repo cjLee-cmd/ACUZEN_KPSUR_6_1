@@ -187,10 +187,27 @@ class FileHandler {
         // Step 4: 품질 부족 시 OCR 시도
         console.log(`⚠️ Text quality insufficient (${textQuality.score}/100), trying OCR...`);
 
-        if (typeof Tesseract !== 'undefined' && pdf) {
+        // Tesseract.js 로딩 체크
+        if (typeof Tesseract === 'undefined') {
+            console.error('❌ Tesseract.js not loaded! OCR unavailable.');
+            console.log('💡 해결방법: HTML에 다음 스크립트 추가 필요');
+            console.log('   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>');
+        } else if (!pdf) {
+            console.warn('⚠️ PDF not loaded - OCR unavailable');
+        } else {
             try {
-                console.log(`🔍 Starting OCR for: ${file.name}`);
+                console.log(`🔍 Starting OCR for: ${file.name} (${pageCount} pages)`);
                 let ocrText = '';
+
+                // Worker 기반 OCR (성능 향상)
+                const worker = await Tesseract.createWorker('kor+eng', 1, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            console.log(`📝 OCR 진행: ${progress}%`);
+                        }
+                    }
+                });
 
                 for (let i = 1; i <= pageCount; i++) {
                     console.log(`🔄 OCR page ${i}/${pageCount}...`);
@@ -208,17 +225,11 @@ class FileHandler {
                         viewport: viewport
                     }).promise;
 
-                    // Tesseract OCR 수행
-                    const result = await Tesseract.recognize(canvas, 'kor+eng', {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                console.log(`📝 OCR page ${i}: ${Math.round(m.progress * 100)}%`);
-                            }
-                        }
-                    });
+                    // Worker를 사용한 OCR
+                    const result = await worker.recognize(canvas);
 
-                    ocrText += `\n--- Page ${i} ---\n`;
-                    ocrText += result.data.text.trim();
+                    ocrText += `\n## 페이지 ${i}\n`;
+                    ocrText += result.data.text.trim() || '[인식된 텍스트 없음]';
                     ocrText += '\n';
 
                     // 캔버스 메모리 해제
@@ -226,13 +237,16 @@ class FileHandler {
                     canvas.height = 0;
                 }
 
+                // Worker 종료
+                await worker.terminate();
+
                 // OCR 결과 품질 검증
                 const ocrQuality = this.evaluateTextQuality(ocrText);
-                console.log(`📊 OCR quality: ${ocrQuality.score}/100`);
+                console.log(`📊 OCR quality: ${ocrQuality.score}/100 (length: ${ocrQuality.length})`);
 
-                // OCR이 더 좋으면 OCR 결과 사용
-                if (ocrQuality.score > textQuality.score) {
-                    console.log(`✅ OCR complete (better quality): ${file.name}`);
+                // OCR이 더 좋거나 기존 품질이 매우 낮으면 OCR 결과 사용
+                if (ocrQuality.score > textQuality.score || textQuality.score < 20) {
+                    console.log(`✅ OCR complete: ${file.name} (quality: ${ocrQuality.score}/100)`);
                     return {
                         text: ocrText.trim(),
                         fileName: file.name,
@@ -245,11 +259,8 @@ class FileHandler {
 
             } catch (ocrError) {
                 console.error(`❌ OCR failed: ${ocrError.message}`);
+                console.error(ocrError);
             }
-        } else if (typeof Tesseract === 'undefined') {
-            console.warn('⚠️ Tesseract.js not loaded - OCR unavailable');
-        } else if (!pdf) {
-            console.warn('⚠️ PDF not loaded - OCR unavailable');
         }
 
         // Step 5: 최선의 결과 반환 (텍스트 추출 결과라도 반환)
@@ -541,7 +552,7 @@ ${Object.entries(RAW_ID_DEFINITIONS).map(([id, name]) => `- ${id}: ${name}`).joi
 
         const result = await window.multiLLMClient.generate(prompt, {
             provider: 'google',
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             temperature: 0.2,
             maxTokens: 200
         });

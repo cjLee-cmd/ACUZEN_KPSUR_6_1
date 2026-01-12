@@ -390,6 +390,291 @@ class MultiLLMClient {
         return result;
     }
 
+    // ==========================================
+    // 스트리밍 API 메서드들
+    // ==========================================
+
+    // Claude 스트리밍 API 호출
+    async callClaudeStream(prompt, options = {}, onChunk) {
+        const apiKey = this.getApiKey('claude');
+        if (!apiKey) throw new Error('Anthropic API 키가 설정되지 않았습니다.');
+
+        const model = options.model || LLM_PROVIDERS.claude.defaultModel;
+        const modelInfo = LLM_PROVIDERS.claude.models[model];
+
+        const response = await fetch(LLM_PROVIDERS.claude.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model: model,
+                max_tokens: options.maxTokens || modelInfo.maxTokens,
+                temperature: options.temperature || 0.3,
+                stream: true,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Claude API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        return this.processClaudeStream(response, model, onChunk);
+    }
+
+    // Claude SSE 스트림 처리
+    async processClaudeStream(response, model, onChunk) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+        let inputTokens = 0;
+        let outputTokens = 0;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+                for (const line of lines) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+
+                    try {
+                        const json = JSON.parse(data);
+
+                        if (json.type === 'content_block_delta' && json.delta?.text) {
+                            fullText += json.delta.text;
+                            if (onChunk) onChunk(json.delta.text, fullText);
+                        } else if (json.type === 'message_delta' && json.usage) {
+                            outputTokens = json.usage.output_tokens || 0;
+                        } else if (json.type === 'message_start' && json.message?.usage) {
+                            inputTokens = json.message.usage.input_tokens || 0;
+                        }
+                    } catch (e) {
+                        // Skip unparseable lines
+                    }
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
+
+        const cost = this.estimateCost('claude', model, inputTokens, outputTokens);
+        this.totalCost += cost;
+
+        return {
+            success: true,
+            text: fullText,
+            model,
+            provider: 'claude',
+            usage: { inputTokens, outputTokens },
+            cost
+        };
+    }
+
+    // OpenAI 스트리밍 API 호출
+    async callOpenAIStream(prompt, options = {}, onChunk) {
+        const apiKey = this.getApiKey('openai');
+        if (!apiKey) throw new Error('OpenAI API 키가 설정되지 않았습니다.');
+
+        const model = options.model || LLM_PROVIDERS.openai.defaultModel;
+        const modelInfo = LLM_PROVIDERS.openai.models[model];
+
+        const response = await fetch(LLM_PROVIDERS.openai.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: model,
+                max_tokens: options.maxTokens || modelInfo.maxTokens,
+                temperature: options.temperature || 0.3,
+                stream: true,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`OpenAI API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        return this.processOpenAIStream(response, model, onChunk);
+    }
+
+    // OpenAI SSE 스트림 처리
+    async processOpenAIStream(response, model, onChunk) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+                for (const line of lines) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+
+                    try {
+                        const json = JSON.parse(data);
+                        const text = json.choices?.[0]?.delta?.content || '';
+
+                        if (text) {
+                            fullText += text;
+                            if (onChunk) onChunk(text, fullText);
+                        }
+                    } catch (e) {
+                        // Skip unparseable lines
+                    }
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
+
+        // OpenAI streaming doesn't return usage in stream, estimate it
+        const inputTokens = Math.ceil(prompt.length / 4);
+        const outputTokens = Math.ceil(fullText.length / 4);
+        const cost = this.estimateCost('openai', model, inputTokens, outputTokens);
+        this.totalCost += cost;
+
+        return {
+            success: true,
+            text: fullText,
+            model,
+            provider: 'openai',
+            usage: { inputTokens, outputTokens },
+            cost
+        };
+    }
+
+    // Gemini 스트리밍 API 호출
+    async callGeminiStream(prompt, options = {}, onChunk) {
+        const apiKey = this.getApiKey('google');
+        if (!apiKey) throw new Error('Google API 키가 설정되지 않았습니다.');
+
+        const model = options.model || LLM_PROVIDERS.google.defaultModel;
+        const modelInfo = LLM_PROVIDERS.google.models[model];
+        const apiVersion = modelInfo?.apiVersion || 'v1beta';
+        const baseUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models`;
+        // streamGenerateContent 엔드포인트 사용
+        const url = `${baseUrl}/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: options.temperature || 0.3,
+                    maxOutputTokens: options.maxTokens || 8192
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Gemini API Error: ${error.error?.message || response.statusText}`);
+        }
+
+        return this.processGeminiStream(response, model, onChunk);
+    }
+
+    // Gemini SSE 스트림 처리
+    async processGeminiStream(response, model, onChunk) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+        let inputTokens = 0;
+        let outputTokens = 0;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+                for (const line of lines) {
+                    const data = line.slice(6);
+
+                    try {
+                        const json = JSON.parse(data);
+                        const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                        if (json.usageMetadata) {
+                            inputTokens = json.usageMetadata.promptTokenCount || inputTokens;
+                            outputTokens = json.usageMetadata.candidatesTokenCount || outputTokens;
+                        }
+
+                        if (text) {
+                            fullText += text;
+                            if (onChunk) onChunk(text, fullText);
+                        }
+                    } catch (e) {
+                        // Skip unparseable lines
+                    }
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
+
+        const cost = this.estimateCost('google', model, inputTokens, outputTokens);
+        this.totalCost += cost;
+
+        return {
+            success: true,
+            text: fullText,
+            model,
+            provider: 'google',
+            usage: { inputTokens, outputTokens },
+            cost
+        };
+    }
+
+    // 통합 스트리밍 호출 메서드
+    async generateStream(prompt, options = {}, onChunk) {
+        const provider = options.provider || 'google';
+        const startTime = Date.now();
+
+        let result;
+        switch (provider) {
+            case 'claude':
+                result = await this.callClaudeStream(prompt, options, onChunk);
+                break;
+            case 'openai':
+                result = await this.callOpenAIStream(prompt, options, onChunk);
+                break;
+            case 'google':
+                result = await this.callGeminiStream(prompt, options, onChunk);
+                break;
+            default:
+                throw new Error(`Unknown provider: ${provider}`);
+        }
+
+        result.duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+        // 대화 로그 저장
+        this.logDialog(prompt, result);
+
+        return result;
+    }
+
     // Hybrid 모드 생성
     async generateHybrid(prompt, hybridMode, options = {}) {
         const config = HYBRID_MODES[hybridMode];

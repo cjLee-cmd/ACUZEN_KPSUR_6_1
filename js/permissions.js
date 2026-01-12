@@ -52,7 +52,6 @@ const PAGE_PERMISSIONS = {
     // 작성자 이상
     'P13_NewReport.html': ROLES.AUTHOR,
     'P14_UnifiedProcessing.html': ROLES.AUTHOR,
-    'P14_Stage2_Processing.html': ROLES.AUTHOR,
     'P15_SectionEditor.html': ROLES.AUTHOR,
     'P20_Output.html': ROLES.AUTHOR,
 

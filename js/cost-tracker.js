@@ -16,9 +16,11 @@ const PRICING = {
         'gpt-4o-mini': { input: 0.15, output: 0.60 }
     },
     google: {
-        'gemini-2.0-flash': { input: 0, output: 0 },
+        'gemini-3-flash-preview': { input: 0.075, output: 0.30 },
+        'gemini-3-pro-preview': { input: 1.25, output: 5 },
         'gemini-2.5-flash': { input: 0.075, output: 0.30 },
-        'gemini-2.0-pro': { input: 1.25, output: 5 }
+        'gemini-2.5-pro': { input: 1.25, output: 5 },
+        'gemini-2.0-flash': { input: 0, output: 0 }
     }
 };
 

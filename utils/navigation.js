@@ -9,15 +9,11 @@
 const PAGE_STAGE_MAP = {
     'P13_NewReport.html': 1,
     'P14_UnifiedProcessing.html': 2,
-    'P14_Stage2_Processing.html': 2,
-    'P14_FileUpload.html': 3,
-    'P15_MarkdownConversion.html': 4,
-    'P15_SectionEditor.html': 5,
-    'P16_DataExtraction.html': 6,
-    'P17_TemplateWriting.html': 7,
-    'P18_Review.html': 8,
-    'P19_QC.html': 9,
-    'P20_Output.html': 10
+    'P16_LineListingAnalysis.html': 2.5,  // Line Listing 분석
+    'P15_SectionEditor.html': 3,
+    'P18_Review.html': 4,
+    'P19_QC.html': 5,
+    'P20_Output.html': 6
 };
 
 /**

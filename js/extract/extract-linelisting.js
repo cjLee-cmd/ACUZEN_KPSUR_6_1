@@ -86,15 +86,50 @@
             const uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
             const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
 
-            return uploadedFiles.filter(file =>
+            // Line Listing 파일 필터링 및 변환
+            const lineListingFiles = uploadedFiles.filter(file =>
                 this.isLineListingRawId(file.assignedRawId || file.rawId)
-            ).map(file => ({
-                name: file.name,
-                rawId: file.assignedRawId || file.rawId,
-                hasMarkdown: !!convertedMarkdowns[file.name],
-                markdownContent: convertedMarkdowns[file.name] || null,
-                originalFile: file
-            }));
+            ).map(file => {
+                // P14에서 fileName으로 저장되므로 fileName 우선 사용
+                // 다양한 속성명 fallback 처리
+                const rawId = file.assignedRawId || file.rawId;
+                let fileName = file.fileName || file.name || file.originalName;
+
+                // 파일명이 없는 경우 마크다운 키에서 찾기 시도
+                if (!fileName && rawId) {
+                    const markdownKeys = Object.keys(convertedMarkdowns);
+                    const matchingKey = markdownKeys.find(key =>
+                        key && key.toUpperCase().includes(rawId.toUpperCase())
+                    );
+                    if (matchingKey) {
+                        fileName = matchingKey;
+                        console.log(`[LineListingExtractor] 마크다운 키에서 파일명 복원: ${fileName}`);
+                    }
+                }
+
+                // 그래도 없으면 RAW ID로 임시 파일명 생성
+                if (!fileName && rawId) {
+                    fileName = `${rawId}_file.xlsx`;
+                    console.warn(`[LineListingExtractor] 파일명 누락, 임시 생성: ${fileName}`);
+                }
+
+                return {
+                    name: fileName,
+                    rawId: rawId,
+                    hasMarkdown: fileName ? !!convertedMarkdowns[fileName] : false,
+                    markdownContent: fileName ? (convertedMarkdowns[fileName] || null) : null,
+                    originalFile: file
+                };
+            });
+
+            // 유효한 파일만 반환 (이름이 있는 파일)
+            const validFiles = lineListingFiles.filter(f => f.name);
+
+            if (lineListingFiles.length > validFiles.length) {
+                console.warn(`[LineListingExtractor] ${lineListingFiles.length - validFiles.length}개 파일의 이름을 찾을 수 없습니다.`);
+            }
+
+            return validFiles;
         }
 
         /**
@@ -221,6 +256,7 @@
             const provider = options.provider || 'google';
             const model = options.model || 'gemini-3-flash-preview';
             const temperature = options.temperature || 0.2;
+            const BATCH_SIZE = 30; // 배치당 처리할 데이터 수
 
             // 초기화
             this.statistics.total = aeData.length;
@@ -230,43 +266,83 @@
                 onProgress({ current: 0, total: aeData.length, status: 'LLM 분석 시작...' });
             }
 
-            // 프롬프트 구성
-            const prompt = this.buildAnalysisPrompt(aeData, causData);
+            // 배치로 분할
+            const batches = [];
+            for (let i = 0; i < aeData.length; i += BATCH_SIZE) {
+                batches.push(aeData.slice(i, i + BATCH_SIZE));
+            }
+
+            console.log(`[LineListing] 총 ${aeData.length}건을 ${batches.length}개 배치로 분할 (배치당 ${BATCH_SIZE}건)`);
+
+            // 배치별 처리 결과 저장
+            const allProcessedData = [];
+            let totalUsage = { inputTokens: 0, outputTokens: 0 };
+            let totalCost = 0;
+
+            // 배치별 처리
+            for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+                const batch = batches[batchIdx];
+                const batchStart = batchIdx * BATCH_SIZE;
+                const batchEnd = Math.min(batchStart + batch.length, aeData.length);
+
+                if (onProgress) {
+                    onProgress({
+                        current: batchStart,
+                        total: aeData.length,
+                        status: `배치 ${batchIdx + 1}/${batches.length} 처리 중... (${batchStart + 1}-${batchEnd}건)`
+                    });
+                }
+
+                // 배치용 프롬프트 구성
+                const prompt = this.buildBatchAnalysisPrompt(batch, causData, batchIdx + 1, batches.length);
+
+                // LLM 호출
+                const result = await window.multiLLMClient.generate(prompt, {
+                    provider,
+                    model,
+                    temperature,
+                    maxTokens: 16384
+                });
+
+                if (!result.success) {
+                    console.error(`[LineListing] 배치 ${batchIdx + 1} 실패:`, result.error);
+                    throw new Error(`배치 ${batchIdx + 1} LLM 응답 실패: ` + (result.error || 'Unknown error'));
+                }
+
+                // JSON 응답 파싱
+                const parsedResult = this.parseJsonResponse(result.text);
+
+                if (!parsedResult.processed_data || !Array.isArray(parsedResult.processed_data)) {
+                    console.error(`[LineListing] 배치 ${batchIdx + 1} 응답 형식 오류`);
+                    throw new Error(`배치 ${batchIdx + 1} 응답 형식이 올바르지 않습니다.`);
+                }
+
+                // 결과 병합
+                allProcessedData.push(...parsedResult.processed_data);
+
+                // 사용량 누적
+                if (result.usage) {
+                    totalUsage.inputTokens += result.usage.inputTokens || 0;
+                    totalUsage.outputTokens += result.usage.outputTokens || 0;
+                }
+                if (result.cost) {
+                    totalCost += result.cost;
+                }
+
+                console.log(`[LineListing] 배치 ${batchIdx + 1}/${batches.length} 완료 (${parsedResult.processed_data.length}건 처리)`);
+            }
 
             if (onProgress) {
-                onProgress({ current: 0, total: aeData.length, status: 'LLM에 데이터 전송 중...' });
+                onProgress({ current: aeData.length, total: aeData.length, status: '보고서 생성 중...' });
             }
 
-            // LLM 호출
-            const result = await window.multiLLMClient.generate(prompt, {
-                provider,
-                model,
-                temperature,
-                maxTokens: 65536
-            });
-
-            if (!result.success) {
-                throw new Error('LLM 응답 실패: ' + (result.error || 'Unknown error'));
-            }
-
-            if (onProgress) {
-                onProgress({ current: Math.floor(aeData.length * 0.8), total: aeData.length, status: '응답 파싱 중...' });
-            }
-
-            // JSON 응답 파싱
-            const parsedResult = this.parseJsonResponse(result.text);
-
-            if (!parsedResult.processed_data || !parsedResult.report_md) {
-                throw new Error('응답 형식이 올바르지 않습니다. (processed_data 또는 report_md 누락)');
-            }
-
-            // 결과 저장
-            this.processedData = parsedResult.processed_data;
-            this.reportMarkdown = parsedResult.report_md;
+            // 최종 보고서 생성 (처리된 전체 데이터 기반)
+            this.processedData = allProcessedData;
+            this.reportMarkdown = this.generateReportFromProcessedData(allProcessedData);
             this.updateStatistics();
 
             if (onProgress) {
-                onProgress({ current: aeData.length, total: aeData.length, status: '분석 완료' });
+                onProgress({ current: aeData.length, total: aeData.length, status: '분석 완료!' });
             }
 
             return {
@@ -275,9 +351,111 @@
                 processedData: this.processedData,
                 reportMarkdown: this.reportMarkdown,
                 statistics: this.statistics,
-                llmUsage: result.usage,
-                llmCost: result.cost
+                llmUsage: totalUsage,
+                llmCost: totalCost
             };
+        }
+
+        /**
+         * 배치용 분석 프롬프트 생성
+         */
+        buildBatchAnalysisPrompt(batchData, causData, batchNum, totalBatches) {
+            const aeString = JSON.stringify(batchData, null, 2);
+            const causString = JSON.stringify(causData, null, 2);
+
+            return `당신은 제약회사 약물감시팀 팀장입니다. 이상사례 데이터를 분석하여 Seriousness, 인과성평가, SOC를 판정합니다.
+
+[배치 정보] ${batchNum}/${totalBatches} (${batchData.length}건)
+
+[데이터]
+1. 이상사례 데이터 (AE): ${aeString}
+2. 인과성평가 데이터 (Causality): ${causString}
+
+[처리 규칙]
+1. 'Seriousness': 사망, 생명위협, 입원, 입원기간연장, 영구장애, 선천성기형, 기타중대한결과 중 하나라도 해당되면 "Yes", 아니면 "No"
+2. '인과성평가': 인과성평가 데이터에서 매칭되는 결과 (Certain, Probable, Possible, Unlikely, Unrelated 등)
+3. 'SOC': MedDRA PT에 해당하는 상위 SOC(System Organ Class) 영문 명칭
+
+[출력 형식]
+마크다운 코드블럭 없이 순수 JSON만 출력하십시오.
+{
+  "processed_data": [
+    { "원본데이터필드들": "...", "Seriousness": "Yes/No", "인과성평가": "Possible", "SOC": "Nervous system disorders" },
+    ...
+  ]
+}`;
+        }
+
+        /**
+         * 처리된 데이터로부터 보고서 마크다운 생성
+         */
+        generateReportFromProcessedData(processedData) {
+            // SOC별 통계 집계
+            const socStats = {};
+
+            processedData.forEach(item => {
+                const soc = item.SOC || 'Unknown';
+                const pt = item['이상사례·약물이상반응 MedDRA명'] || item['PT'] || 'Unknown';
+                const isSerious = item.Seriousness === 'Yes';
+                const causality = item['인과성평가'] || '';
+                const isADR = ['Certain', 'Probable', 'Possible'].some(c => causality.includes(c));
+
+                if (!socStats[soc]) {
+                    socStats[soc] = { pts: {}, totals: { seriousAE: 0, seriousADR: 0, nonSeriousAE: 0, nonSeriousADR: 0 } };
+                }
+                if (!socStats[soc].pts[pt]) {
+                    socStats[soc].pts[pt] = { seriousAE: 0, seriousADR: 0, nonSeriousAE: 0, nonSeriousADR: 0 };
+                }
+
+                if (isSerious) {
+                    socStats[soc].pts[pt].seriousAE++;
+                    socStats[soc].totals.seriousAE++;
+                    if (isADR) {
+                        socStats[soc].pts[pt].seriousADR++;
+                        socStats[soc].totals.seriousADR++;
+                    }
+                } else {
+                    socStats[soc].pts[pt].nonSeriousAE++;
+                    socStats[soc].totals.nonSeriousAE++;
+                    if (isADR) {
+                        socStats[soc].pts[pt].nonSeriousADR++;
+                        socStats[soc].totals.nonSeriousADR++;
+                    }
+                }
+            });
+
+            // 마크다운 테이블 생성
+            let md = `# [별첨 3] 시판 후 정보에서 보고 기간 동안의 요약 도표\n\n`;
+            md += `| 구분 (SOC / PT) | 중대한 이상사례 (건수) | 중대한 약물이상반응 (건수) | 중대하지 않은 이상사례 (건수) | 중대하지 않은 약물이상반응 (건수) | 총-이상사례 (건수) | 총-약물이상반응 (건수) |\n`;
+            md += `|---|---|---|---|---|---|---|\n`;
+
+            let grandTotal = { seriousAE: 0, seriousADR: 0, nonSeriousAE: 0, nonSeriousADR: 0 };
+
+            Object.keys(socStats).sort().forEach(soc => {
+                const stats = socStats[soc];
+                const totalAE = stats.totals.seriousAE + stats.totals.nonSeriousAE;
+                const totalADR = stats.totals.seriousADR + stats.totals.nonSeriousADR;
+
+                md += `| **${soc}** | ${stats.totals.seriousAE} | ${stats.totals.seriousADR} | ${stats.totals.nonSeriousAE} | ${stats.totals.nonSeriousADR} | ${totalAE} | ${totalADR} |\n`;
+
+                Object.keys(stats.pts).sort().forEach(pt => {
+                    const ptStats = stats.pts[pt];
+                    const ptTotalAE = ptStats.seriousAE + ptStats.nonSeriousAE;
+                    const ptTotalADR = ptStats.seriousADR + ptStats.nonSeriousADR;
+                    md += `| &nbsp;&nbsp; ${pt} | ${ptStats.seriousAE} | ${ptStats.seriousADR} | ${ptStats.nonSeriousAE} | ${ptStats.nonSeriousADR} | ${ptTotalAE} | ${ptTotalADR} |\n`;
+                });
+
+                grandTotal.seriousAE += stats.totals.seriousAE;
+                grandTotal.seriousADR += stats.totals.seriousADR;
+                grandTotal.nonSeriousAE += stats.totals.nonSeriousAE;
+                grandTotal.nonSeriousADR += stats.totals.nonSeriousADR;
+            });
+
+            const grandTotalAE = grandTotal.seriousAE + grandTotal.nonSeriousAE;
+            const grandTotalADR = grandTotal.seriousADR + grandTotal.nonSeriousADR;
+            md += `| **총계** | ${grandTotal.seriousAE} | ${grandTotal.seriousADR} | ${grandTotal.nonSeriousAE} | ${grandTotal.nonSeriousADR} | ${grandTotalAE} | ${grandTotalADR} |\n`;
+
+            return md;
         }
 
         /**
@@ -329,7 +507,7 @@
         }
 
         /**
-         * JSON 응답 파싱 (마크다운 코드블럭 제거 포함)
+         * JSON 응답 파싱 (마크다운 코드블럭 제거 + 불완전한 JSON 복구)
          */
         parseJsonResponse(responseText) {
             // 마크다운 코드블럭 제거
@@ -340,20 +518,137 @@
 
             // JSON 범위 찾기
             const startIdx = cleanText.indexOf('{');
-            const endIdx = cleanText.lastIndexOf('}');
+            let endIdx = cleanText.lastIndexOf('}');
 
-            if (startIdx === -1 || endIdx === -1) {
+            if (startIdx === -1) {
                 throw new Error('JSON 형식을 찾을 수 없습니다.');
             }
 
-            cleanText = cleanText.substring(startIdx, endIdx + 1);
+            // } 가 없으면 불완전한 JSON - 복구 시도
+            if (endIdx === -1 || endIdx < startIdx) {
+                console.warn('[parseJsonResponse] 불완전한 JSON 감지, 복구 시도...');
+                cleanText = cleanText.substring(startIdx);
+                cleanText = this.repairIncompleteJson(cleanText);
+            } else {
+                cleanText = cleanText.substring(startIdx, endIdx + 1);
+            }
 
+            // 1차 파싱 시도
             try {
                 return JSON.parse(cleanText);
             } catch (e) {
-                console.error('JSON 파싱 오류:', e);
-                throw new Error('JSON 파싱 실패: ' + e.message);
+                console.warn('[parseJsonResponse] 1차 파싱 실패, 복구 시도...', e.message);
             }
+
+            // 2차: 불완전한 JSON 복구 시도
+            try {
+                const repairedJson = this.repairIncompleteJson(cleanText);
+                return JSON.parse(repairedJson);
+            } catch (e) {
+                console.warn('[parseJsonResponse] 2차 파싱 실패, processed_data 추출 시도...', e.message);
+            }
+
+            // 3차: processed_data 배열만 추출 시도
+            try {
+                const processedData = this.extractProcessedDataArray(cleanText);
+                if (processedData && processedData.length > 0) {
+                    console.log(`[parseJsonResponse] processed_data ${processedData.length}건 추출 성공`);
+                    return { processed_data: processedData };
+                }
+            } catch (e) {
+                console.error('[parseJsonResponse] processed_data 추출 실패:', e.message);
+            }
+
+            throw new Error('JSON 파싱 실패: 복구할 수 없는 형식입니다.');
+        }
+
+        /**
+         * 불완전한 JSON 복구
+         */
+        repairIncompleteJson(jsonStr) {
+            let repaired = jsonStr;
+
+            // 트레일링 콤마 제거
+            repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+
+            // 불완전한 문자열 닫기 (열린 따옴표 찾기)
+            const lastQuoteIdx = repaired.lastIndexOf('"');
+            if (lastQuoteIdx > 0) {
+                const beforeQuote = repaired.substring(0, lastQuoteIdx);
+                const quoteCount = (beforeQuote.match(/(?<!\\)"/g) || []).length;
+                if (quoteCount % 2 === 0) {
+                    // 짝수 = 마지막 따옴표가 문자열 시작, 닫아야 함
+                    // 불완전한 객체일 가능성 - 해당 객체 제거
+                    const lastCompleteObjEnd = repaired.lastIndexOf('},');
+                    if (lastCompleteObjEnd > 0) {
+                        repaired = repaired.substring(0, lastCompleteObjEnd + 1);
+                    }
+                }
+            }
+
+            // 괄호 균형 맞추기
+            const openBraces = (repaired.match(/{/g) || []).length;
+            const closeBraces = (repaired.match(/}/g) || []).length;
+            const openBrackets = (repaired.match(/\[/g) || []).length;
+            const closeBrackets = (repaired.match(/]/g) || []).length;
+
+            // 트레일링 콤마 다시 제거 (객체 제거 후)
+            repaired = repaired.replace(/,\s*$/g, '');
+
+            // 닫는 괄호 추가
+            for (let i = 0; i < openBrackets - closeBrackets; i++) {
+                repaired += ']';
+            }
+            for (let i = 0; i < openBraces - closeBraces; i++) {
+                repaired += '}';
+            }
+
+            return repaired;
+        }
+
+        /**
+         * processed_data 배열만 추출
+         */
+        extractProcessedDataArray(jsonStr) {
+            // "processed_data": [ ... ] 패턴 찾기
+            const match = jsonStr.match(/"processed_data"\s*:\s*\[/);
+            if (!match) {
+                return null;
+            }
+
+            const startIdx = match.index + match[0].length - 1; // '[' 위치
+            let depth = 0;
+            let endIdx = -1;
+
+            for (let i = startIdx; i < jsonStr.length; i++) {
+                if (jsonStr[i] === '[') depth++;
+                else if (jsonStr[i] === ']') {
+                    depth--;
+                    if (depth === 0) {
+                        endIdx = i;
+                        break;
+                    }
+                }
+            }
+
+            let arrayStr;
+            if (endIdx === -1) {
+                // 배열이 완전하지 않음 - 마지막 완전한 객체까지 추출
+                arrayStr = jsonStr.substring(startIdx);
+                const lastCompleteObj = arrayStr.lastIndexOf('},');
+                if (lastCompleteObj > 0) {
+                    arrayStr = arrayStr.substring(0, lastCompleteObj + 1) + ']';
+                } else {
+                    // 단일 객체도 없으면 실패
+                    return null;
+                }
+            } else {
+                arrayStr = jsonStr.substring(startIdx, endIdx + 1);
+            }
+
+            // 트레일링 콤마 제거 후 파싱
+            arrayStr = arrayStr.replace(/,\s*]/g, ']');
+            return JSON.parse(arrayStr);
         }
 
         /**
