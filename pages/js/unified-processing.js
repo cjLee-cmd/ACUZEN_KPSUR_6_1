@@ -1275,6 +1275,107 @@
     }
 
     // ========================================
+    // RAW ID 복원 헬퍼 함수 (Option B 수정)
+    // ========================================
+
+    /**
+     * 파일명에서 RAW ID를 추출합니다.
+     * @param {string} fileName - 파일명
+     * @returns {string} - 추출된 RAW ID 또는 'UNKNOWN'
+     */
+    function extractRawIdFromFileName(fileName) {
+        if (!fileName) return 'UNKNOWN';
+
+        const lowerName = fileName.toLowerCase();
+
+        // RAW ID 패턴 매칭 (구체적인 패턴 우선)
+        const patterns = [
+            { pattern: /raw1\.?2|보고.*기간.*시작.*시점.*첨부/i, rawId: 'RAW1.2' },
+            { pattern: /raw1\.?1|최신.*첨부/i, rawId: 'RAW1.1' },
+            { pattern: /raw2\.?6|보고.*시작.*시점.*사용상/i, rawId: 'RAW2.6' },
+            { pattern: /raw2\.?5|보고.*기간.*시작.*시점.*용법/i, rawId: 'RAW2.5' },
+            { pattern: /raw2\.?4|보고.*기간.*시작.*시점.*효능/i, rawId: 'RAW2.4' },
+            { pattern: /raw2\.?3|사용상.*주의/i, rawId: 'RAW2.3' },
+            { pattern: /raw2\.?2|효능.*효과/i, rawId: 'RAW2.2' },
+            { pattern: /raw2\.?1|용법.*용량/i, rawId: 'RAW2.1' },
+            { pattern: /raw17|iit|nis|트래커/i, rawId: 'RAW17' },
+            { pattern: /raw16|meddra|smq/i, rawId: 'RAW16' },
+            { pattern: /raw15|정기.*보고/i, rawId: 'RAW15' },
+            { pattern: /raw14|원시.*자료/i, rawId: 'RAW14' },
+            { pattern: /raw13|국내.*신속/i, rawId: 'RAW13' },
+            { pattern: /raw12|국외.*신속/i, rawId: 'RAW12' },
+            { pattern: /raw9|문헌/i, rawId: 'RAW9' },
+            { pattern: /raw8|임상.*노출/i, rawId: 'RAW8' },
+            { pattern: /raw7|안전성.*정보.*변경/i, rawId: 'RAW7' },
+            { pattern: /raw6|취합본/i, rawId: 'RAW6' },
+            { pattern: /raw5|안전성.*조치.*메일/i, rawId: 'RAW5' },
+            { pattern: /raw4|허가.*현황/i, rawId: 'RAW4' },
+            { pattern: /raw3|sales|판매/i, rawId: 'RAW3' }
+        ];
+
+        for (const { pattern, rawId } of patterns) {
+            if (pattern.test(lowerName)) {
+                return rawId;
+            }
+        }
+
+        return 'UNKNOWN';
+    }
+
+    /**
+     * convertedMarkdowns에 rawId를 복원합니다.
+     * uploadedFiles와 조인하거나 파일명에서 추출합니다.
+     *
+     * @param {Object} convertedMarkdowns - {fileName: markdownContent} 형태
+     * @returns {Array} - [{fileName, rawId, markdown}] 형태의 배열
+     */
+    function restoreRawIdToMarkdowns(convertedMarkdowns) {
+        // uploadedFiles에서 rawId 매핑 가져오기
+        const uploadedFilesData = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+        const rawIdMap = {};
+
+        // uploadedFiles 배열에서 rawId 매핑 생성
+        if (Array.isArray(uploadedFilesData)) {
+            uploadedFilesData.forEach(file => {
+                if (file.fileName && file.rawId) {
+                    rawIdMap[file.fileName] = file.rawId;
+                }
+            });
+        }
+
+        console.log('[P14] RAW ID 매핑 복원:', Object.keys(rawIdMap).length, '개 파일');
+
+        // convertedMarkdowns를 배열로 변환하면서 rawId 복원
+        const result = Object.entries(convertedMarkdowns).map(([fileName, content]) => {
+            // 1차: uploadedFiles에서 rawId 찾기
+            let rawId = rawIdMap[fileName];
+
+            // 2차: 파일명에서 rawId 추출 (fallback)
+            if (!rawId) {
+                rawId = extractRawIdFromFileName(fileName);
+                console.log(`[P14] RAW ID 파일명에서 추출: ${fileName} → ${rawId}`);
+            }
+
+            return {
+                fileName,
+                rawId,
+                markdown: content
+            };
+        });
+
+        // RAW ID 순서로 정렬
+        result.sort((a, b) => {
+            const aNum = parseFloat(a.rawId.replace(/[^0-9.]/g, '')) || 999;
+            const bNum = parseFloat(b.rawId.replace(/[^0-9.]/g, '')) || 999;
+            return aNum - bNum;
+        });
+
+        console.log('[P14] RAW ID 복원 완료:', result.map(r => `${r.rawId}:${r.fileName.substring(0, 20)}`));
+
+        return result;
+    }
+
+    // ========================================
     // PSUR 섹션 생성
     // ========================================
     async function generatePSURSections(convertedMarkdowns) {
@@ -1304,10 +1405,18 @@
             // 1. 컨텍스트 로드
             const context = await loadPSURContext();
 
-            // 2. 마크다운 통합
-            const allMarkdowns = Object.entries(convertedMarkdowns)
-                .map(([fileName, content]) => `### 파일: ${fileName}\n\n${content}`)
+            // 2. RAW ID 복원 및 마크다운 통합
+            const markdownsWithRawId = restoreRawIdToMarkdowns(convertedMarkdowns);
+
+            // RAW ID를 포함한 마크다운 통합
+            const allMarkdowns = markdownsWithRawId
+                .map(({ fileName, rawId, markdown }) =>
+                    `### [${rawId}] ${fileName}\n\n${markdown}`)
                 .join('\n\n---\n\n');
+
+            // 업로드된 RAW ID 목록 생성 (LLM에 전달)
+            const uploadedRawIds = [...new Set(markdownsWithRawId.map(m => m.rawId))].sort();
+            console.log('[P14] 업로드된 RAW IDs:', uploadedRawIds.join(', '));
 
             // 3. 데이터 가용성 상태 메시지 생성
             const dataStatus = validation.criticalMissing.length > 0
@@ -1320,6 +1429,9 @@
             const prompt = `${context}
 
 # 중요 지침
+
+## 업로드된 RAW ID 목록
+다음 RAW ID의 데이터가 제공되었습니다: **${uploadedRawIds.join(', ')}**
 
 ## 데이터 가용성 상태
 ${dataStatus}
@@ -1347,7 +1459,9 @@ ${dataStatus}
 - [섹션에서 다루어야 할 주요 내용 나열]
 
 ## RAW 원시자료 (변환된 마크다운)
-${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데이터가 없습니다. 모든 섹션을 플레이스홀더로 생성하세요.'}
+총 ${markdownsWithRawId.length}개 파일 (RAW IDs: ${uploadedRawIds.join(', ')})
+
+${markdownsWithRawId.length > 0 ? allMarkdowns : '제공된 RAW 데이터가 없습니다. 모든 섹션을 플레이스홀더로 생성하세요.'}
 
 ## 출력 형식 (Structured Output)
 위의 RAW 원시자료를 분석하여 다음 JSON 형식으로 PSUR 15개 섹션을 생성하세요.
