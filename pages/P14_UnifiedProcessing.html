@@ -1173,8 +1173,16 @@
                 step3Files.length = 0;
                 for (const file of stage2Data.step3Files) {
                     const idbFile = indexedDBMap[file.name];
+                    // 파일명 기반으로 rawId 재탐지 (user_inputs에 저장된 값이 잘못되었을 수 있음)
+                    const redetectedRawId = typeof window.detectRawIdFromFileName === 'function'
+                        ? (window.detectRawIdFromFileName(file.name) || file.rawId)
+                        : file.rawId;
+                    if (redetectedRawId !== file.rawId) {
+                        console.log(`🔄 RAW ID 재탐지: ${file.name} → ${redetectedRawId} (기존: ${file.rawId})`);
+                    }
                     step3Files.push({
                         ...file,
+                        rawId: redetectedRawId,  // 재탐지된 rawId로 덮어쓰기
                         file: idbFile?.file || null,
                         arrayBuffer: idbFile ? await getArrayBufferFromFile(idbFile.file) : null,
                         isRestored: true,
@@ -1235,11 +1243,18 @@
                     const idbFile = indexedDBMap[file.fileName];
 
                     if (zoneId === 'step3') {
+                        // 파일명 기반으로 rawId 재탐지 (저장된 값이 잘못되었을 수 있음)
+                        const redetectedRawId = typeof window.detectRawIdFromFileName === 'function'
+                            ? (window.detectRawIdFromFileName(file.fileName) || file.rawId)
+                            : file.rawId;
+                        if (redetectedRawId !== file.rawId) {
+                            console.log(`🔄 RAW ID 재탐지: ${file.fileName} → ${redetectedRawId} (기존: ${file.rawId})`);
+                        }
                         step3Files.push({
                             id: file.id || idbFile?.id,
                             name: file.fileName,
                             size: file.fileSize,
-                            rawId: file.rawId,
+                            rawId: redetectedRawId,
                             file: idbFile?.file || null,
                             arrayBuffer: idbFile ? await getArrayBufferFromFile(idbFile.file) : null,
                             isRestored: true,
@@ -1275,11 +1290,18 @@
                     const arrayBuffer = await getArrayBufferFromFile(idbFile.file);
 
                     if (zoneId === 'step3' || idbFile.rawId) {
+                        // 파일명 기반으로 rawId 재탐지 (IndexedDB에 저장된 값이 잘못되었을 수 있음)
+                        const redetectedRawId = typeof window.detectRawIdFromFileName === 'function'
+                            ? (window.detectRawIdFromFileName(idbFile.name) || idbFile.rawId)
+                            : idbFile.rawId;
+                        if (redetectedRawId !== idbFile.rawId) {
+                            console.log(`🔄 RAW ID 재탐지: ${idbFile.name} → ${redetectedRawId} (기존: ${idbFile.rawId})`);
+                        }
                         step3Files.push({
                             id: idbFile.id,
                             name: idbFile.name,
                             size: idbFile.size,
-                            rawId: idbFile.rawId,
+                            rawId: redetectedRawId,
                             file: idbFile.file,
                             arrayBuffer: arrayBuffer,
                             isRestored: true,
