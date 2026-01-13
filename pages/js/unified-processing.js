@@ -1106,37 +1106,64 @@
     function validateDataCompleteness(uploadedFilesData) {
         const uploadedRAWIds = new Set();
 
+        // Helper: RAW ID 추가 (접미사 있는 경우 베이스 ID도 추가)
+        function addRawId(rawId) {
+            if (!rawId) return;
+            uploadedRAWIds.add(rawId);
+            // 접미사 처리: RAW7.1 → RAW7 (베이스 ID도 추가)
+            const baseMatch = rawId.match(/^(RAW\d+)/);
+            if (baseMatch && baseMatch[1] !== rawId) {
+                uploadedRAWIds.add(baseMatch[1]);
+            }
+        }
+
         // Extract all uploaded RAW IDs
         // 데이터 형식 감지: 배열 또는 객체
         if (Array.isArray(uploadedFilesData)) {
             // 배열 형식: [{fileName, rawId, zoneId}, ...]
             uploadedFilesData.forEach(f => {
-                if (f.rawId) uploadedRAWIds.add(f.rawId);
+                addRawId(f.rawId);
             });
         } else {
-            // 객체 형식 (레거시 호환): {startPeriod: [...], endPeriod: [...], ...}
-            if (uploadedFilesData.startPeriod) {
-                uploadedFilesData.startPeriod.forEach(f => {
-                    if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
-                    if (f.rawId) uploadedRAWIds.add(f.rawId);
+            // 객체 형식 판별: 숫자 키 vs 존(zone) 기반
+            const keys = Object.keys(uploadedFilesData);
+            const isNumericKeyFormat = keys.length > 0 && keys.every(k => !isNaN(k));
+
+            if (isNumericKeyFormat) {
+                // ★ 숫자 키 형식: { "0": {rawId, zoneId}, "1": {rawId, zoneId}, ... }
+                console.log('[P14] 숫자 키 형식 데이터 감지, 직접 RAW ID 추출');
+                Object.values(uploadedFilesData).forEach(file => {
+                    addRawId(file.rawId);
+                    addRawId(file.assignedRawId);
+                    if (file.rawIdCandidates && file.rawIdCandidates[0]) {
+                        addRawId(file.rawIdCandidates[0]);
+                    }
                 });
-            }
-            if (uploadedFilesData.endPeriod) {
-                uploadedFilesData.endPeriod.forEach(f => {
-                    if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
-                    if (f.rawId) uploadedRAWIds.add(f.rawId);
-                });
-            }
-            if (uploadedFilesData.changeHistory) {
-                uploadedFilesData.changeHistory.forEach(f => {
-                    if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
-                    if (f.rawId) uploadedRAWIds.add(f.rawId);
-                });
-            }
-            if (uploadedFilesData.step3Files) {
-                uploadedFilesData.step3Files.forEach(f => {
-                    if (f.rawId) uploadedRAWIds.add(f.rawId);
-                });
+            } else {
+                // 존(zone) 기반 형식 (레거시 호환): {startPeriod: [...], endPeriod: [...], ...}
+                if (uploadedFilesData.startPeriod) {
+                    uploadedFilesData.startPeriod.forEach(f => {
+                        if (f.rawIdCandidates) addRawId(f.rawIdCandidates[0]);
+                        addRawId(f.rawId);
+                    });
+                }
+                if (uploadedFilesData.endPeriod) {
+                    uploadedFilesData.endPeriod.forEach(f => {
+                        if (f.rawIdCandidates) addRawId(f.rawIdCandidates[0]);
+                        addRawId(f.rawId);
+                    });
+                }
+                if (uploadedFilesData.changeHistory) {
+                    uploadedFilesData.changeHistory.forEach(f => {
+                        if (f.rawIdCandidates) addRawId(f.rawIdCandidates[0]);
+                        addRawId(f.rawId);
+                    });
+                }
+                if (uploadedFilesData.step3Files) {
+                    uploadedFilesData.step3Files.forEach(f => {
+                        addRawId(f.rawId);
+                    });
+                }
             }
         }
 

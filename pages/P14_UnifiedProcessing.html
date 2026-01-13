@@ -2239,17 +2239,43 @@
                 });
             }
 
-            // Step 1 존 검사
-            extractFromZone(uploadedFiles.startPeriod);
-            extractFromZone(uploadedFiles.endPeriod);
-            extractFromZone(uploadedFiles.changeHistory);  // RAW5, RAW6, RAW7
+            // ★ 데이터 형식 감지: 숫자 키 형식 vs 존(zone) 기반 형식
+            const keys = Object.keys(uploadedFiles);
+            const isNumericKeyFormat = keys.length > 0 && keys.every(k => !isNaN(k));
 
-            // Step 2 존 검사
-            extractFromZone(uploadedFiles.sponsored);      // RAW8
-            extractFromZone(uploadedFiles.iitnis);         // RAW17
+            if (isNumericKeyFormat) {
+                // 숫자 키 형식: { "0": {rawId, zoneId}, "1": {rawId, zoneId}, ... }
+                console.log('[validateDataCompleteness] 숫자 키 형식 데이터 감지, 직접 RAW ID 추출');
+                Object.values(uploadedFiles).forEach(file => {
+                    // rawId 속성에서 직접 추출
+                    if (file.rawId) {
+                        addRawId(file.rawId);
+                    }
+                    // 대체 속성들도 확인
+                    if (file.assignedRawId) {
+                        addRawId(file.assignedRawId);
+                    }
+                    if (file.rawIdCandidates && file.rawIdCandidates[0]) {
+                        addRawId(file.rawIdCandidates[0]);
+                    }
+                });
+                console.log('[validateDataCompleteness] 추출된 RAW IDs:', [...uploadedRAWIds]);
+            } else {
+                // 존(zone) 기반 형식: { startPeriod: [...], endPeriod: [...], ... }
+                console.log('[validateDataCompleteness] 존(zone) 기반 형식 데이터 감지');
 
-            // Step 3 파일 검사 (rawId 속성 사용)
-            extractFromZone(uploadedFiles.step3Files, true);
+                // Step 1 존 검사
+                extractFromZone(uploadedFiles.startPeriod);
+                extractFromZone(uploadedFiles.endPeriod);
+                extractFromZone(uploadedFiles.changeHistory);  // RAW5, RAW6, RAW7
+
+                // Step 2 존 검사
+                extractFromZone(uploadedFiles.sponsored);      // RAW8
+                extractFromZone(uploadedFiles.iitnis);         // RAW17
+
+                // Step 3 파일 검사 (rawId 속성 사용)
+                extractFromZone(uploadedFiles.step3Files, true);
+            }
 
             const warnings = [];
             const criticalMissing = [];
