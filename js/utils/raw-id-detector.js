@@ -97,8 +97,14 @@
     // Step 3 기타자료 RAW ID 옵션 (드롭다운용)
     // ========================================
     const STEP3_RAW_ID_OPTIONS = Object.freeze([
+        { value: 'RAW2.3', label: 'RAW2.3 - 사용상의주의사항' },
+        { value: 'RAW2.4', label: 'RAW2.4 - 보고기간시작시점효능효과' },
+        { value: 'RAW2.5', label: 'RAW2.5 - 보고기간시작시점용법용량' },
+        { value: 'RAW2.6', label: 'RAW2.6 - 보고시작시점사용상의주의사항' },
         { value: 'RAW3', label: 'RAW3 - 시판후 판매 데이터' },
         { value: 'RAW4', label: 'RAW4 - 허가현황' },
+        { value: 'RAW5', label: 'RAW5 - 안전성조치허가팀메일' },
+        { value: 'RAW6', label: 'RAW6 - 안전성조치허가팀메일_취합본' },
         { value: 'RAW9', label: 'RAW9 - 문헌자료' },
         { value: 'RAW16', label: 'RAW16 - MedDRA SMQ' }
     ]);
@@ -393,6 +399,13 @@
     Object.freeze(RawIdDetector);
 
     // 전역으로 내보내기 (window 객체)
+    if (typeof window !== 'undefined') {
+        window.RawIdDetector = RawIdDetector;
+        // 개별 함수도 직접 접근 가능하도록 export
+        window.detectStep3RawId = detectStep3RawId;
+        window.detectRawIdFromFileName = detectRawIdFromFileName;
+        window.getStep3RawIdOptions = () => STEP3_RAW_ID_OPTIONS;
+    }
     if (typeof global !== 'undefined') {
         global.RawIdDetector = RawIdDetector;
     }

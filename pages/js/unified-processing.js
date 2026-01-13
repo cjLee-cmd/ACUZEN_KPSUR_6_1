@@ -191,12 +191,17 @@
             savedFiles.forEach(file => {
                 const zoneId = file.zoneId;
                 if (zoneId === 'step3') {
+                    // 복원 시 파일명 기반으로 rawId 재탐지 (저장된 rawId가 잘못되었을 수 있음)
+                    const redetectedRawId = typeof detectStep3RawId === 'function'
+                        ? detectStep3RawId(file.fileName)
+                        : file.rawId;
                     step3Files.push({
                         name: file.fileName,
                         size: file.fileSize,
-                        rawId: file.rawId,
+                        rawId: redetectedRawId,
                         isRestored: true
                     });
+                    console.log(`[P14] Step3 파일 복원: ${file.fileName} → ${redetectedRawId} (원래: ${file.rawId})`);
                 } else if (uploadedFiles[zoneId]) {
                     uploadedFiles[zoneId].push({
                         name: file.fileName,

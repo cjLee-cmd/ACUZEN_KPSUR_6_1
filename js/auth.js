@@ -42,6 +42,45 @@ class AuthManager {
     }
 
     /**
+     * 사용자를 users 테이블에 동기화 (upsert)
+     * reports.created_by FK 제약조건을 충족하기 위해 필요
+     */
+    async syncUserToDatabase(userId, email, name, role, position = '') {
+        try {
+            if (!window.supabaseClient || !window.supabaseClient.client) {
+                console.warn('⚠️ syncUserToDatabase: supabaseClient not available');
+                return { success: false, error: 'supabaseClient not available' };
+            }
+
+            // 기본 필드만 사용 (position 컬럼이 없을 수 있음)
+            const userData = {
+                id: userId,
+                email: email,
+                name: name,
+                role: role
+            };
+
+            const { data, error } = await window.supabaseClient.client
+                .from('users')
+                .upsert(userData, { onConflict: 'id' })
+                .select()
+                .single();
+
+            if (error) {
+                // RLS 오류 시에도 진행 가능하도록 경고만 출력
+                console.warn('⚠️ syncUserToDatabase failed (RLS?):', error.message);
+                return { success: false, error: error.message };
+            }
+
+            console.log('✅ User synced to database:', email);
+            return { success: true, user: data };
+        } catch (e) {
+            console.warn('⚠️ syncUserToDatabase error:', e.message);
+            return { success: false, error: e.message };
+        }
+    }
+
+    /**
      * 로그인 (테스트 계정 + Supabase Auth)
      * 테스트 계정은 개발 모드에서만 활성화됨
      */
@@ -114,6 +153,15 @@ class AuthManager {
                         console.log('✅ Supabase auth also successful for test account');
                         sessionData.type = 'test+supabase';
                         Storage.set(CONFIG.STORAGE_KEYS.SESSION, sessionData);
+
+                        // users 테이블에 동기화 (reports FK 충족)
+                        await this.syncUserToDatabase(
+                            testAccount.id,
+                            email,
+                            testAccount.name,
+                            testAccount.role,
+                            testAccount.position
+                        );
                     } else {
                         console.log('ℹ️ Supabase auth failed:', supabaseResult.error);
                     }
@@ -163,6 +211,15 @@ class AuthManager {
             this.currentUser = userObj;
             this.currentSession = sessionData;
             Storage.set(CONFIG.STORAGE_KEYS.SESSION, sessionData);
+
+            // users 테이블에 동기화 (reports FK 충족)
+            await this.syncUserToDatabase(
+                result.user.id,
+                result.user.email,
+                result.user.user_metadata?.name || email,
+                result.user.user_metadata?.role || 'Author',
+                result.user.user_metadata?.position || ''
+            );
 
             console.log('✅ Login successful (Supabase):', email);
 

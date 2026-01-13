@@ -52,15 +52,14 @@
             letter-spacing: -0.5px;
         }
 
-        [diff_block_start] [data-theme="dark"] .welcome-title {
+        [data-theme="dark"] .welcome-title {
             background: linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        [diff_block_end] [diff_block_start] [data-theme="dark"] .stat-value {
-            background: linear-gradient(135deg, #FFFFFF 0%, #D4D4D4 100%);
-        }
-
-        [diff_block_end] .welcome-subtitle {
+        .welcome-subtitle {
             font-size: 13px;
             color: var(--app-text-normal);
             font-weight: 500;
@@ -159,6 +158,9 @@
 
         [data-theme="dark"] .stat-value {
             background: linear-gradient(135deg, #F8D8FF 0%, #80F0FF 55%, #4ADE80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-label {
@@ -572,6 +574,18 @@
             .btn-secondary {
                 flex: 1;
             }
+        }
+
+        /* Dark Mode - Logo and Header */
+        [data-theme="dark"] .logo-text {
+            background: linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        [data-theme="dark"] .logo-subtitle {
+            color: var(--app-text-muted);
         }
     </style>
 </head>

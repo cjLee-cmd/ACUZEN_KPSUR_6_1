@@ -953,6 +953,9 @@
                         <button class="btn-wizard btn-wizard-next" id="nextBtn" onclick="nextStep()">
                             다음 →
                         </button>
+                        <button class="btn-wizard btn-wizard-skip" id="skipBtn" onclick="skipToNextPage()" style="display: none; margin-left: 10px; background: #4caf50;">
+                            다음 →
+                        </button>
                     </div>
                 </div>
             </main>
@@ -1438,6 +1441,15 @@
                 nextBtn.classList.add('btn-wizard-next');
             }
 
+            // Skip 버튼 표시/숨김 (Step 3에서 이미 분류 완료된 경우에만 표시)
+            const skipBtn = document.getElementById('skipBtn');
+            const hasGeneratedSections = localStorage.getItem('generatedSections');
+            if (currentStep === totalSteps && hasGeneratedSections) {
+                skipBtn.style.display = 'inline-block';
+            } else {
+                skipBtn.style.display = 'none';
+            }
+
             // Step 3에서 파일 요약 및 리스트 업데이트
             if (currentStep === 3) {
                 updateFileSummary();
@@ -1459,6 +1471,28 @@
             if (currentStep > 1) {
                 currentStep--;
                 updateStepUI();
+            }
+        }
+
+        // ========================================
+        // 다음 페이지로 건너뛰기 (이미 분류 완료된 경우)
+        // ========================================
+        function skipToNextPage() {
+            const reportId = getUrlParam('reportId') || localStorage.getItem('current_report');
+
+            // convertedMarkdowns에서 Line Listing 파일 존재 여부 확인
+            const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
+            const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+            const hasLineListingFiles = Object.keys(convertedMarkdowns).some(key => {
+                return lineListingRawIds.some(rawId => key.includes(rawId));
+            });
+
+            if (hasLineListingFiles) {
+                console.log('[P14] Skip → P16 Line Listing 분석 페이지로 이동');
+                navigateTo(`P16_LineListingAnalysis.html?reportId=${reportId}`);
+            } else {
+                console.log('[P14] Skip → P15 섹션 에디터로 이동');
+                navigateTo(`P15_SectionEditor.html?reportId=${reportId}`);
             }
         }
 
