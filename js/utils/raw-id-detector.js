@@ -1,17 +1,47 @@
 /**
- * raw-id-detector.js
- * 파일명에서 RAW ID를 자동 감지하는 통합 모듈
+ * ╔════════════════════════════════════════════════════════════════════════════╗
+ * ║                                                                            ║
+ * ║  RAW ID DETECTOR MODULE                                                    ║
+ * ║  Version: 2.1.0                                                            ║
+ * ║  Last Modified: 2026-01-13                                                 ║
+ * ║                                                                            ║
+ * ╠════════════════════════════════════════════════════════════════════════════╣
+ * ║                                                                            ║
+ * ║  ⚠️  WARNING: DO NOT MODIFY THIS FILE                                      ║
+ * ║                                                                            ║
+ * ║  This is a SEALED MODULE containing RAW ID detection logic.               ║
+ * ║  Any modifications require explicit approval and documentation.            ║
+ * ║                                                                            ║
+ * ║  이 파일은 RAW ID 감지 로직을 포함한 봉인된 모듈입니다.                    ║
+ * ║  수정 시 반드시 명시적인 승인과 문서화가 필요합니다.                        ║
+ * ║                                                                            ║
+ * ║  MODIFICATION HISTORY:                                                     ║
+ * ║  - 2026-01-08: Initial creation (v1.0.0)                                   ║
+ * ║  - 2026-01-12: Add ZONE_RAW_ID_MAPPING, STEP3_RAW_ID_OPTIONS (v2.0.0)      ║
+ * ║  - 2026-01-13: Add standalone '첨부문서' pattern, seal module (v2.1.0)     ║
+ * ║                                                                            ║
+ * ╚════════════════════════════════════════════════════════════════════════════╝
  *
- * @version 2.0.0
- * @description RAW ID 감지, Zone 매핑, Step 3 옵션 등 통합 관리
- *
- * MODIFICATION HISTORY:
- * - 2026-01-08: Initial creation (v1.0.0)
- * - 2026-01-12: Add ZONE_RAW_ID_MAPPING, STEP3_RAW_ID_OPTIONS, detectRawIdForZone (v2.0.0)
+ * @fileoverview RAW ID Detection Module
+ * @module RawIdDetector
+ * @version 2.1.0
+ * @readonly
+ * @sealed
  */
 
-(function() {
+(function(global) {
     'use strict';
+
+    // ========================================
+    // 모듈 버전 및 봉인 상태
+    // ========================================
+    const MODULE_VERSION = '2.1.0';
+
+    // 이미 봉인된 경우 재초기화 방지
+    if (global.RawIdDetector && global.RawIdDetector._sealed) {
+        console.warn('⚠️ RawIdDetector is already initialized and sealed.');
+        return;
+    }
 
     // ========================================
     // RAW ID 정의 (CLAUDE.md 기준)
@@ -321,12 +351,50 @@
         // 유틸리티
         getRawIdInfo,
         getAllRawIds,
-        getAllZoneIds
+        getAllZoneIds,
+
+        /**
+         * 모듈 버전 조회
+         * @returns {string} 모듈 버전
+         */
+        get version() {
+            return MODULE_VERSION;
+        },
+
+        /**
+         * 모듈 무결성 검증
+         * @returns {boolean} 무결성 상태
+         */
+        verifyIntegrity() {
+            const requiredFunctions = [
+                'detectRawIdFromFileName',
+                'detectRawIdDetailed',
+                'detectRawIdForZone',
+                'getZoneCandidates',
+                'detectStep3RawId'
+            ];
+            const requiredConstants = [
+                'RAW_ID_DEFINITIONS',
+                'ZONE_RAW_ID_MAPPING',
+                'STEP3_RAW_ID_OPTIONS'
+            ];
+
+            const functionsValid = requiredFunctions.every(fn => typeof this[fn] === 'function');
+            const constantsValid = requiredConstants.every(c => this[c] && Object.isFrozen(this[c]));
+
+            return functionsValid && constantsValid && this._sealed === true;
+        },
+
+        // 봉인 플래그
+        _sealed: true
     };
 
+    // 모듈 봉인 (Object.freeze)
+    Object.freeze(RawIdDetector);
+
     // 전역으로 내보내기 (window 객체)
-    if (typeof window !== 'undefined') {
-        window.RawIdDetector = RawIdDetector;
+    if (typeof global !== 'undefined') {
+        global.RawIdDetector = RawIdDetector;
     }
 
     // ES6 모듈 지원 (향후 사용)
@@ -334,6 +402,6 @@
         module.exports = RawIdDetector;
     }
 
-    console.log('✅ RawIdDetector v2.0.0 loaded');
+    console.log(`🔒 RawIdDetector v${MODULE_VERSION} initialized and sealed.`);
 
-})();
+})(typeof window !== 'undefined' ? window : this);
