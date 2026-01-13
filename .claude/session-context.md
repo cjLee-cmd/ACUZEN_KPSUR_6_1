@@ -1,8 +1,45 @@
-# KPSUR Session Context - 2026-01-13 (Updated v2)
+# KPSUR Session Context - 2026-01-13 (Updated v3)
 
 ## 최신 세션 요약
 
-### 이번 세션 완료 작업 (2026-01-13 #2)
+### 이번 세션 완료 작업 (2026-01-13 #3) - E2E 테스트
+
+#### Full E2E 테스트 완료 ✅
+
+**테스트 범위**: Login → Dashboard → Stage 1-5 전체 워크플로우
+
+**테스트 결과**: 7/7 Pass
+
+| TC | Stage | 테스트 항목 | 결과 | 비고 |
+|----|-------|------------|------|------|
+| TC-01 | Dashboard | 대시보드 접근 | ✅ Pass | 로그인 및 대시보드 로드 정상 |
+| TC-02 | Stage 1 | 새 보고서 생성 | ✅ Pass | Report ID: local_1768296874585 |
+| TC-03 | Stage 2 | Raw Data 처리 | ✅ Pass | 30개 파일 업로드, 45개 마크다운 변환 |
+| TC-04 | Stage 2.5 | Line Listing 분석 | ✅ Pass | 8개 LL 파일, 452건 이상사례 분석 |
+| TC-05 | Stage 3 | 섹션 편집 | ✅ Pass | 15개 섹션 전체 생성 완료 |
+| TC-06 | Stage 4 | QC 검증 | ✅ Pass | 16/16 항목 통과, 0 critical/warning |
+| TC-07 | Stage 5 | 최종 출력 | ✅ Pass | HTML 문서 내보내기 성공 |
+
+**워크플로우 경로**:
+```
+P01_Login → P10_Dashboard → P13_NewReport → P14_UnifiedProcessing
+→ P16_LineListingAnalysis → P15_SectionEditor → P19_QC → P20_Output
+```
+
+**Stage 2 상세**:
+- Step 1: 8개 파일 (RAW1.x, RAW2.1-2.2, RAW7)
+- Step 2: 2개 파일 (RAW8, RAW17)
+- Step 3: 20개 파일 (RAW2.3-2.6, RAW3-6, RAW9, RAW12-16)
+- LLM 처리: 마크다운 변환 → RAW ID 분류 → 데이터 통합 → PSUR 섹션 생성
+
+**QC 검증 상세**:
+- 모델: Gemini 3 Flash Preview
+- 검증 카테고리: 완전성, 일관성, 정확성, 형식, 추적성
+- 결과: 16/16 Pass, 5개 Info (섹션 명명 규칙 차이)
+
+---
+
+### 이전 세션 완료 작업 (2026-01-13 #2)
 
 #### 중복 매핑 문제 해결 및 완전 모듈화 ✅
 
@@ -194,9 +231,10 @@ SECTION_DATA_DEPENDENCIES: {
 
 ## 다음 세션 작업
 
-1. **Stage 3-5 테스트**: Review (P18), QC (P19), Output (P20)
+1. ~~**Stage 3-5 테스트**: Review (P18), QC (P19), Output (P20)~~ ✅ 완료 (2026-01-13 #3)
 2. **마크다운 변환 모듈 봉인**: `js/markdown-converter.js` (사용자 요청 시)
 3. **raw-id-detector.js 봉인**: Core 모듈과 동일한 방식으로 봉인 (사용자 요청 시)
+4. **file-handler.js RAW ID 중복 제거**: 계획 파일 참조 (`compiled-meandering-snowflake.md`)
 
 ---
 
