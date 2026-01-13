@@ -79,7 +79,7 @@
     const DETAILED_PATTERNS = [
         // RAW1.x - 첨부문서 (구체적 버전 먼저)
         { pattern: /raw1\.?2|보고.*기간.*시작.*시점.*첨부|시작.*시점.*첨부/i, rawId: 'RAW1.2' },
-        { pattern: /raw1\.?1|최신.*첨부|첨부문서.*예시/i, rawId: 'RAW1.1' },
+        { pattern: /raw1\.?1|최신.*첨부|첨부문서/i, rawId: 'RAW1.1' },
 
         // RAW2.x - 허가정보 (구체적 버전 먼저)
         { pattern: /raw2\.?6|보고.*시작.*시점.*사용상|시작.*시점.*주의/i, rawId: 'RAW2.6' },
