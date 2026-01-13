@@ -5,6 +5,31 @@
 
 import { CONFIG, Storage, DateHelper } from './config.js';
 
+// ========================================
+// RAW ID 모듈 참조 (Single Source of Truth: raw-id-detector.js)
+// ========================================
+const getRawIdModule = () => window.RawIdDetector || null;
+
+const getRawIdListForPrompt = () => {
+    const module = getRawIdModule();
+    if (!module || !module.RAW_ID_DEFINITIONS) return '';
+    return Object.entries(module.RAW_ID_DEFINITIONS)
+        .map(([id, def]) => `- ${id}: ${def.description}`)
+        .join('\n');
+};
+
+const getRawIdDescription = (rawId) => {
+    const module = getRawIdModule();
+    if (!module || !module.RAW_ID_DEFINITIONS) return rawId;
+    return module.RAW_ID_DEFINITIONS[rawId]?.description || rawId;
+};
+
+const isValidRawId = (rawId) => {
+    const module = getRawIdModule();
+    if (!module || !module.RAW_ID_DEFINITIONS) return false;
+    return !!module.RAW_ID_DEFINITIONS[rawId];
+};
+
 class LLMClient {
     constructor() {
         this.apiKey = null;
@@ -132,7 +157,7 @@ class LLMClient {
 ${content.substring(0, 2000)}
 
 **RAW ID 목록**:
-${Object.entries(CONFIG.RAW_IDS).map(([id, name]) => `- ${id}: ${name}`).join('\n')}
+${getRawIdListForPrompt()}
 
 **지침**:
 1. 파일명과 내용을 면밀히 분석하세요.
@@ -155,7 +180,7 @@ ${Object.entries(CONFIG.RAW_IDS).map(([id, name]) => `- ${id}: ${name}`).join('\
                 return { success: true, rawId: null, needsUserInput: true };
             }
 
-            if (CONFIG.RAW_IDS[rawId]) {
+            if (isValidRawId(rawId)) {
                 return { success: true, rawId: rawId };
             }
 
@@ -175,7 +200,7 @@ ${Object.entries(CONFIG.RAW_IDS).map(([id, name]) => `- ${id}: ${name}`).join('\
 아래 문서를 마크다운 형식으로 변환하세요.
 
 **파일명**: ${filename}
-**문서 유형**: ${rawId} - ${CONFIG.RAW_IDS[rawId]}
+**문서 유형**: ${rawId} - ${getRawIdDescription(rawId)}
 
 **원본 내용**:
 ${content}
@@ -203,7 +228,7 @@ ${content}
 
 아래 마크다운 문서에서 요청된 데이터를 추출하세요.
 
-**문서 유형**: ${rawId} - ${CONFIG.RAW_IDS[rawId]}
+**문서 유형**: ${rawId} - ${getRawIdDescription(rawId)}
 
 **마크다운 문서**:
 ${markdownContent}

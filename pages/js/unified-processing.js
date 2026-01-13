@@ -4,10 +4,42 @@
  *
  * P14_UnifiedProcessing.html 인라인 스크립트 분리
  * Stage 2: 파일 업로드, 마크다운 변환, LLM 분류, PSUR 섹션 생성
+ *
+ * @requires RawIdDetector - js/utils/raw-id-detector.js (RAW ID 감지 모듈)
  */
 
 (function() {
     'use strict';
+
+    // ========================================
+    // RAW ID 모듈 참조 (Single Source of Truth: raw-id-detector.js)
+    // ========================================
+
+    // 모듈 로드 확인
+    const isRawIdModuleLoaded = () => {
+        return window.RawIdDetector &&
+               window.RawIdDetector.ZONE_RAW_ID_MAPPING &&
+               window.RawIdDetector.STEP3_RAW_ID_OPTIONS;
+    };
+
+    // 모듈 참조 (없으면 에러 로깅)
+    function getModule() {
+        if (!isRawIdModuleLoaded()) {
+            console.error('[UnifiedProcessing] RawIdDetector 모듈 미로드! raw-id-detector.js 확인 필요');
+            return {
+                ZONE_RAW_ID_MAPPING: {},
+                STEP3_RAW_ID_OPTIONS: [],
+                detectRawIdForZone: (f, z) => null,
+                detectRawIdDetailed: (f) => null,
+                detectRawIdFromFileName: (f) => null
+            };
+        }
+        return window.RawIdDetector;
+    }
+
+    // Zone별 RAW ID 매핑 - 모듈에서만 참조 (중복 데이터 제거)
+    const getRawIdMapping = () => getModule().ZONE_RAW_ID_MAPPING;
+    const getStep3RawIdOptions = () => getModule().STEP3_RAW_ID_OPTIONS;
 
     // ========================================
     // 전역 상태
@@ -34,103 +66,30 @@
     // Step 3 파일 저장소 (드랍다운 선택 방식)
     const step3Files = [];  // { file, name, size, rawId }
 
-    // RAW ID 매핑 (Step 1, 2, 3)
-    const rawIdMapping = {
-        startPeriod: ['RAW1.2', 'RAW2.6'],
-        endPeriod: ['RAW1.1', 'RAW2.1', 'RAW2.2', 'RAW2.3'],
-        changeHistory: ['RAW5', 'RAW6', 'RAW7'],
-        sponsored: ['RAW8'],
-        iitnis: ['RAW17'],
-        // Step 3 - Line Listing
-        lineListing_domestic: ['RAW13'],   // 국내 신속보고
-        lineListing_foreign: ['RAW12'],    // 국외 신속보고
-        lineListing_raw: ['RAW14'],        // 원시자료
-        lineListing_periodic: ['RAW15']    // 정기보고
-    };
-
-    // Step 3 RAW ID 옵션 (기타문서용 - 라인리스팅 제외)
-    const step3RawIdOptions = [
-        { value: 'RAW3', label: 'RAW3 - 시판후 판매 데이터' },
-        { value: 'RAW4', label: 'RAW4 - 허가현황' },
-        { value: 'RAW9', label: 'RAW9 - 문헌자료' },
-        { value: 'RAW16', label: 'RAW16 - MedDRA SMQ' }
-    ];
-
     // ========================================
-    // 파일명 기반 RAW ID 자동 감지
+    // 파일명 기반 RAW ID 자동 감지 (모듈 함수 래퍼)
     // ========================================
     /**
      * 파일명에서 RAW ID를 감지합니다.
-     * zone의 후보 목록 중에서 파일명에 가장 적합한 RAW ID를 찾습니다.
+     * RawIdDetector 모듈의 detectRawIdForZone 함수를 사용합니다.
      *
      * @param {string} filename - 파일명
      * @param {string[]} candidates - zone별 RAW ID 후보 목록
-     * @returns {string|null} - 감지된 RAW ID 또는 null
+     * @returns {string|null} - 감지된 RAW ID 또는 첫 번째 후보
      */
     function detectRawIdFromFilename(filename, candidates) {
-        if (!filename || !candidates || candidates.length === 0) {
-            return null;
-        }
+        const detector = getModule();
 
-        const lowerFilename = filename.toLowerCase();
-
-        // 패턴 정의 (더 구체적인 패턴이 먼저)
-        const patterns = [
-            // RAW1.x - 첨부문서 (구체적 버전 먼저)
-            { pattern: /raw1\.?2|보고.*기간.*시작.*시점.*첨부|시작.*시점.*첨부/i, rawId: 'RAW1.2' },
-            { pattern: /raw1\.?1|최신.*첨부|첨부문서.*예시/i, rawId: 'RAW1.1' },
-
-            // RAW2.x - 허가정보 (구체적 버전 먼저)
-            { pattern: /raw2\.?6|보고.*시작.*시점.*사용상|시작.*시점.*주의/i, rawId: 'RAW2.6' },
-            { pattern: /raw2\.?5|보고.*기간.*시작.*시점.*용법|시작.*시점.*용법/i, rawId: 'RAW2.5' },
-            { pattern: /raw2\.?4|보고.*기간.*시작.*시점.*효능|시작.*시점.*효능/i, rawId: 'RAW2.4' },
-            { pattern: /raw2\.?3|사용상.*주의|주의사항/i, rawId: 'RAW2.3' },
-            { pattern: /raw2\.?2|효능.*효과/i, rawId: 'RAW2.2' },
-            { pattern: /raw2\.?1|용법.*용량/i, rawId: 'RAW2.1' },
-
-            // RAW5-7 - 안전성 관련 (구체적인 패턴 먼저)
-            { pattern: /raw7|안전성.*정보.*변경/i, rawId: 'RAW7' },
-            { pattern: /raw6|취합본|취합/i, rawId: 'RAW6' },
-            { pattern: /raw5|안전성.*조치.*메일|허가.*팀.*메일/i, rawId: 'RAW5' },
-
-            // RAW8, RAW17 - 임상자료
-            { pattern: /raw17|iit|nis|트래커/i, rawId: 'RAW17' },
-            { pattern: /raw8|임상.*노출|clinical.*exposure/i, rawId: 'RAW8' },
-
-            // RAW12-15 - Line Listing
-            { pattern: /raw15|정기.*보고/i, rawId: 'RAW15' },
-            { pattern: /raw14|원시.*자료/i, rawId: 'RAW14' },
-            { pattern: /raw13|국내.*신속/i, rawId: 'RAW13' },
-            { pattern: /raw12|국외.*신속/i, rawId: 'RAW12' },
-
-            // 기타
-            { pattern: /raw16|meddra|smq|lack.*of.*efficacy/i, rawId: 'RAW16' },
-            { pattern: /raw9|문헌|literature/i, rawId: 'RAW9' },
-            { pattern: /raw4|허가.*현황|license/i, rawId: 'RAW4' },
-            { pattern: /raw3|sales|판매/i, rawId: 'RAW3' }
-        ];
-
-        // 패턴 매칭으로 RAW ID 찾기
-        for (const { pattern, rawId } of patterns) {
-            if (pattern.test(lowerFilename)) {
-                // 후보 목록에 있는지 확인 (호환성)
-                // RAW ID 형식 정규화 (RAW7 → RAW7, RAW7.1 → RAW7 등)
-                const normalizedRawId = rawId.split('.')[0];
-                const matchingCandidate = candidates.find(c => {
-                    const normalizedCandidate = c.split('.')[0];
-                    return normalizedCandidate === normalizedRawId || c === rawId;
-                });
-
-                if (matchingCandidate) {
-                    console.log(`[RAW ID 감지] ${filename} → ${rawId} (후보: ${candidates.join(', ')})`);
-                    return rawId;
-                }
+        // 모듈 로드 여부 확인
+        if (detector.detectRawIdDetailed) {
+            const detected = detector.detectRawIdDetailed(filename, candidates);
+            if (detected) {
+                return detected;
             }
         }
 
-        // 패턴 매칭 실패 시 첫 번째 후보 반환
-        console.log(`[RAW ID 감지] ${filename} → 패턴 미매칭, 기본값 ${candidates[0]} 사용`);
-        return candidates[0];
+        // Fallback: 첫 번째 후보 반환
+        return candidates && candidates.length > 0 ? candidates[0] : null;
     }
 
     // ========================================
@@ -242,7 +201,7 @@
                     uploadedFiles[zoneId].push({
                         name: file.fileName,
                         size: file.fileSize,
-                        rawIdCandidates: rawIdMapping[zoneId] || [],
+                        rawIdCandidates: getRawIdMapping()[zoneId] || [],
                         isRestored: true
                     });
                 }
@@ -423,7 +382,7 @@
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                rawIdCandidates: rawIdMapping[zoneId] || []
+                rawIdCandidates: getRawIdMapping()[zoneId] || []
             });
         }
 
@@ -495,7 +454,7 @@
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                rawId: step3RawIdOptions[0].value  // 기본값: RAW3
+                rawId: getStep3RawIdOptions()[0]?.value || 'RAW3'  // 기본값: RAW3
             });
         }
 
@@ -528,7 +487,7 @@
                     <div class="step3-file-size">${formatFileSize(f.size)}${f.isRestored ? ' <span class="restored-badge">복원됨</span>' : ''}</div>
                 </div>
                 <select class="step3-rawid-select" onchange="UnifiedProcessingPage.updateStep3RawId(${index}, this.value)" ${f.isRestored ? 'disabled' : ''}>
-                    ${step3RawIdOptions.map(opt => `
+                    ${getStep3RawIdOptions().map(opt => `
                         <option value="${opt.value}" ${f.rawId === opt.value ? 'selected' : ''}>
                             ${opt.label}
                         </option>
@@ -583,7 +542,7 @@
         let allFiles = [];
         for (const [zoneId, files] of Object.entries(uploadedFiles)) {
             files.forEach(f => {
-                const candidates = rawIdMapping[zoneId] || [];
+                const candidates = getRawIdMapping()[zoneId] || [];
                 const detectedRawId = detectRawIdFromFilename(f.name, candidates);
                 allFiles.push({
                     name: f.name,
@@ -616,7 +575,7 @@
         let allFiles = [];
         for (const [zoneId, files] of Object.entries(uploadedFiles)) {
             files.forEach(f => {
-                const candidates = rawIdMapping[zoneId] || [];
+                const candidates = getRawIdMapping()[zoneId] || [];
                 // 파일명 기반 RAW ID 감지 (개선된 로직)
                 const detectedRawId = detectRawIdFromFilename(f.name, candidates);
                 allFiles.push({
@@ -1148,21 +1107,40 @@
         const uploadedRAWIds = new Set();
 
         // Extract all uploaded RAW IDs
-        if (uploadedFilesData.startPeriod) {
-            uploadedFilesData.startPeriod.forEach(f => {
-                if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
-            });
-        }
-        if (uploadedFilesData.endPeriod) {
-            uploadedFilesData.endPeriod.forEach(f => {
-                if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
-            });
-        }
-        if (uploadedFilesData.step3Files) {
-            uploadedFilesData.step3Files.forEach(f => {
+        // 데이터 형식 감지: 배열 또는 객체
+        if (Array.isArray(uploadedFilesData)) {
+            // 배열 형식: [{fileName, rawId, zoneId}, ...]
+            uploadedFilesData.forEach(f => {
                 if (f.rawId) uploadedRAWIds.add(f.rawId);
             });
+        } else {
+            // 객체 형식 (레거시 호환): {startPeriod: [...], endPeriod: [...], ...}
+            if (uploadedFilesData.startPeriod) {
+                uploadedFilesData.startPeriod.forEach(f => {
+                    if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
+                    if (f.rawId) uploadedRAWIds.add(f.rawId);
+                });
+            }
+            if (uploadedFilesData.endPeriod) {
+                uploadedFilesData.endPeriod.forEach(f => {
+                    if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
+                    if (f.rawId) uploadedRAWIds.add(f.rawId);
+                });
+            }
+            if (uploadedFilesData.changeHistory) {
+                uploadedFilesData.changeHistory.forEach(f => {
+                    if (f.rawIdCandidates) uploadedRAWIds.add(f.rawIdCandidates[0]);
+                    if (f.rawId) uploadedRAWIds.add(f.rawId);
+                });
+            }
+            if (uploadedFilesData.step3Files) {
+                uploadedFilesData.step3Files.forEach(f => {
+                    if (f.rawId) uploadedRAWIds.add(f.rawId);
+                });
+            }
         }
+
+        console.log('[P14] 업로드된 RAW IDs (검증용):', [...uploadedRAWIds].sort().join(', '));
 
         const warnings = [];
         const criticalMissing = [];
@@ -1275,48 +1253,28 @@
     }
 
     // ========================================
-    // RAW ID 복원 헬퍼 함수 (Option B 수정)
+    // RAW ID 복원 헬퍼 함수 (모듈 함수 래퍼)
     // ========================================
 
     /**
      * 파일명에서 RAW ID를 추출합니다.
+     * RawIdDetector 모듈의 detectRawIdDetailed 함수를 사용합니다.
      * @param {string} fileName - 파일명
      * @returns {string} - 추출된 RAW ID 또는 'UNKNOWN'
      */
     function extractRawIdFromFileName(fileName) {
         if (!fileName) return 'UNKNOWN';
 
-        const lowerName = fileName.toLowerCase();
+        const detector = getModule();
+        if (detector.detectRawIdDetailed) {
+            const detected = detector.detectRawIdDetailed(fileName);
+            if (detected) return detected;
+        }
 
-        // RAW ID 패턴 매칭 (구체적인 패턴 우선)
-        const patterns = [
-            { pattern: /raw1\.?2|보고.*기간.*시작.*시점.*첨부/i, rawId: 'RAW1.2' },
-            { pattern: /raw1\.?1|최신.*첨부/i, rawId: 'RAW1.1' },
-            { pattern: /raw2\.?6|보고.*시작.*시점.*사용상/i, rawId: 'RAW2.6' },
-            { pattern: /raw2\.?5|보고.*기간.*시작.*시점.*용법/i, rawId: 'RAW2.5' },
-            { pattern: /raw2\.?4|보고.*기간.*시작.*시점.*효능/i, rawId: 'RAW2.4' },
-            { pattern: /raw2\.?3|사용상.*주의/i, rawId: 'RAW2.3' },
-            { pattern: /raw2\.?2|효능.*효과/i, rawId: 'RAW2.2' },
-            { pattern: /raw2\.?1|용법.*용량/i, rawId: 'RAW2.1' },
-            { pattern: /raw17|iit|nis|트래커/i, rawId: 'RAW17' },
-            { pattern: /raw16|meddra|smq/i, rawId: 'RAW16' },
-            { pattern: /raw15|정기.*보고/i, rawId: 'RAW15' },
-            { pattern: /raw14|원시.*자료/i, rawId: 'RAW14' },
-            { pattern: /raw13|국내.*신속/i, rawId: 'RAW13' },
-            { pattern: /raw12|국외.*신속/i, rawId: 'RAW12' },
-            { pattern: /raw9|문헌/i, rawId: 'RAW9' },
-            { pattern: /raw8|임상.*노출/i, rawId: 'RAW8' },
-            { pattern: /raw7|안전성.*정보.*변경/i, rawId: 'RAW7' },
-            { pattern: /raw6|취합본/i, rawId: 'RAW6' },
-            { pattern: /raw5|안전성.*조치.*메일/i, rawId: 'RAW5' },
-            { pattern: /raw4|허가.*현황/i, rawId: 'RAW4' },
-            { pattern: /raw3|sales|판매/i, rawId: 'RAW3' }
-        ];
-
-        for (const { pattern, rawId } of patterns) {
-            if (pattern.test(lowerName)) {
-                return rawId;
-            }
+        // Fallback: 기본 패턴 매칭
+        if (detector.detectRawIdFromFileName) {
+            const detected = detector.detectRawIdFromFileName(fileName);
+            if (detected) return detected;
         }
 
         return 'UNKNOWN';

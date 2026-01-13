@@ -26,18 +26,8 @@ const CONFIG = {
         LAST_STAGE: 'last_stage'
     },
 
-    // RAW ID 분류 (소스 문서 타입)
-    RAW_IDS: {
-        'RAW1': '최신첨부문서',
-        'RAW2.1': '용법용량',
-        'RAW2.2': '효능효과',
-        'RAW2.3': '사용상의주의사항',
-        'RAW3': '시판후sales데이터',
-        'RAW4': '허가현황',
-        'RAW12': '국내신속보고LineListing',
-        'RAW14': '원시자료LineListing',
-        'RAW15': '정기보고LineListing'
-    },
+    // RAW ID 정의 → RawIdDetector.RAW_ID_DEFINITIONS 참조 (js/utils/raw-id-detector.js)
+    // 중복 제거됨 - Single Source of Truth 패턴 적용
 
     // PSUR 섹션별 데이터 의존성 (섹션 생성에 필요한 RAW 파일 정의)
     SECTION_DATA_DEPENDENCIES: {

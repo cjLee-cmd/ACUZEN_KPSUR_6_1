@@ -15,52 +15,46 @@ if (!window.DateHelper) {
     };
 }
 
-// RAW ID 정의
-const RAW_ID_DEFINITIONS = {
-    'RAW1': '최신첨부문서',
-    'RAW2.1': '용법용량',
-    'RAW2.2': '효능효과',
-    'RAW2.3': '사용상의주의사항',
-    'RAW2.6': '보고서작성지침사용상의주의사항',
-    'RAW3': '시판후sales데이터',
-    'RAW4': '허가현황',
-    'RAW5.1': '안전성조치허가메일',
-    'RAW6.1': '안전성조치허가메일_취합본',
-    'RAW7.1': '안전성정보변경_복수항목',
-    'RAW7.2': '안전성정보변경',
-    'RAW7.3': '안전성정보변경_용법용량',
-    'RAW7.4': '안전성정보변경_표현식복수항목',
-    'RAW8': '임상노출데이터',
-    'RAW9': '문헌자료',
-    'RAW12': '국외신속보고LineListing',
-    'RAW13': '국내신속보고LineListing',
-    'RAW14': '원시자료LineListing',
-    'RAW15': '정기보고LineListing'
+// ========================================
+// RAW ID 모듈 참조 (Single Source of Truth: raw-id-detector.js)
+// ========================================
+// 중복 정의 제거됨 - 모든 RAW ID 데이터는 raw-id-detector.js에서 관리
+
+/**
+ * RawIdDetector 모듈 참조
+ * @returns {Object|null} RawIdDetector 모듈 또는 null
+ */
+const getRawIdModule = () => {
+    if (!window.RawIdDetector) {
+        console.error('[FileHandler] RawIdDetector 모듈 미로드! raw-id-detector.js 확인 필요');
+        return null;
+    }
+    return window.RawIdDetector;
 };
 
-// 파일명 기반 RAW ID 자동 매칭 규칙 (더 구체적인 패턴이 먼저 와야 함)
-const RAW_ID_PATTERNS = [
-    // RAW12-15는 RAW1보다 먼저 매칭되어야 함
-    { pattern: /raw12|국외.*신속|foreign.*expedited/i, rawId: 'RAW12' },
-    { pattern: /raw13|국내.*신속|domestic.*expedited/i, rawId: 'RAW13' },
-    { pattern: /raw14|원시자료/i, rawId: 'RAW14' },
-    { pattern: /raw15|정기보고|periodic/i, rawId: 'RAW15' },
-    // RAW2.x는 RAW2보다 먼저
-    { pattern: /raw2\.?1|용법용량/i, rawId: 'RAW2.1' },
-    { pattern: /raw2\.?2|효능효과/i, rawId: 'RAW2.2' },
-    { pattern: /raw2\.?3|사용상.*주의|주의사항/i, rawId: 'RAW2.3' },
-    { pattern: /raw2\.?6|보고.*시작.*시점/i, rawId: 'RAW2.6' },
-    // RAW5-8
-    { pattern: /raw5|안전성.*조치.*메일/i, rawId: 'RAW5.1' },
-    { pattern: /raw6|안전성.*조치.*취합/i, rawId: 'RAW6.1' },
-    { pattern: /raw7|안전성.*정보.*변경/i, rawId: 'RAW7.1' },
-    { pattern: /raw8|임상.*노출|clinical.*exposure/i, rawId: 'RAW8' },
-    { pattern: /raw9|문헌|literature/i, rawId: 'RAW9' },
-    // 일반 패턴들
-    { pattern: /raw1[^0-9]|raw1$|첨부문서|label/i, rawId: 'RAW1' },
-    { pattern: /raw3|sales|판매/i, rawId: 'RAW3' },
-    { pattern: /raw4|허가현황|license/i, rawId: 'RAW4' }
-];
+/**
+ * RAW ID 설명 조회 (모듈에서 가져옴)
+ * @param {string} rawId - RAW ID
+ * @returns {string} RAW ID 설명 또는 rawId 자체
+ */
+const getRawIdDescription = (rawId) => {
+    const module = getRawIdModule();
+    if (!module || !module.RAW_ID_DEFINITIONS) return rawId;
+    const def = module.RAW_ID_DEFINITIONS[rawId];
+    return def?.description || rawId;
+};
+
+/**
+ * 모든 RAW ID 목록 (LLM 프롬프트용)
+ * @returns {string} RAW ID 목록 문자열
+ */
+const getRawIdListForPrompt = () => {
+    const module = getRawIdModule();
+    if (!module || !module.RAW_ID_DEFINITIONS) return '';
+    return Object.entries(module.RAW_ID_DEFINITIONS)
+        .map(([id, def]) => `- ${id}: ${def.description}`)
+        .join('\n');
+};
 
 class FileHandler {
     constructor() {
@@ -450,7 +444,7 @@ class FileHandler {
                     fileName: file.name,
                     fileSize: file.size,
                     rawId: ruleMatch,
-                    rawIdName: RAW_ID_DEFINITIONS[ruleMatch],
+                    rawIdName: getRawIdDescription(ruleMatch),
                     needsUserInput: false,
                     method: 'rule-based',
                     classifiedAt: DateHelper.formatISO()
@@ -480,7 +474,7 @@ class FileHandler {
                             fileName: file.name,
                             fileSize: file.size,
                             rawId: llmResult.rawId,
-                            rawIdName: RAW_ID_DEFINITIONS[llmResult.rawId],
+                            rawIdName: getRawIdDescription(llmResult.rawId),
                             needsUserInput: false,
                             method: 'llm',
                             classifiedAt: DateHelper.formatISO()
@@ -521,15 +515,18 @@ class FileHandler {
     }
 
     /**
-     * 파일명 기반 RAW ID 매칭
+     * 파일명 기반 RAW ID 매칭 (RawIdDetector 모듈 사용)
      */
     matchByFilename(filename) {
-        for (const rule of RAW_ID_PATTERNS) {
-            if (rule.pattern.test(filename)) {
-                return rule.rawId;
-            }
-        }
-        return null;
+        const module = getRawIdModule();
+        if (!module) return null;
+
+        // 1. 상세 패턴 매칭 시도
+        const detailedMatch = module.detectRawIdDetailed?.(filename);
+        if (detailedMatch) return detailedMatch;
+
+        // 2. 기본 패턴 매칭 시도
+        return module.detectRawIdFromFileName?.(filename) || null;
     }
 
     /**
@@ -543,7 +540,7 @@ class FileHandler {
 ${textPreview.substring(0, 1500)}
 
 RAW ID 목록:
-${Object.entries(RAW_ID_DEFINITIONS).map(([id, name]) => `- ${id}: ${name}`).join('\n')}
+${getRawIdListForPrompt()}
 
 응답 형식 (JSON만 출력):
 {"rawId": "RAW1", "confidence": 0.95, "reason": "첨부문서 관련 내용"}
@@ -703,5 +700,5 @@ const fileHandler = new FileHandler();
 if (typeof window !== 'undefined') {
     window.fileHandler = fileHandler;
     window.FileHandler = FileHandler;
-    window.RAW_ID_DEFINITIONS = RAW_ID_DEFINITIONS;
+    // RAW_ID_DEFINITIONS는 RawIdDetector.RAW_ID_DEFINITIONS 사용 (중복 제거)
 }
