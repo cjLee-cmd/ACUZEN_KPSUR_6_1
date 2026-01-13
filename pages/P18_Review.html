@@ -1501,6 +1501,26 @@
         const draftReport = Storage.get('draftReport') || {};
         let generatedSections = draftReport.sections || {};
 
+        // Fallback: 'generatedSections' localStorage 키에서도 로드 시도
+        if (Object.keys(generatedSections).length === 0) {
+            const storedSections = Storage.get('generatedSections');
+            if (storedSections && typeof storedSections === 'object') {
+                // ID 형식 변환: '00' → 'S00' 또는 그대로 사용
+                Object.entries(storedSections).forEach(([key, value]) => {
+                    const normalizedKey = key.startsWith('S') ? key : `S${key.padStart(2, '0')}`;
+                    // value가 객체인 경우 (새 형식: {id, name, content, ...})
+                    if (value && typeof value === 'object' && value.content) {
+                        generatedSections[normalizedKey] = value;
+                    }
+                    // value가 문자열인 경우 (구 형식: 마크다운 직접)
+                    else if (typeof value === 'string') {
+                        generatedSections[normalizedKey] = { content: value };
+                    }
+                });
+                console.log('[P18] ✅ Loaded sections from generatedSections localStorage:', Object.keys(generatedSections).length);
+            }
+        }
+
         // DB에서 섹션 로드 함수
         async function loadSectionsFromDB() {
             if (!reportId) {
