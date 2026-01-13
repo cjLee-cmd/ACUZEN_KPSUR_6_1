@@ -984,6 +984,7 @@
     <script src="../utils/user-menu.js"></script>
     <script src="../js/utils/raw-id-detector.js"></script>
     <script src="../js/config.js"></script>
+    <script src="../js/file-storage.js"></script>
     <script src="../js/supabase-client.js"></script>
     <script src="../js/auth.js"></script>
     <!-- Core Module (SEALED - DO NOT MODIFY without authorization) -->
@@ -1082,6 +1083,21 @@
 
             if (!reportId) {
                 console.log('📌 reportId 없음 - 새 세션');
+                // reportId가 없어도 IndexedDB에 파일이 있으면 복원 시도
+                if (window.fileStorage) {
+                    try {
+                        const idbCount = await window.fileStorage.getFileCount();
+                        if (idbCount > 0) {
+                            console.log(`📌 IndexedDB에 ${idbCount}개 파일 발견 - 복원 시도`);
+                            const restored = await restoreStateFromLocalStorage();
+                            if (restored) {
+                                showToast(`이전 세션의 ${idbCount}개 파일을 복원했습니다`, 'success');
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('⚠️ IndexedDB 확인 실패:', err);
+                    }
+                }
                 return;
             }
 
@@ -1116,24 +1132,55 @@
         async function restoreStateFromUserInputs(stage2Data) {
             console.log('📦 user_inputs에서 복원:', stage2Data);
 
+            // IndexedDB에서 파일 로드 시도
+            let indexedDBFiles = [];
+            if (window.fileStorage) {
+                try {
+                    indexedDBFiles = await window.fileStorage.loadAllFiles();
+                    console.log(`💾 IndexedDB에서 ${indexedDBFiles.length}개 파일 로드`);
+                } catch (err) {
+                    console.warn('⚠️ IndexedDB 로드 실패:', err);
+                }
+            }
+
+            // IndexedDB 파일을 이름으로 매핑
+            const indexedDBMap = {};
+            indexedDBFiles.forEach(f => {
+                indexedDBMap[f.name] = f;
+            });
+
             // Step 1-2 파일 복원
             if (stage2Data.uploadedFiles) {
-                Object.keys(uploadedFiles).forEach(zone => {
+                for (const zone of Object.keys(uploadedFiles)) {
                     if (stage2Data.uploadedFiles[zone]) {
-                        uploadedFiles[zone] = stage2Data.uploadedFiles[zone].map(file => ({
-                            ...file,
-                            isRestored: true  // UI 표시용 플래그
-                        }));
+                        uploadedFiles[zone] = [];
+                        for (const file of stage2Data.uploadedFiles[zone]) {
+                            const idbFile = indexedDBMap[file.name];
+                            uploadedFiles[zone].push({
+                                ...file,
+                                file: idbFile?.file || null,
+                                arrayBuffer: idbFile ? await getArrayBufferFromFile(idbFile.file) : null,
+                                isRestored: true,
+                                hasIndexedDBData: !!idbFile
+                            });
+                        }
                     }
-                });
+                }
             }
 
             // Step 3 파일 복원
             if (stage2Data.step3Files) {
                 step3Files.length = 0;
-                stage2Data.step3Files.forEach(file => {
-                    step3Files.push({ ...file, isRestored: true });
-                });
+                for (const file of stage2Data.step3Files) {
+                    const idbFile = indexedDBMap[file.name];
+                    step3Files.push({
+                        ...file,
+                        file: idbFile?.file || null,
+                        arrayBuffer: idbFile ? await getArrayBufferFromFile(idbFile.file) : null,
+                        isRestored: true,
+                        hasIndexedDBData: !!idbFile
+                    });
+                }
             }
 
             // 라디오 버튼 상태 복원
@@ -1149,6 +1196,12 @@
             // UI 갱신
             renderAllFileLists();
             updateAllUploadButtons();
+
+            // 복원 결과 로깅
+            const totalFiles = Object.values(uploadedFiles).flat().length + step3Files.length;
+            const filesWithData = Object.values(uploadedFiles).flat().filter(f => f.hasIndexedDBData).length +
+                                  step3Files.filter(f => f.hasIndexedDBData).length;
+            console.log(`✅ user_inputs에서 복원 완료: ${totalFiles}개 파일 (${filesWithData}개 원본 데이터 복원)`);
         }
 
         async function restoreStateFromLocalStorage() {
@@ -1158,35 +1211,112 @@
             const savedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
             const savedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
 
+            // IndexedDB에서 파일 로드 시도
+            let indexedDBFiles = [];
+            if (window.fileStorage) {
+                try {
+                    indexedDBFiles = await window.fileStorage.loadAllFiles();
+                    console.log(`💾 IndexedDB에서 ${indexedDBFiles.length}개 파일 로드`);
+                } catch (err) {
+                    console.warn('⚠️ IndexedDB 로드 실패:', err);
+                }
+            }
+
+            // IndexedDB 파일을 이름으로 매핑
+            const indexedDBMap = {};
+            indexedDBFiles.forEach(f => {
+                indexedDBMap[f.name] = f;
+            });
+
             if (Array.isArray(savedFiles) && savedFiles.length > 0) {
                 // uploadedFiles 배열 형식인 경우 (이전 저장 형식)
-                savedFiles.forEach(file => {
+                for (const file of savedFiles) {
                     const zoneId = file.zoneId;
+                    const idbFile = indexedDBMap[file.fileName];
+
                     if (zoneId === 'step3') {
                         step3Files.push({
+                            id: file.id || idbFile?.id,
                             name: file.fileName,
                             size: file.fileSize,
                             rawId: file.rawId,
-                            isRestored: true
+                            file: idbFile?.file || null,
+                            arrayBuffer: idbFile ? await getArrayBufferFromFile(idbFile.file) : null,
+                            isRestored: true,
+                            hasIndexedDBData: !!idbFile
                         });
                     } else if (uploadedFiles[zoneId]) {
                         uploadedFiles[zoneId].push({
+                            id: file.id || idbFile?.id,
                             name: file.fileName,
                             size: file.fileSize,
                             rawIdCandidates: rawIdMapping[zoneId] || [],
-                            isRestored: true
+                            file: idbFile?.file || null,
+                            arrayBuffer: idbFile ? await getArrayBufferFromFile(idbFile.file) : null,
+                            isRestored: true,
+                            hasIndexedDBData: !!idbFile
                         });
                     }
-                });
+                }
 
                 renderAllFileLists();
                 updateAllUploadButtons();
-                console.log('✅ localStorage에서 복원 완료:', savedFiles.length, '개 파일');
+
+                const restoredWithData = savedFiles.filter(f => indexedDBMap[f.fileName]).length;
+                console.log(`✅ localStorage에서 복원 완료: ${savedFiles.length}개 파일 (${restoredWithData}개 원본 데이터 복원)`);
                 return true;
             }
 
-            console.log('📌 localStorage에 저장된 파일 없음');
+            // localStorage에 없어도 IndexedDB에 있으면 복원 시도
+            if (indexedDBFiles.length > 0) {
+                console.log('📦 IndexedDB에서 직접 복원 시도');
+                for (const idbFile of indexedDBFiles) {
+                    const zoneId = idbFile.rawId ? 'step3' : (idbFile.zoneId || 'endPeriod');
+                    const arrayBuffer = await getArrayBufferFromFile(idbFile.file);
+
+                    if (zoneId === 'step3' || idbFile.rawId) {
+                        step3Files.push({
+                            id: idbFile.id,
+                            name: idbFile.name,
+                            size: idbFile.size,
+                            rawId: idbFile.rawId,
+                            file: idbFile.file,
+                            arrayBuffer: arrayBuffer,
+                            isRestored: true,
+                            hasIndexedDBData: true
+                        });
+                    } else if (uploadedFiles[zoneId]) {
+                        uploadedFiles[zoneId].push({
+                            id: idbFile.id,
+                            name: idbFile.name,
+                            size: idbFile.size,
+                            rawIdCandidates: rawIdMapping[zoneId] || [],
+                            file: idbFile.file,
+                            arrayBuffer: arrayBuffer,
+                            isRestored: true,
+                            hasIndexedDBData: true
+                        });
+                    }
+                }
+                renderAllFileLists();
+                updateAllUploadButtons();
+                console.log(`✅ IndexedDB에서 복원 완료: ${indexedDBFiles.length}개 파일`);
+                return true;
+            }
+
+            console.log('📌 localStorage와 IndexedDB에 저장된 파일 없음');
             return false;
+        }
+
+        // ArrayBuffer 획득 헬퍼 함수
+        async function getArrayBufferFromFile(file) {
+            if (!file) return null;
+            try {
+                return await file.arrayBuffer();
+            } catch (err) {
+                console.warn('⚠️ ArrayBuffer 변환 실패:', err);
+                return null;
+            }
         }
 
         // 헬퍼 함수들
@@ -1231,6 +1361,15 @@
                 uploadedFiles[zone] = [];
             });
             step3Files.length = 0;
+
+            // IndexedDB도 클리어
+            if (window.fileStorage) {
+                window.fileStorage.clearAll().then(() => {
+                    console.log('💾 IndexedDB 클리어 완료');
+                }).catch(err => {
+                    console.warn('⚠️ IndexedDB 클리어 실패:', err);
+                });
+            }
         }
 
         function initDarkMode() {
@@ -1342,7 +1481,11 @@
                     console.warn(`⚠️ ArrayBuffer 읽기 실패 (나중에 재시도): ${file.name}`, err);
                 }
 
+                // 파일 ID 생성 (IndexedDB 저장용)
+                const fileId = `${zoneId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
                 uploadedFiles[zoneId].push({
+                    id: fileId,
                     file: file,
                     arrayBuffer: arrayBuffer,
                     name: file.name,
@@ -1350,6 +1493,23 @@
                     type: file.type,
                     rawIdCandidates: rawIdMapping[zoneId] || []
                 });
+
+                // IndexedDB에 파일 저장 (백그라운드)
+                if (window.fileStorage && arrayBuffer) {
+                    window.fileStorage.saveFile({
+                        id: fileId,
+                        file: file,
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        rawId: null,
+                        zoneId: zoneId
+                    }).then(() => {
+                        console.log(`💾 IndexedDB 저장 완료: ${file.name}`);
+                    }).catch(err => {
+                        console.warn(`⚠️ IndexedDB 저장 실패: ${file.name}`, err);
+                    });
+                }
             }
 
             // UI 업데이트
@@ -1373,9 +1533,17 @@
         }
 
         function removeFile(zoneId, index) {
+            const removedFile = uploadedFiles[zoneId][index];
             uploadedFiles[zoneId].splice(index, 1);
             renderZoneFiles(zoneId);
             updateUploadButton(zoneId);
+
+            // IndexedDB에서도 삭제
+            if (window.fileStorage && removedFile?.id) {
+                window.fileStorage.deleteFile(removedFile.id).catch(err => {
+                    console.warn('⚠️ IndexedDB 파일 삭제 실패:', err);
+                });
+            }
         }
 
         function updateUploadButton(zoneId) {
@@ -1412,7 +1580,11 @@
                     ? window.RawIdDetector.detectStep3RawId(file.name, allowedRawIds, step3RawIdOptions[0].value)
                     : step3RawIdOptions[0].value;
 
+                // 파일 ID 생성 (IndexedDB 저장용)
+                const fileId = `step3_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
                 step3Files.push({
+                    id: fileId,
                     file: file,
                     arrayBuffer: arrayBuffer,
                     name: file.name,
@@ -1420,6 +1592,23 @@
                     type: file.type,
                     rawId: detectedRawId
                 });
+
+                // IndexedDB에 파일 저장 (백그라운드)
+                if (window.fileStorage && arrayBuffer) {
+                    window.fileStorage.saveFile({
+                        id: fileId,
+                        file: file,
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        rawId: detectedRawId,
+                        zoneId: 'step3'
+                    }).then(() => {
+                        console.log(`💾 IndexedDB 저장 완료: ${file.name}`);
+                    }).catch(err => {
+                        console.warn(`⚠️ IndexedDB 저장 실패: ${file.name}`, err);
+                    });
+                }
             }
 
             renderStep3FileList();
@@ -1467,8 +1656,16 @@
         }
 
         function removeStep3File(index) {
+            const removedFile = step3Files[index];
             step3Files.splice(index, 1);
             renderStep3FileList();
+
+            // IndexedDB에서도 삭제
+            if (window.fileStorage && removedFile?.id) {
+                window.fileStorage.deleteFile(removedFile.id).catch(err => {
+                    console.warn('⚠️ IndexedDB 파일 삭제 실패:', err);
+                });
+            }
         }
 
         function getFileIcon(filename) {

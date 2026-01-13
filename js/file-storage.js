@@ -67,6 +67,7 @@ class FileStorage {
                     size: fileData.size || fileData.file.size,
                     type: fileData.type || fileData.file.type,
                     rawId: fileData.rawId,
+                    zoneId: fileData.zoneId,  // Zone ID 추가
                     arrayBuffer: arrayBuffer,
                     savedAt: new Date().toISOString()
                 };
@@ -221,6 +222,7 @@ class FileStorage {
                         size: record.size,
                         type: record.type,
                         rawId: record.rawId,
+                        zoneId: record.zoneId,  // Zone ID 추가
                         savedAt: record.savedAt
                     };
                 });
