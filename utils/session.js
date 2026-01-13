@@ -228,8 +228,6 @@ if (typeof window !== 'undefined') {
     window.checkNavigationSecurity = checkNavigationSecurity;
     window.setNavigationFlag = setNavigationFlag;
 
-    // 페이지 로드 시 자동 보안 체크 (리프레시 감지)
-    document.addEventListener('DOMContentLoaded', () => {
-        checkNavigationSecurity();
-    });
+    // 자동 보안 체크 제거 - page-guard.js가 세션 검증을 담당
+    // (중복 체크로 인한 예측 불가능한 리다이렉트 방지)
 }

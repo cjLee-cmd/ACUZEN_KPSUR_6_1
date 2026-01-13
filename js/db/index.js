@@ -230,12 +230,43 @@
         // Direct Query Access
         // ==========================================
 
+        /**
+         * 테이블 쿼리 빌더 반환 (기존 코드 호환용)
+         * 주의: init()이 먼저 호출되어야 함
+         * @param {string} table - 테이블명
+         * @returns {QueryBuilder}
+         */
+        from(table) {
+            const client = this.core.getClient();
+            if (!client) {
+                console.error('❌ Supabase client not initialized. Call init() first.');
+                throw new Error('Supabase client not initialized');
+            }
+            return client.from(table);
+        }
+
         async query(table) {
             return this.core.query(table);
         }
 
         getClient() {
             return this.core.getClient();
+        }
+
+        /**
+         * 원본 Supabase 클라이언트 접근 (기존 코드 호환용)
+         * @returns {SupabaseClient}
+         */
+        get client() {
+            return this.core.getClient();
+        }
+
+        /**
+         * auth 객체 직접 접근 (기존 코드 호환용)
+         */
+        get authClient() {
+            const client = this.core.getClient();
+            return client ? client.auth : null;
         }
 
         isInitialized() {

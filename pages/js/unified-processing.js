@@ -757,36 +757,7 @@
         return `# ${fileInfo.name}\n\n지원하지 않는 파일 형식입니다.`;
     }
 
-    async function convertExcelToMarkdown(fileInfo) {
-        const arrayBuffer = fileInfo.arrayBuffer || await fileInfo.file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        let markdown = `# ${fileInfo.name}\n\n`;
-
-        workbook.SheetNames.forEach(sheetName => {
-            const sheet = workbook.Sheets[sheetName];
-            const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-            if (data.length === 0) return;
-
-            markdown += `## ${sheetName}\n\n`;
-
-            // 헤더
-            if (data[0]) {
-                markdown += '| ' + data[0].map(c => c || '').join(' | ') + ' |\n';
-                markdown += '| ' + data[0].map(() => '---').join(' | ') + ' |\n';
-            }
-
-            // 데이터
-            for (let i = 1; i < data.length; i++) {
-                if (data[i] && data[i].length > 0) {
-                    markdown += '| ' + data[i].map(c => c || '').join(' | ') + ' |\n';
-                }
-            }
-            markdown += '\n';
-        });
-
-        return markdown;
-    }
+    // NOTE: Excel 변환은 외부 모듈 사용 (markdown-converter.js의 convertExcelToMarkdownTable)
 
     async function convertDocxToMarkdown(fileInfo) {
         const arrayBuffer = fileInfo.arrayBuffer || await fileInfo.file.arrayBuffer();

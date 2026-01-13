@@ -26,6 +26,7 @@
  * ║  - 2026-01-07: Initial creation (v1.0.0)                                   ║
  * ║  - 2026-01-08: Add arrayBuffer validation in readFile (v1.0.1)            ║
  * ║  - 2026-01-08: Fix detached ArrayBuffer in PDF processing (v1.0.2)        ║
+ * ║  - 2026-01-13: Add Excel formula calculation support (v1.0.3)             ║
  * ║                                                                            ║
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
@@ -52,7 +53,7 @@
     // MODULE INTEGRITY CHECK
     // ═══════════════════════════════════════════════════════════════════════════
 
-    const MODULE_VERSION = '1.0.2';
+    const MODULE_VERSION = '1.0.3';
     const MODULE_SIGNATURE = 'KPSUR_MD_CORE_2026';
     const LOCKED = true;
 
@@ -105,6 +106,116 @@
         const koreanChars = (text.match(/[가-힣]/g) || []).length;
         const totalChars = text.trim().length;
         return totalChars > 0 ? (koreanChars / totalChars) * 100 : 0;
+    }
+
+    /**
+     * Parse CSV line handling quoted fields
+     * @private
+     */
+    function _parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    /**
+     * Evaluate =SUM() formula in CSV content
+     * Handles row-wise and column-wise sum formulas
+     * @private
+     */
+    function _evaluateExcelFormulas(csvContent) {
+        const lines = csvContent.split('\n');
+        const data = lines.map(line => _parseCSVLine(line));
+
+        // Process each cell and evaluate SUM formulas
+        for (let row = 0; row < data.length; row++) {
+            for (let col = 0; col < data[row].length; col++) {
+                const cell = data[row][col];
+                if (typeof cell === 'string' && /^=\s*sum\s*\(/i.test(cell.trim())) {
+                    const calculated = _calculateSumFormula(cell, data, row, col);
+                    if (calculated !== null) {
+                        data[row][col] = calculated.toString();
+                    }
+                }
+            }
+        }
+
+        // Convert back to CSV
+        return data.map(row => row.map(cell => {
+            // Escape commas and quotes in cells
+            if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+                return '"' + cell.replace(/"/g, '""') + '"';
+            }
+            return cell;
+        }).join(',')).join('\n');
+    }
+
+    /**
+     * Calculate SUM formula value
+     * @private
+     */
+    function _calculateSumFormula(formula, data, currentRow, currentCol) {
+        try {
+            // Extract range from formula: =SUM(A1:A10) or =sum(B2:D2)
+            const match = formula.match(/=\s*sum\s*\(\s*([A-Z]+)(\d+)\s*:\s*([A-Z]+)(\d+)\s*\)/i);
+            if (!match) {
+                // Try to sum all numeric values in the same row (left of current cell)
+                // This handles cases like =SUM() without explicit range in Total columns
+                let sum = 0;
+                for (let c = 0; c < currentCol; c++) {
+                    const val = parseFloat(data[currentRow][c]);
+                    if (!isNaN(val)) {
+                        sum += val;
+                    }
+                }
+                return sum;
+            }
+
+            const startCol = _colLetterToIndex(match[1]);
+            const startRow = parseInt(match[2], 10) - 1; // 0-indexed
+            const endCol = _colLetterToIndex(match[3]);
+            const endRow = parseInt(match[4], 10) - 1;
+
+            let sum = 0;
+            for (let r = startRow; r <= endRow && r < data.length; r++) {
+                for (let c = startCol; c <= endCol && c < (data[r] || []).length; c++) {
+                    const val = parseFloat(data[r][c]);
+                    if (!isNaN(val)) {
+                        sum += val;
+                    }
+                }
+            }
+            return sum;
+        } catch (e) {
+            console.warn(`⚠️ Formula calculation failed: ${formula}`, e);
+            return null;
+        }
+    }
+
+    /**
+     * Convert column letter to index (A=0, B=1, ..., Z=25, AA=26, ...)
+     * @private
+     */
+    function _colLetterToIndex(letters) {
+        let index = 0;
+        for (let i = 0; i < letters.length; i++) {
+            index = index * 26 + (letters.charCodeAt(i) - 'A'.charCodeAt(0) + 1);
+        }
+        return index - 1;
     }
 
     /**
@@ -249,14 +360,32 @@
         }
 
         const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const workbook = XLSX.read(arrayBuffer, {
+            type: 'array',
+            cellFormula: true,  // Preserve formula information
+            sheetStubs: true    // Include stub cells (cells with formulas but no cached value)
+        });
         let text = '';
+        let formulasCalculated = 0;
 
         workbook.SheetNames.forEach(sheetName => {
             const sheet = workbook.Sheets[sheetName];
+
+            // Calculate formulas before converting to CSV
+            formulasCalculated += _calculateSheetFormulas(sheet);
+
             text += `## ${sheetName}\n\n`;
-            text += XLSX.utils.sheet_to_csv(sheet) + '\n\n';
+
+            // Convert to CSV (now with calculated values)
+            let csvContent = XLSX.utils.sheet_to_csv(sheet);
+
+            // Also check for any formula text patterns in CSV (fallback)
+            csvContent = _evaluateExcelFormulas(csvContent);
+
+            text += csvContent + '\n\n';
         });
+
+        console.log(`✅ Excel processed: ${file.name} (${formulasCalculated} formulas calculated)`);
 
         return {
             text,
@@ -264,6 +393,119 @@
             sheets: workbook.SheetNames.length,
             sheetNames: workbook.SheetNames
         };
+    }
+
+    /**
+     * Calculate formulas in a sheet (modifies sheet in place)
+     * Supports: SUM, AVERAGE, COUNT, MIN, MAX
+     * @private
+     */
+    function _calculateSheetFormulas(sheet) {
+        let count = 0;
+        const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+
+        // First pass: collect all cell values
+        const cellValues = {};
+        for (let r = range.s.r; r <= range.e.r; r++) {
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                const addr = XLSX.utils.encode_cell({ r, c });
+                const cell = sheet[addr];
+                if (cell && cell.v !== undefined && cell.t === 'n') {
+                    cellValues[addr] = cell.v;
+                }
+            }
+        }
+
+        // Second pass: calculate formulas
+        for (let r = range.s.r; r <= range.e.r; r++) {
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                const addr = XLSX.utils.encode_cell({ r, c });
+                const cell = sheet[addr];
+
+                // Check if cell has a formula
+                if (cell && cell.f) {
+                    const formula = cell.f.toUpperCase();
+                    let result = null;
+
+                    // Parse SUM formula
+                    if (formula.startsWith('SUM(')) {
+                        result = _calculateRangeFormula(formula, 'SUM', cellValues, sheet);
+                    }
+                    // Parse AVERAGE formula
+                    else if (formula.startsWith('AVERAGE(')) {
+                        result = _calculateRangeFormula(formula, 'AVERAGE', cellValues, sheet);
+                    }
+                    // Parse COUNT formula
+                    else if (formula.startsWith('COUNT(')) {
+                        result = _calculateRangeFormula(formula, 'COUNT', cellValues, sheet);
+                    }
+                    // Parse MIN formula
+                    else if (formula.startsWith('MIN(')) {
+                        result = _calculateRangeFormula(formula, 'MIN', cellValues, sheet);
+                    }
+                    // Parse MAX formula
+                    else if (formula.startsWith('MAX(')) {
+                        result = _calculateRangeFormula(formula, 'MAX', cellValues, sheet);
+                    }
+
+                    if (result !== null) {
+                        cell.v = result;
+                        cell.t = 'n';  // Set type to number
+                        count++;
+                    }
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Calculate range-based formula (SUM, AVERAGE, etc.)
+     * @private
+     */
+    function _calculateRangeFormula(formula, funcName, cellValues, sheet) {
+        try {
+            // Extract range: SUM(A1:A10) or SUM(A1:B10)
+            const rangeMatch = formula.match(new RegExp(funcName + '\\(([A-Z]+\\d+):([A-Z]+\\d+)\\)'));
+            if (!rangeMatch) return null;
+
+            const startCell = XLSX.utils.decode_cell(rangeMatch[1]);
+            const endCell = XLSX.utils.decode_cell(rangeMatch[2]);
+
+            const values = [];
+            for (let r = startCell.r; r <= endCell.r; r++) {
+                for (let c = startCell.c; c <= endCell.c; c++) {
+                    const addr = XLSX.utils.encode_cell({ r, c });
+                    const cell = sheet[addr];
+                    if (cell && cell.t === 'n' && typeof cell.v === 'number') {
+                        values.push(cell.v);
+                    } else if (cellValues[addr] !== undefined) {
+                        values.push(cellValues[addr]);
+                    }
+                }
+            }
+
+            if (values.length === 0) return 0;
+
+            switch (funcName) {
+                case 'SUM':
+                    return values.reduce((a, b) => a + b, 0);
+                case 'AVERAGE':
+                    return values.reduce((a, b) => a + b, 0) / values.length;
+                case 'COUNT':
+                    return values.length;
+                case 'MIN':
+                    return Math.min(...values);
+                case 'MAX':
+                    return Math.max(...values);
+                default:
+                    return null;
+            }
+        } catch (e) {
+            console.warn(`⚠️ Formula calculation error: ${formula}`, e);
+            return null;
+        }
     }
 
     /**

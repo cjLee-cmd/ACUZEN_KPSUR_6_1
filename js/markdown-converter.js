@@ -501,6 +501,163 @@ class MarkdownConverter {
 
         return markdown;
     }
+
+    // ==========================================
+    // Excel Formula Calculation Methods
+    // ==========================================
+
+    /**
+     * Excel 파일을 마크다운 테이블로 변환 (수식 계산 포함)
+     * @param {Object} fileInfo - { file?, arrayBuffer?, name }
+     * @param {Object} options - { calculateFormulas: true, includeSheetName: true }
+     * @returns {Promise<{markdown: string, formulasCalculated: number, sheets: number}>}
+     */
+    async convertExcelToMarkdownTable(fileInfo, options = {}) {
+        const { calculateFormulas = true, includeSheetName = true } = options;
+
+        if (typeof XLSX === 'undefined') {
+            throw new Error('XLSX 라이브러리가 로드되지 않았습니다.');
+        }
+
+        const arrayBuffer = fileInfo.arrayBuffer || await fileInfo.file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, {
+            type: 'array',
+            cellFormula: true,
+            sheetStubs: true
+        });
+
+        let markdown = `# ${fileInfo.name}\n\n`;
+        let totalFormulas = 0;
+
+        workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+
+            if (calculateFormulas) {
+                totalFormulas += this._calculateSheetFormulas(sheet);
+            }
+
+            if (includeSheetName) {
+                markdown += `## ${sheetName}\n\n`;
+            }
+            markdown += this._sheetToMarkdownTable(sheet) + '\n';
+        });
+
+        if (totalFormulas > 0) {
+            console.log(`✅ [MarkdownConverter] Excel 수식 ${totalFormulas}개 계산 완료: ${fileInfo.name}`);
+        }
+
+        return {
+            markdown,
+            formulasCalculated: totalFormulas,
+            sheets: workbook.SheetNames.length
+        };
+    }
+
+    /**
+     * 시트 내 수식 계산 (SUM, AVERAGE, COUNT, MIN, MAX)
+     * @private
+     */
+    _calculateSheetFormulas(sheet) {
+        let count = 0;
+        const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+        const cellValues = {};
+
+        // 1차: 모든 셀 값 수집
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = sheet[addr];
+                if (cell && cell.v !== undefined && cell.t === 'n') {
+                    cellValues[addr] = cell.v;
+                }
+            }
+        }
+
+        // 2차: 수식 계산
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = sheet[addr];
+
+                if (cell && cell.f) {
+                    const result = this._calculateRangeFormula(cell.f, cellValues, sheet);
+                    if (result !== null) {
+                        cell.v = result;
+                        cell.t = 'n';
+                        cellValues[addr] = result;
+                        count++;
+                    }
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * 범위 기반 수식 계산
+     * @private
+     */
+    _calculateRangeFormula(formula, cellValues, sheet) {
+        const upper = formula.toUpperCase();
+        const funcs = ['SUM', 'AVERAGE', 'COUNT', 'MIN', 'MAX'];
+        let funcName = null;
+
+        for (const f of funcs) {
+            if (upper.startsWith(f + '(')) {
+                funcName = f;
+                break;
+            }
+        }
+        if (!funcName) return null;
+
+        const rangeMatch = formula.match(/\(([A-Z]+\d+):([A-Z]+\d+)\)/i);
+        if (!rangeMatch) return null;
+
+        const start = XLSX.utils.decode_cell(rangeMatch[1]);
+        const end = XLSX.utils.decode_cell(rangeMatch[2]);
+        const values = [];
+
+        for (let R = start.r; R <= end.r; R++) {
+            for (let C = start.c; C <= end.c; C++) {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const val = cellValues[addr] ?? sheet[addr]?.v;
+                if (typeof val === 'number') values.push(val);
+            }
+        }
+
+        if (values.length === 0) return funcName === 'COUNT' ? 0 : null;
+
+        switch (funcName) {
+            case 'SUM': return values.reduce((a, b) => a + b, 0);
+            case 'AVERAGE': return values.reduce((a, b) => a + b, 0) / values.length;
+            case 'COUNT': return values.length;
+            case 'MIN': return Math.min(...values);
+            case 'MAX': return Math.max(...values);
+            default: return null;
+        }
+    }
+
+    /**
+     * 시트를 마크다운 테이블로 변환
+     * @private
+     */
+    _sheetToMarkdownTable(sheet) {
+        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (data.length === 0) return '';
+
+        let markdown = '';
+        if (data[0]) {
+            markdown += '| ' + data[0].map(c => c ?? '').join(' | ') + ' |\n';
+            markdown += '| ' + data[0].map(() => '---').join(' | ') + ' |\n';
+        }
+        for (let i = 1; i < data.length; i++) {
+            if (data[i]?.length > 0) {
+                markdown += '| ' + data[i].map(c => c ?? '').join(' | ') + ' |\n';
+            }
+        }
+        return markdown;
+    }
 }
 
 // Singleton instance

@@ -340,6 +340,7 @@ class FileHandler {
 
     /**
      * Excel 파일 읽기 (SheetJS 사용)
+     * v1.1.0 - Excel 수식 계산 지원 추가 (SUM, AVERAGE, COUNT, MIN, MAX)
      */
     async readExcel(file) {
         const arrayBuffer = await file.arrayBuffer();
@@ -347,12 +348,21 @@ class FileHandler {
         // SheetJS (XLSX)가 로드되었는지 확인
         if (typeof XLSX !== 'undefined') {
             try {
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const workbook = XLSX.read(arrayBuffer, {
+                    type: 'array',
+                    cellFormula: true,   // 수식 정보 보존
+                    sheetStubs: true     // 캐시된 값 없는 수식 셀 포함
+                });
                 let fullText = '';
                 let sheets = {};
+                let totalFormulasCalculated = 0;
 
                 workbook.SheetNames.forEach(sheetName => {
                     const worksheet = workbook.Sheets[sheetName];
+
+                    // 수식 계산 실행
+                    const formulaCount = this._calculateSheetFormulas(worksheet);
+                    totalFormulasCalculated += formulaCount;
 
                     // 마크다운 테이블 형식으로 변환
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -376,12 +386,17 @@ class FileHandler {
                     }
                 });
 
+                if (totalFormulasCalculated > 0) {
+                    console.log(`✅ [FileHandler] Excel 수식 ${totalFormulasCalculated}개 계산 완료: ${file.name}`);
+                }
+
                 return {
                     text: fullText,
                     fileName: file.name,
                     fileType: 'excel',
                     sheets: sheets,
-                    sheetNames: workbook.SheetNames
+                    sheetNames: workbook.SheetNames,
+                    formulasCalculated: totalFormulasCalculated
                 };
             } catch (xlsxError) {
                 console.warn('Excel parsing error:', xlsxError.message);
@@ -395,6 +410,99 @@ class FileHandler {
             fileType: 'excel',
             arrayBuffer: arrayBuffer
         };
+    }
+
+    /**
+     * 시트 내 수식 계산 (SUM, AVERAGE, COUNT, MIN, MAX 지원)
+     * @private
+     */
+    _calculateSheetFormulas(sheet) {
+        let count = 0;
+        const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+
+        // 1차: 모든 셀 값 수집
+        const cellValues = {};
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = sheet[addr];
+                if (cell && cell.v !== undefined && cell.t === 'n') {
+                    cellValues[addr] = cell.v;
+                }
+            }
+        }
+
+        // 2차: 수식 계산
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = sheet[addr];
+
+                if (cell && cell.f) {
+                    const formula = cell.f.toUpperCase();
+                    let result = null;
+
+                    if (formula.startsWith('SUM(')) {
+                        result = this._calculateRangeFormula(cell.f, 'SUM', cellValues, sheet);
+                    } else if (formula.startsWith('AVERAGE(')) {
+                        result = this._calculateRangeFormula(cell.f, 'AVERAGE', cellValues, sheet);
+                    } else if (formula.startsWith('COUNT(')) {
+                        result = this._calculateRangeFormula(cell.f, 'COUNT', cellValues, sheet);
+                    } else if (formula.startsWith('MIN(')) {
+                        result = this._calculateRangeFormula(cell.f, 'MIN', cellValues, sheet);
+                    } else if (formula.startsWith('MAX(')) {
+                        result = this._calculateRangeFormula(cell.f, 'MAX', cellValues, sheet);
+                    }
+
+                    if (result !== null) {
+                        cell.v = result;
+                        cell.t = 'n';
+                        cellValues[addr] = result;
+                        count++;
+                    }
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * 범위 기반 수식 계산
+     * @private
+     */
+    _calculateRangeFormula(formula, funcName, cellValues, sheet) {
+        const rangeMatch = formula.match(/\(([A-Z]+\d+):([A-Z]+\d+)\)/i);
+        if (!rangeMatch) return null;
+
+        const startCell = XLSX.utils.decode_cell(rangeMatch[1]);
+        const endCell = XLSX.utils.decode_cell(rangeMatch[2]);
+        const values = [];
+
+        for (let R = startCell.r; R <= endCell.r; R++) {
+            for (let C = startCell.c; C <= endCell.c; C++) {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                if (cellValues[addr] !== undefined) {
+                    values.push(cellValues[addr]);
+                } else {
+                    const cell = sheet[addr];
+                    if (cell && cell.v !== undefined && cell.t === 'n') {
+                        values.push(cell.v);
+                    }
+                }
+            }
+        }
+
+        if (values.length === 0) return funcName === 'COUNT' ? 0 : null;
+
+        switch (funcName) {
+            case 'SUM': return values.reduce((a, b) => a + b, 0);
+            case 'AVERAGE': return values.reduce((a, b) => a + b, 0) / values.length;
+            case 'COUNT': return values.length;
+            case 'MIN': return Math.min(...values);
+            case 'MAX': return Math.max(...values);
+            default: return null;
+        }
     }
 
     /**
