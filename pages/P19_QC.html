@@ -982,11 +982,20 @@
 
         // Load reviewed sections and source documents
         const reviewedSections = Storage.get('reviewedSections') || {};
-        const convertedMarkdowns = Storage.get('convertedMarkdowns') || [];
+        const convertedMarkdownsRaw = Storage.get('convertedMarkdowns') || [];
         const extractedData = Storage.get('extractedData') || {};
 
+        // Convert object to array if needed (localStorage stores as object keyed by filename)
+        const convertedMarkdowns = Array.isArray(convertedMarkdownsRaw)
+            ? convertedMarkdownsRaw
+            : Object.values(convertedMarkdownsRaw);
+        console.log('[P19_QC] convertedMarkdowns loaded:', convertedMarkdowns.length, 'items');
+
         // Combine all markdown as source documents
-        const sourceDocuments = convertedMarkdowns.map(md => md.markdown).join('\n\n---\n\n');
+        const sourceDocuments = convertedMarkdowns
+            .map(md => (typeof md === 'string' ? md : md.markdown || md.content || ''))
+            .filter(content => content)
+            .join('\n\n---\n\n');
 
         // Get draft report content
         const draftReport = Storage.get('draftReport') || {};
