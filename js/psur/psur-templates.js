@@ -204,13 +204,17 @@
 
         /**
          * UserPrompt 템플릿 로드
+         * @param {boolean} forceReload - 캐시 무시하고 강제 로드
          */
-        async loadUserPromptTemplate() {
-            if (this.userPromptTemplateLoaded && this.userPromptTemplate) {
+        async loadUserPromptTemplate(forceReload = false) {
+            if (!forceReload && this.userPromptTemplateLoaded && this.userPromptTemplate) {
                 return this.userPromptTemplate;
             }
 
-            console.log('[PSURTemplates] Loading UserPrompt.md...');
+            console.log('[PSURTemplates] Loading UserPrompt.md...' + (forceReload ? ' (force reload)' : ''));
+
+            // Cache-busting을 위한 타임스탬프
+            const cacheBuster = `?t=${Date.now()}`;
 
             const paths = [
                 '../01_Context/UserPrompt.md',
@@ -222,7 +226,7 @@
 
             for (const path of paths) {
                 try {
-                    const response = await fetch(path);
+                    const response = await fetch(path + cacheBuster, { cache: 'no-store' });
                     if (response.ok) {
                         this.userPromptTemplate = await response.text();
                         this.userPromptTemplateLoaded = true;

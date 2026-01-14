@@ -123,10 +123,10 @@
                 }
             }
 
-            // UserPrompt 템플릿 로드
-            if (this.templates && !this.templates.userPromptTemplateLoaded) {
+            // UserPrompt 템플릿 로드 (항상 최신 버전으로 강제 리로드)
+            if (this.templates) {
                 if (onProgress) onProgress({ step: 'userPrompt', message: 'UserPrompt 템플릿 로드 중...' });
-                await this.templates.loadUserPromptTemplate();
+                await this.templates.loadUserPromptTemplate(true); // forceReload=true
             }
 
             // 마크다운 통합
@@ -178,8 +178,12 @@
 
             try {
                 const startTime = Date.now();
-                const responseText = await this.callGeminiAPI(prompt, 65536);
+                let responseText = await this.callGeminiAPI(prompt, 65536);
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                // 후처리: '~습니다'체 → '~이다'체 변환
+                if (onProgress) onProgress({ step: 'postprocess', message: '문체 변환 중 (~이다체 적용)...' });
+                responseText = this.convertToFormalStyle(responseText);
 
                 this.generatedFullReport = {
                     content: responseText,
@@ -362,6 +366,77 @@
          */
         delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /**
+         * 문체 변환: '~습니다'체 → '~이다'체
+         * LLM이 프롬프트 지시를 무시할 경우 후처리로 문체 변환
+         */
+        convertToFormalStyle(text) {
+            if (!text) return text;
+
+            console.log('[PSURCore] Converting style from ~습니다 to ~이다...');
+
+            // 문체 변환 규칙 (순서 중요 - 더 구체적인 패턴 먼저)
+            const replacements = [
+                // ~었습니다/았습니다 → ~었다/았다
+                [/되었습니다/g, '되었다'],
+                [/하였습니다/g, '하였다'],
+                [/였습니다/g, '였다'],
+                [/았습니다/g, '았다'],
+                [/었습니다/g, '었다'],
+
+                // ~겠습니다 → ~겠다
+                [/하겠습니다/g, '하겠다'],
+                [/되겠습니다/g, '되겠다'],
+                [/겠습니다/g, '겠다'],
+
+                // ~ㅂ니다 패턴
+                [/있습니다/g, '있다'],
+                [/없습니다/g, '없다'],
+                [/됩니다/g, '된다'],
+                [/합니다/g, '한다'],
+                [/갑니다/g, '간다'],
+                [/옵니다/g, '온다'],
+                [/봅니다/g, '본다'],
+                [/줍니다/g, '준다'],
+                [/받습니다/g, '받는다'],
+                [/찾습니다/g, '찾는다'],
+                [/같습니다/g, '같다'],
+                [/높습니다/g, '높다'],
+                [/낮습니다/g, '낮다'],
+                [/많습니다/g, '많다'],
+                [/적습니다/g, '적다'],
+
+                // ~입니다 → ~이다 (명사 + 입니다)
+                [/입니다/g, '이다'],
+
+                // ~습니다 일반 패턴 (동사/형용사 어간 + 습니다)
+                [/습니다/g, '다'],
+
+                // ~십시오/세요 → ~라/~하라
+                [/하십시오/g, '하라'],
+                [/하세요/g, '하라'],
+                [/십시오/g, '라'],
+                [/세요/g, '라'],
+
+                // ~ㅂ니까/습니까 (의문형)
+                [/입니까/g, '인가'],
+                [/습니까/g, '는가'],
+                [/ㅂ니까/g, '는가']
+            ];
+
+            let converted = text;
+            for (const [pattern, replacement] of replacements) {
+                converted = converted.replace(pattern, replacement);
+            }
+
+            // 변환 결과 로깅
+            const originalCount = (text.match(/습니다|입니다/g) || []).length;
+            const remainingCount = (converted.match(/습니다|입니다/g) || []).length;
+            console.log(`[PSURCore] Style conversion: ${originalCount} → ${remainingCount} (${originalCount - remainingCount} converted)`);
+
+            return converted;
         }
     }
 
