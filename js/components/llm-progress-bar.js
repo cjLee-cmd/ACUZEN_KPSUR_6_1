@@ -59,11 +59,13 @@
                     transform: translateY(${this.position === 'bottom' ? '100%' : '-100%'});
                     opacity: 0;
                     transition: transform 0.3s ease, opacity 0.3s ease;
+                    pointer-events: none;
                 }
 
                 .llm-progress-container.visible {
                     transform: translateY(0);
                     opacity: 1;
+                    pointer-events: auto;
                 }
 
                 /* Progress Layout */
