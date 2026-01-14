@@ -535,12 +535,12 @@
     }
 
     /**
-     * Download Excel (CS59_별첨3_일람표 형식)
+     * Download Excel (CS59_별첨1_일람표 형식)
      */
     function downloadExcel() {
         if (!window.extractLineListings) return;
 
-        const filename = `CS59_별첨3_일람표.xlsx`;
+        const filename = `CS59_별첨1_일람표.xlsx`;
 
         window.extractLineListings.downloadExcel(filename);
         log('success', `Excel 파일 다운로드: ${filename}`);

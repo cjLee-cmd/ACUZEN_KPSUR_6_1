@@ -595,7 +595,7 @@ const PSURGenerator = {
 - 중대하지 않은 이상사례: ${this.lineListingAnalysis.statistics.seriousNo}건
 - Certain/Probable 인과성: ${this.lineListingAnalysis.statistics.certainProbable}건
 
-### CS59 별첨3 요약 테이블
+### CS59 별첨1 요약 테이블 (개별증례 Line Listing)
 ${this.lineListingAnalysis.reportMarkdown}
 
 ---

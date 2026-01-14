@@ -425,7 +425,7 @@
             });
 
             // 마크다운 테이블 생성
-            let md = `# [별첨 3] 시판 후 정보에서 보고 기간 동안의 요약 도표\n\n`;
+            let md = `# [별첨 1] 개별증례 Line Listing\n\n`;
             md += `| 구분 (SOC / PT) | 중대한 이상사례 (건수) | 중대한 약물이상반응 (건수) | 중대하지 않은 이상사례 (건수) | 중대하지 않은 약물이상반응 (건수) | 총-이상사례 (건수) | 총-약물이상반응 (건수) |\n`;
             md += `|---|---|---|---|---|---|---|\n`;
 
@@ -483,7 +483,7 @@
 [처리 규칙 2: 보고서 작성 (report_md)]
 1. 처리된 데이터를 바탕으로 아래 **[보고서 양식 예시]**와 똑같은 구조의 마크다운 보고서를 작성하십시오.
 2. **[보고서 양식 예시]**:
-   # [별첨 3] 시판 후 정보에서 보고 기간 동안의 요약 도표
+   # [별첨 1] 개별증례 Line Listing
    | 구분 (SOC / PT) | 중대한 이상사례 (환자수/건수) | 중대한 약물이상반응 (환자수/건수) | 중대하지 않은 이상사례 (환자수/건수) | 중대하지 않은 약물이상반응 (환자수/건수) | 총-이상사례 (환자수/건수) | 총-약물이상반응 (환자수/건수) |
    |---|---|---|---|---|---|---|
    | **Blood and lymphatic system disorders** | 14/22 | 11/19 | 14/14 | 11/11 | 28/36 | 22/30 |
@@ -705,7 +705,7 @@
         }
 
         /**
-         * 결과를 Excel 워크북으로 변환 (CS59_별첨3_일람표.xlsx 형식)
+         * 결과를 Excel 워크북으로 변환 (CS59_별첨1_일람표.xlsx 형식)
          */
         toExcelWorkbook() {
             if (!this.processedData || !window.XLSX) {
@@ -851,7 +851,7 @@
         }
 
         /**
-         * CS59_별첨3_일람표.xlsx 형식의 워크시트 데이터 생성
+         * CS59_별첨1_일람표.xlsx 형식의 워크시트 데이터 생성
          */
         buildCS59WorksheetData(aggregatedData) {
             const data = [];
@@ -878,7 +878,7 @@
             const totalPatients = grandTotals.seriousAE.patients + grandTotals.nonSeriousAE.patients;
 
             // Row 1: Title
-            data.push([null, null, '[별첨 3] 시판 후 정보에서 보고 기간 동안의 요약 도표']);
+            data.push([null, null, '[별첨 1] 개별증례 Line Listing']);
 
             // Row 2-3: Empty
             data.push([]);
@@ -1007,9 +1007,9 @@
         }
 
         /**
-         * Excel 파일 다운로드 (CS59_별첨3_일람표 형식)
+         * Excel 파일 다운로드 (CS59_별첨1_일람표 형식)
          */
-        downloadExcel(filename = 'CS59_별첨3_일람표.xlsx') {
+        downloadExcel(filename = 'CS59_별첨1_일람표.xlsx') {
             const wb = this.toExcelWorkbook();
             XLSX.writeFile(wb, filename);
         }
@@ -1157,7 +1157,7 @@
         }
 
         /**
-         * 싱글샷 LLM 분석 (구조화 출력 - CS59_별첨3_일람표 형식)
+         * 싱글샷 LLM 분석 (구조화 출력 - CS59_별첨1_일람표 형식)
          * @param {Array} aeData - 이상사례 데이터
          * @param {Array} causData - 인과성평가 데이터
          * @param {Object} options - LLM 옵션
@@ -1195,7 +1195,7 @@
                     },
                     cs59Summary: {
                         type: "array",
-                        description: "CS59_별첨3_일람표 형식의 SOC/PT별 요약 (구분, 중대한 이상사례, 중대한 약물이상반응, 중대하지 않은 이상사례, 중대하지 않은 약물이상반응, 총-이상사례, 총-약물이상반응)",
+                        description: "CS59_별첨1_일람표 형식의 SOC/PT별 요약 (구분, 중대한 이상사례, 중대한 약물이상반응, 중대하지 않은 이상사례, 중대하지 않은 약물이상반응, 총-이상사례, 총-약물이상반응)",
                         items: {
                             type: "object",
                             properties: {
@@ -1297,7 +1297,7 @@ ${causString}
    - **인과성평가**: 인과성평가 데이터에서 매칭되는 결과 (Certain, Probable, Possible, Unlikely, Unrelated 등)
    - **SOC**: 이상사례 MedDRA PT에 해당하는 상위 SOC(System Organ Class) 영문 명칭
 
-2. **cs59Summary**: CS59_별첨3_일람표 형식의 SOC/PT별 요약 테이블 데이터
+2. **cs59Summary**: CS59_별첨1_일람표 형식의 SOC/PT별 요약 테이블 데이터
    - level: "SOC" | "PT" | "TOTAL"
    - name: SOC명 또는 PT명 (TOTAL일 경우 "총계")
    - 각 카테고리별 "환자수/건수" 형식 (예: "14/22")
@@ -1339,10 +1339,10 @@ ${causString}
          */
         buildCS59ReportMarkdown(cs59Summary) {
             if (!cs59Summary || !Array.isArray(cs59Summary) || cs59Summary.length === 0) {
-                return '# [별첨 3] 시판 후 정보에서 보고 기간 동안의 요약 도표\n\n데이터가 없습니다.';
+                return '# [별첨 1] 개별증례 Line Listing\n\n데이터가 없습니다.';
             }
 
-            let md = `# [별첨 3] 시판 후 정보에서 보고 기간 동안의 요약 도표\n\n`;
+            let md = `# [별첨 1] 개별증례 Line Listing\n\n`;
             md += `| 구분 (SOC / PT) | 중대한 이상사례 (환자수/건수) | 중대한 약물이상반응 (환자수/건수) | 중대하지 않은 이상사례 (환자수/건수) | 중대하지 않은 약물이상반응 (환자수/건수) | 총-이상사례 (환자수/건수) | 총-약물이상반응 (환자수/건수) |\n`;
             md += `|---|---|---|---|---|---|---|\n`;
 
