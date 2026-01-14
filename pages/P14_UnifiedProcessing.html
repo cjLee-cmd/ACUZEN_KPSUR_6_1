@@ -1987,11 +1987,26 @@
             document.getElementById('nextBtn').textContent = '처리 중...';
             document.getElementById('processingStatus').classList.add('visible');
 
+            // 프로그레스 바 표시 (전체 처리 과정)
+            if (window.llmProgressBar) {
+                window.llmProgressBar.init({
+                    title: 'RAW 데이터 처리',
+                    steps: [
+                        { id: 'convert', name: 'MD 변환', icon: '📄' },
+                        { id: 'classify', name: 'RAW 분류', icon: '🏷️' },
+                        { id: 'integrate', name: '데이터 통합', icon: '🔗' },
+                        { id: 'generate', name: 'PSUR 생성', icon: '🤖' }
+                    ]
+                }).show().startStep(0);
+            }
+
             try {
                 // Step 1: 마크다운 변환
                 updateProcessingStep(1, 'active', '변환 중...');
+                if (window.llmProgressBar) window.llmProgressBar.setStreamText('마크다운 변환 중...');
                 const convertedFiles = await convertAllToMarkdown(allFiles);
                 updateProcessingStep(1, 'completed', '완료');
+                if (window.llmProgressBar) window.llmProgressBar.completeStep(0).startStep(1);
 
                 // Step 1 결과 확인 팝업
                 const conversionOk = await showConversionResultPopup(convertedFiles);
@@ -2000,23 +2015,29 @@
                     document.getElementById('nextBtn').disabled = false;
                     document.getElementById('nextBtn').textContent = '🚀 LLM 분류 시작';
                     document.getElementById('processingStatus').classList.remove('visible');
+                    if (window.llmProgressBar) window.llmProgressBar.hide();
                     return;
                 }
 
                 // Step 2: RAW ID 분류 (LLM) - 현재는 사용자 지정 RAW ID 사용
                 updateProcessingStep(2, 'active', '분류 중...');
+                if (window.llmProgressBar) window.llmProgressBar.setStreamText('RAW ID 분류 중...');
                 // LLM 분류 로직은 추후 추가
                 await new Promise(resolve => setTimeout(resolve, 500));
                 updateProcessingStep(2, 'completed', '완료');
+                if (window.llmProgressBar) window.llmProgressBar.completeStep(1).startStep(2);
 
                 // Step 3: 데이터 통합
                 updateProcessingStep(3, 'active', '통합 중...');
+                if (window.llmProgressBar) window.llmProgressBar.setStreamText('데이터 통합 중...');
                 await saveProcessingResults(convertedFiles);
                 updateProcessingStep(3, 'completed', '완료');
+                if (window.llmProgressBar) window.llmProgressBar.completeStep(2).startStep(3);
 
                 // Step 4: PSUR 섹션 생성 (LLM)
                 // 누락 파일 체크는 generatePSURSections 내부에서 수행됨
                 updateProcessingStep(4, 'active', '섹션 생성 중...');
+                if (window.llmProgressBar) window.llmProgressBar.setStreamText('LLM으로 PSUR 섹션 생성 중...');
                 const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
                 const generatedSections = await generatePSURSections(convertedMarkdowns);
 
@@ -2029,6 +2050,7 @@
                     sourceFiles: Object.keys(convertedMarkdowns).length
                 }));
                 updateProcessingStep(4, 'completed', '완료');
+                if (window.llmProgressBar) window.llmProgressBar.completeStep(3).complete('처리 완료!');
 
                 showToast('처리 완료! 다음 단계로 이동합니다.', 'success');
 
@@ -2057,6 +2079,7 @@
                 showToast(`처리 실패: ${error.message}`, 'error');
                 document.getElementById('nextBtn').disabled = false;
                 document.getElementById('nextBtn').textContent = '🚀 LLM 분류 시작';
+                if (window.llmProgressBar) window.llmProgressBar.error(`처리 실패: ${error.message}`);
             }
         }
 
@@ -2747,33 +2770,13 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                     throw new Error('multiLLMClient가 초기화되지 않았습니다.');
                 }
 
-                // 프로그레스 바 초기화 및 표시
+                // LLM 스트리밍 준비
                 let isCancelled = false;
                 if (window.llmProgressBar) {
-                    window.llmProgressBar.init({
-                        title: 'PSUR 섹션 생성',
-                        steps: [
-                            { id: 'prepare', name: '준비', icon: '📋' },
-                            { id: 'generate', name: 'LLM 생성', icon: '🤖' },
-                            { id: 'parse', name: '파싱', icon: '🔍' },
-                            { id: 'validate', name: '검증', icon: '✅' }
-                        ],
-                        onCancel: () => {
-                            isCancelled = true;
-                            window.llmProgressBar.error('사용자가 처리를 취소했습니다.');
-                            throw new Error('사용자가 처리를 취소했습니다.');
-                        }
-                    }).show().startStep(0);
-                }
-
-                // Step 1: 준비
-                await new Promise(resolve => setTimeout(resolve, 300));
-                if (window.llmProgressBar) {
-                    window.llmProgressBar.completeStep(0).startStep(1);
                     window.llmProgressBar.setStreamText('LLM에 요청 중...');
                 }
 
-                // Step 2: LLM 스트리밍 호출
+                // LLM 스트리밍 호출
                 let fullResponseText = '';
                 const response = await window.multiLLMClient.generateStream(
                     prompt,
@@ -2796,10 +2799,9 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 const responseText = response?.text || fullResponseText;
                 console.log('✅ LLM 응답 수신:', responseText.length, '자');
 
-                // Step 2 완료, Step 3 시작
+                // 파싱 시작
                 if (window.llmProgressBar) {
-                    window.llmProgressBar.completeStep(1).startStep(2);
-                    window.llmProgressBar.setStreamText('JSON 파싱 중...');
+                    window.llmProgressBar.setStreamText('응답 파싱 중...');
                 }
 
                 // LLM 대화 로그 저장 (세션 매니저가 있으면)
@@ -2900,9 +2902,8 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 }
             }
 
-            // Step 3 완료, Step 4 시작
+            // 섹션 검증
             if (window.llmProgressBar) {
-                window.llmProgressBar.completeStep(2).startStep(3);
                 window.llmProgressBar.setStreamText('섹션 검증 중...');
             }
 
@@ -2931,10 +2932,9 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 });
             }
 
-            // Step 4 완료 및 프로그레스 바 완료
+            // 섹션 생성 완료 로그
             if (window.llmProgressBar) {
-                window.llmProgressBar.completeStep(3);
-                window.llmProgressBar.complete(`${Object.keys(sections).length}개 섹션 생성 완료!`);
+                window.llmProgressBar.setStreamText(`${Object.keys(sections).length}개 섹션 생성 완료`);
             }
 
             console.groupEnd();
