@@ -29,9 +29,26 @@
             this.totalSteps = 0;
             this.isVisible = false;
             this.streamingBuffer = [];
+            this._initialized = false;
 
+            // DOM이 준비되면 컨테이너 생성
+            if (document.body) {
+                this._initDOM();
+            } else {
+                // <head>에서 로드된 경우 DOM 준비 대기
+                document.addEventListener('DOMContentLoaded', () => this._initDOM());
+            }
+        }
+
+        /**
+         * DOM 초기화 (컨테이너 + 스타일)
+         */
+        _initDOM() {
+            if (this._initialized) return;
+            this._initialized = true;
             this._createContainer();
             this._injectStyles();
+            console.log('[LLMProgressBar] DOM 초기화 완료');
         }
 
         /**
@@ -364,6 +381,11 @@
          * @param {Function} config.onCancel - 취소 콜백
          */
         init(config = {}) {
+            // DOM이 아직 초기화되지 않았다면 초기화
+            if (!this._initialized) {
+                this._initDOM();
+            }
+
             this.steps = config.steps || [];
             this.totalSteps = this.steps.length;
             this.currentStep = 0;
@@ -371,8 +393,9 @@
             this.streamingBuffer = [];
 
             // 제목 업데이트
-            if (config.title) {
-                this.container.querySelector('.llm-progress-title span').textContent = config.title;
+            if (config.title && this.container) {
+                const titleSpan = this.container.querySelector('.llm-progress-title span');
+                if (titleSpan) titleSpan.textContent = config.title;
             }
 
             // 단계 표시 업데이트
@@ -386,7 +409,9 @@
          * 단계 렌더링
          */
         _renderSteps() {
+            if (!this.container) return;
             const stepsContainer = this.container.querySelector('.llm-steps-container');
+            if (!stepsContainer) return;
             stepsContainer.innerHTML = this.steps.map((step, idx) => `
                 <div class="llm-step" data-step="${idx}">
                     <span class="llm-step-icon">${step.icon || '○'}</span>
@@ -400,19 +425,26 @@
          * @param {number} percent - 0-100
          */
         _updateProgress(percent) {
+            if (!this.container) return;
             const fill = this.container.querySelector('.llm-progress-bar-fill');
             const percentEl = this.container.querySelector('.llm-progress-percent');
 
-            fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
-            percentEl.textContent = `${Math.round(percent)}%`;
+            if (fill) fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+            if (percentEl) percentEl.textContent = `${Math.round(percent)}%`;
         }
 
         /**
          * 프로그레스 바 표시
          */
         show() {
+            // DOM이 아직 초기화되지 않았다면 초기화
+            if (!this._initialized) {
+                this._initDOM();
+            }
             this.isVisible = true;
-            this.container.classList.add('visible');
+            if (this.container) {
+                this.container.classList.add('visible');
+            }
             return this;
         }
 
@@ -421,7 +453,9 @@
          */
         hide() {
             this.isVisible = false;
-            this.container.classList.remove('visible');
+            if (this.container) {
+                this.container.classList.remove('visible');
+            }
             return this;
         }
 
@@ -430,6 +464,8 @@
          * @param {number|string} stepId - 단계 인덱스 또는 ID
          */
         startStep(stepId) {
+            if (!this.container) return this;
+
             const stepIdx = typeof stepId === 'number' ? stepId :
                 this.steps.findIndex(s => s.id === stepId);
 
@@ -456,8 +492,8 @@
 
             // 제목 업데이트
             const currentStepName = this.steps[stepIdx]?.name || '';
-            this.container.querySelector('.llm-progress-title span').textContent =
-                `${currentStepName} 처리 중...`;
+            const titleEl = this.container.querySelector('.llm-progress-title span');
+            if (titleEl) titleEl.textContent = `${currentStepName} 처리 중...`;
 
             return this;
         }
@@ -467,6 +503,8 @@
          * @param {number|string} stepId - 단계 인덱스 또는 ID
          */
         completeStep(stepId) {
+            if (!this.container) return this;
+
             const stepIdx = typeof stepId === 'number' ? stepId :
                 this.steps.findIndex(s => s.id === stepId);
 
@@ -491,7 +529,7 @@
          * @param {string} chunk - 텍스트 청크
          */
         appendStreamText(chunk) {
-            if (!chunk) return this;
+            if (!chunk || !this.container) return this;
 
             this.streamingBuffer.push(chunk);
 
@@ -502,11 +540,11 @@
             const displayText = recentLines.join('\n');
 
             const streamText = this.container.querySelector('.llm-stream-text');
-            streamText.textContent = displayText || '처리 중...';
+            if (streamText) streamText.textContent = displayText || '처리 중...';
 
             // 스크롤 최하단으로
             const streamContent = this.container.querySelector('.llm-stream-content');
-            streamContent.scrollTop = streamContent.scrollHeight;
+            if (streamContent) streamContent.scrollTop = streamContent.scrollHeight;
 
             return this;
         }
@@ -516,8 +554,9 @@
          * @param {string} text - 전체 텍스트
          */
         setStreamText(text) {
+            if (!this.container) return this;
             const streamText = this.container.querySelector('.llm-stream-text');
-            streamText.textContent = text || '대기 중...';
+            if (streamText) streamText.textContent = text || '대기 중...';
             return this;
         }
 
@@ -535,6 +574,8 @@
          * @param {string} message - 완료 메시지
          */
         complete(message = '처리 완료!') {
+            if (!this.container) return this;
+
             this._updateProgress(100);
 
             // 모든 단계 완료 표시
@@ -547,10 +588,11 @@
 
             // 스피너 숨기기
             const spinner = this.container.querySelector('.llm-progress-spinner');
-            spinner.style.display = 'none';
+            if (spinner) spinner.style.display = 'none';
 
             // 제목 업데이트
-            this.container.querySelector('.llm-progress-title span').textContent = message;
+            const titleEl = this.container.querySelector('.llm-progress-title span');
+            if (titleEl) titleEl.textContent = message;
 
             // 1.5초 후 자동 숨김
             setTimeout(() => this.hide(), 1500);
@@ -563,15 +605,19 @@
          * @param {string} message - 에러 메시지
          */
         error(message = '처리 중 오류가 발생했습니다.') {
+            if (!this.container) return this;
+
             const spinner = this.container.querySelector('.llm-progress-spinner');
-            spinner.style.display = 'none';
+            if (spinner) spinner.style.display = 'none';
 
             const title = this.container.querySelector('.llm-progress-title span');
-            title.textContent = message;
-            title.style.color = 'var(--color-error, #DC2626)';
+            if (title) {
+                title.textContent = message;
+                title.style.color = 'var(--color-error, #DC2626)';
+            }
 
             const fill = this.container.querySelector('.llm-progress-bar-fill');
-            fill.style.background = 'var(--color-error, #DC2626)';
+            if (fill) fill.style.background = 'var(--color-error, #DC2626)';
 
             // 3초 후 자동 숨김
             setTimeout(() => this.hide(), 3000);
