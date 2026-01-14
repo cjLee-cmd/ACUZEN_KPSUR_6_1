@@ -995,6 +995,8 @@
     <script src="../js/markdown-converter.js"></script>
     <script src="../js/multi-llm-client.js"></script>
     <script src="../js/llm-session-manager.js"></script>
+    <!-- LLM Progress Bar Component -->
+    <script src="../js/components/llm-progress-bar.js"></script>
     <!-- RAW ID 감지 모듈은 985행에서 이미 로드됨 (중복 제거) -->
 
     <script>
@@ -2740,39 +2742,98 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
 
                 console.log('📝 LLM 프롬프트 생성 완료, 토큰 수:', prompt.length);
 
-                // 4. LLM 호출 (세션 매니저를 통해 - DB에 저장됨)
-                if (!window.llmSessionManager) {
-                    throw new Error('llmSessionManager가 초기화되지 않았습니다.');
+                // 4. LLM 호출 (스트리밍 + 프로그레스 바)
+                if (!window.multiLLMClient) {
+                    throw new Error('multiLLMClient가 초기화되지 않았습니다.');
                 }
 
-                // 세션 초기화 (reportId 기반)
-                const reportId = new URLSearchParams(window.location.search).get('reportId') ||
-                                 localStorage.getItem('current_report_id') ||
-                                 'local_' + Date.now();
+                // 프로그레스 바 초기화 및 표시
+                let isCancelled = false;
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.init({
+                        title: 'PSUR 섹션 생성',
+                        steps: [
+                            { id: 'prepare', name: '준비', icon: '📋' },
+                            { id: 'generate', name: 'LLM 생성', icon: '🤖' },
+                            { id: 'parse', name: '파싱', icon: '🔍' },
+                            { id: 'validate', name: '검증', icon: '✅' }
+                        ],
+                        onCancel: () => {
+                            isCancelled = true;
+                            window.llmProgressBar.error('사용자가 처리를 취소했습니다.');
+                            throw new Error('사용자가 처리를 취소했습니다.');
+                        }
+                    }).show().startStep(0);
+                }
 
-                await window.llmSessionManager.initSession(reportId, {
-                    model: 'gemini-3-flash-preview',
-                    provider: 'google'
-                });
+                // Step 1: 준비
+                await new Promise(resolve => setTimeout(resolve, 300));
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.completeStep(0).startStep(1);
+                    window.llmProgressBar.setStreamText('LLM에 요청 중...');
+                }
 
-                // 세션 매니저를 통해 LLM 호출 → DB에 자동 저장됨
-                const response = await window.llmSessionManager.sendMessage(prompt, {
-                    provider: 'google',
-                    model: 'gemini-3-flash-preview',
-                    dialogType: 'psur_generation',  // 대화 타입 구분
-                    skipHistory: true  // 대용량 프롬프트이므로 히스토리 누적 방지
-                });
+                // Step 2: LLM 스트리밍 호출
+                let fullResponseText = '';
+                const response = await window.multiLLMClient.generateStream(
+                    prompt,
+                    {
+                        provider: 'google',
+                        model: 'gemini-3-flash-preview',
+                        temperature: 0.3
+                    },
+                    // onChunk 콜백 - 스트리밍 텍스트 실시간 표시
+                    (chunk) => {
+                        if (isCancelled) return;
+                        fullResponseText += chunk;
+                        if (window.llmProgressBar) {
+                            window.llmProgressBar.appendStreamText(chunk);
+                        }
+                    }
+                );
 
-                // response는 객체, response.text가 실제 텍스트
-                const responseText = response?.text || '';
+                // 최종 응답 텍스트
+                const responseText = response?.text || fullResponseText;
                 console.log('✅ LLM 응답 수신:', responseText.length, '자');
-                console.log('📊 PSUR 생성 대화가 세션에 저장됨 (dialogType: psur_generation)');
+
+                // Step 2 완료, Step 3 시작
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.completeStep(1).startStep(2);
+                    window.llmProgressBar.setStreamText('JSON 파싱 중...');
+                }
+
+                // LLM 대화 로그 저장 (세션 매니저가 있으면)
+                if (window.llmSessionManager) {
+                    const reportId = new URLSearchParams(window.location.search).get('reportId') ||
+                                     localStorage.getItem('current_report_id') ||
+                                     'local_' + Date.now();
+                    try {
+                        await window.llmSessionManager.initSession(reportId, {
+                            model: 'gemini-3-flash-preview',
+                            provider: 'google'
+                        });
+                        // 대화 로그 수동 저장
+                        await window.llmSessionManager.saveDialog({
+                            userMessage: prompt.substring(0, 500) + '...',  // 프롬프트 요약
+                            assistantMessage: responseText.substring(0, 1000) + '...',  // 응답 요약
+                            dialogType: 'psur_generation'
+                        });
+                        console.log('📊 PSUR 생성 대화가 세션에 저장됨 (dialogType: psur_generation)');
+                    } catch (logError) {
+                        console.warn('대화 로그 저장 실패:', logError);
+                    }
+                }
 
                 // 5. JSON 파싱 with enhanced logging
                 return extractSectionsWithLogging(responseText, sectionNames, validation);
 
             } catch (error) {
                 console.error('❌ PSUR 섹션 생성 실패:', error);
+
+                // 프로그레스 바 에러 표시
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.error(`생성 실패: ${error.message}`);
+                }
 
                 // 에러 시 빈 섹션 반환
                 const sections = {};
@@ -2811,6 +2872,12 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
 
                 if (jsonData.sections) {
                     console.log('✓ JSON format detected and parsed');
+
+                    // 프로그레스 바 업데이트
+                    if (window.llmProgressBar) {
+                        window.llmProgressBar.setStreamText('섹션 데이터 추출 중...');
+                    }
+
                     for (const [key, value] of Object.entries(jsonData.sections)) {
                         const sectionId = key.substring(0, 2);
                         sections[sectionId] = {
@@ -2827,6 +2894,16 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
             } catch (e) {
                 console.log('⚠️ JSON parsing failed, trying regex...');
                 console.error('Parse error:', e.message);
+
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.setStreamText('JSON 파싱 실패, 대체 파싱 시도...');
+                }
+            }
+
+            // Step 3 완료, Step 4 시작
+            if (window.llmProgressBar) {
+                window.llmProgressBar.completeStep(2).startStep(3);
+                window.llmProgressBar.setStreamText('섹션 검증 중...');
             }
 
             console.log('4️⃣ Parsed Sections:', Object.keys(sections).length);
@@ -2844,10 +2921,20 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 console.warn('⚠️ Missing Sections:', missingSections.join(', '));
                 console.log('📝 Generating placeholder sections...');
 
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.setStreamText(`누락 섹션 ${missingSections.length}개 생성 중...`);
+                }
+
                 // Generate placeholder sections
                 missingSections.forEach(id => {
                     sections[id] = generatePlaceholderSection(id, validation);
                 });
+            }
+
+            // Step 4 완료 및 프로그레스 바 완료
+            if (window.llmProgressBar) {
+                window.llmProgressBar.completeStep(3);
+                window.llmProgressBar.complete(`${Object.keys(sections).length}개 섹션 생성 완료!`);
             }
 
             console.groupEnd();
