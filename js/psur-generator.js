@@ -1206,6 +1206,15 @@ ${examplesText.substring(0, 35000)}
                             }
                         }
 
+                        // 섹션 13 (참고문헌) 후처리 검증
+                        if (sections['13']) {
+                            const rawPattern = /RAW\d+(\.\d+)?[：:\s]*[가-힣]/g;
+                            if (rawPattern.test(sections['13'].content)) {
+                                console.warn('[PSURGenerator] 섹션 13에서 RAW 파일 목록 감지 → "해당사항 없음"으로 대체');
+                                sections['13'].content = '## 13. 참고문헌\n\n해당사항 없음';
+                            }
+                        }
+
                         // localStorage에 저장
                         try {
                             localStorage.setItem('generatedSections', JSON.stringify(sections));
@@ -1289,6 +1298,15 @@ ${examplesText.substring(0, 35000)}
                     generatedAt: null,
                     isEdited: false
                 };
+            }
+        }
+
+        // 섹션 13 (참고문헌) 후처리 검증
+        if (sections['13']) {
+            const rawPattern = /RAW\d+(\.\d+)?[：:\s]*[가-힣]/g;
+            if (rawPattern.test(sections['13'].content)) {
+                console.warn('[PSURGenerator] 섹션 13에서 RAW 파일 목록 감지 → "해당사항 없음"으로 대체');
+                sections['13'].content = '## 13. 참고문헌\n\n해당사항 없음';
             }
         }
 

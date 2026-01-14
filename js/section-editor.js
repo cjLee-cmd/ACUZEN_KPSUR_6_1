@@ -109,6 +109,17 @@ class SectionEditor {
                 this.sections = parsed;
                 console.log(`[SectionEditor] ${Object.keys(this.sections).length}개 섹션 localStorage에서 로드됨`);
 
+                // 2.0 섹션 13 (참고문헌) RAW 파일 목록 검증 및 자동 수정
+                if (this.sections['13']) {
+                    const rawPattern = /RAW\d+(\.\d+)?[：:\s]*[가-힣]/g;
+                    if (rawPattern.test(this.sections['13'].content)) {
+                        console.warn('[SectionEditor] 섹션 13에서 RAW 파일 목록 감지 → "해당사항 없음"으로 자동 수정');
+                        this.sections['13'].content = '## 13. 참고문헌\n\n해당사항 없음';
+                        // 수정된 내용 저장
+                        localStorage.setItem('generatedSections', JSON.stringify(this.sections));
+                    }
+                }
+
                 // 2.1 placeholder 확인 및 generatedPSURReport에서 재파싱
                 const hasOnlyPlaceholders = this._checkPlaceholderContent();
                 if (hasOnlyPlaceholders) {
