@@ -201,6 +201,18 @@
 
             for (const table of tables) {
                 const headerStr = table.headers.join(' ').toLowerCase();
+
+                // G.k로만 구성된 테이블은 Drug-Reaction linkage 정보이므로 제외
+                // (G.k.1, G.k.2.2, G.k.9.i.* 등은 보조 정보)
+                const isGkOnlyTable = table.headers.every(h =>
+                    h.startsWith('G.k') || h.trim() === ''
+                );
+
+                if (isGkOnlyTable) {
+                    // G.k 전용 테이블은 건너뜀 (PT/SOC 정보 없음)
+                    continue;
+                }
+
                 if (headerStr.includes('인과성') || headerStr.includes('causality')) {
                     causData = causData.concat(table.data);
                 } else {
@@ -395,7 +407,7 @@
 
             processedData.forEach(item => {
                 const soc = item.SOC || 'Unknown';
-                const pt = item['이상사례·약물이상반응 MedDRA명'] || item['PT'] || 'Unknown';
+                const pt = item['E.i.3.2c'] || item['E.i.3.2d'] || item['이상사례·약물이상반응 MedDRA명'] || item['PT'] || 'Unknown';
                 const isSerious = item.Seriousness === 'Yes';
                 const causality = item['인과성평가'] || '';
                 const isADR = ['Certain', 'Probable', 'Possible'].some(c => causality.includes(c));
@@ -706,73 +718,393 @@
 
         /**
          * 결과를 Excel 워크북으로 변환 (CS59_별첨1_일람표.xlsx 형식)
+         * ExcelJS 라이브러리를 사용하여 스타일 적용
+         * @returns {Promise<ExcelJS.Workbook>} ExcelJS 워크북
          */
-        toExcelWorkbook() {
-            if (!this.processedData || !window.XLSX) {
-                throw new Error('데이터 또는 XLSX 라이브러리가 없습니다.');
+        async toExcelWorkbook() {
+            if (!this.processedData) {
+                throw new Error('데이터가 없습니다.');
             }
 
-            const wb = XLSX.utils.book_new();
+            // ExcelJS 사용 가능 여부 확인
+            if (!window.ExcelJS) {
+                console.warn('ExcelJS 라이브러리가 없습니다. 기본 XLSX로 폴백합니다.');
+                return this.toExcelWorkbookLegacy();
+            }
+
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'KPSUR Agent';
+            workbook.created = new Date();
+
+            const ws = workbook.addWorksheet('별첨1_개별증례');
 
             // SOC/PT별 데이터 집계
             const aggregatedData = this.aggregateBySOCAndPT();
-
-            // 워크시트 데이터 생성
-            const wsData = this.buildCS59WorksheetData(aggregatedData);
-
-            // 워크시트 생성
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-            // 셀 병합 설정
-            ws['!merges'] = [
-                // Row 4 merges
-                { s: { r: 3, c: 1 }, e: { r: 3, c: 2 } },   // B4:C4 이상 사례 종류
-                { s: { r: 3, c: 3 }, e: { r: 3, c: 8 } },   // D4:I4 중대한
-                { s: { r: 3, c: 9 }, e: { r: 3, c: 14 } },  // J4:O4 중대하지 않은
-                { s: { r: 3, c: 15 }, e: { r: 3, c: 20 } }, // P4:U4 총 누적
-                { s: { r: 3, c: 21 }, e: { r: 3, c: 23 } }, // V4:X4 시판후 비중재 연구
-                // Row 5 merges
-                { s: { r: 4, c: 1 }, e: { r: 4, c: 2 } },   // B5:C5 구분
-                { s: { r: 4, c: 3 }, e: { r: 4, c: 5 } },   // D5:F5 이상사례 발현조사 대상자수
-                { s: { r: 4, c: 6 }, e: { r: 4, c: 8 } },   // G5:I5 약물이상반응
-                { s: { r: 4, c: 9 }, e: { r: 4, c: 11 } },  // J5:L5 이상사례 발현조사 대상자수
-                { s: { r: 4, c: 12 }, e: { r: 4, c: 14 } }, // M5:O5 약물이상반응
-                { s: { r: 4, c: 15 }, e: { r: 4, c: 17 } }, // P5:R5 이상사례 발현조사 대상자수
-                { s: { r: 4, c: 18 }, e: { r: 4, c: 20 } }, // S5:U5 약물이상반응
-                { s: { r: 4, c: 21 }, e: { r: 4, c: 23 } }, // V5:X5 중대한 이상사례
-            ];
+            const { wsData, socRows, totalRow } = this.buildCS59WorksheetDataWithMetadata(aggregatedData);
 
             // 열 너비 설정
-            ws['!cols'] = [
-                { wch: 3 },   // A
-                { wch: 35 },  // B - SOC
-                { wch: 25 },  // C - PT
-                { wch: 6 },   // D - 수
-                { wch: 8 },   // E - %
-                { wch: 6 },   // F - 건
-                { wch: 8 },   // G - %
-                { wch: 8 },   // H - %
-                { wch: 6 },   // I - 건
-                { wch: 8 },   // J - %
-                { wch: 8 },   // K - %
-                { wch: 6 },   // L - 건
-                { wch: 8 },   // M - %
-                { wch: 8 },   // N - %
-                { wch: 6 },   // O - 건
-                { wch: 6 },   // P - 수
-                { wch: 8 },   // Q - %
-                { wch: 6 },   // R - 건
-                { wch: 6 },   // S - 수
-                { wch: 8 },   // T - %
-                { wch: 6 },   // U - 건
-                { wch: 6 },   // V - 수
-                { wch: 8 },   // W - %
-                { wch: 6 },   // X - 건
+            ws.columns = [
+                { width: 5 },   // A - No
+                { width: 40 },  // B - SOC
+                { width: 30 },  // C - PT
+                { width: 7 }, { width: 7 }, { width: 7 },  // D-F 중대한 이상사례
+                { width: 7 }, { width: 7 }, { width: 7 },  // G-I 중대한 약물이상반응
+                { width: 7 }, { width: 7 }, { width: 7 },  // J-L 비중대 이상사례
+                { width: 7 }, { width: 7 }, { width: 7 },  // M-O 비중대 약물이상반응
+                { width: 7 }, { width: 7 }, { width: 7 },  // P-R 총 이상사례
+                { width: 7 }, { width: 7 }, { width: 7 },  // S-U 총 약물이상반응
+                { width: 7 }, { width: 7 }, { width: 7 },  // V-X 시판후연구
             ];
 
-            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            // 스타일 정의
+            const styles = {
+                titleFont: { name: '맑은 고딕', size: 12, bold: true },
+                headerFont: { name: '맑은 고딕', size: 9, bold: true },
+                dataFont: { name: '맑은 고딕', size: 9, bold: false },
+                socFont: { name: '맑은 고딕', size: 9, bold: true },
+                totalFont: { name: '맑은 고딕', size: 10, bold: true },
+                headerFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } },
+                subHeaderFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB4C6E7' } },
+                socFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } },
+                totalFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } },
+                thinBorder: {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                },
+                mediumBorder: {
+                    top: { style: 'medium' },
+                    left: { style: 'medium' },
+                    bottom: { style: 'medium' },
+                    right: { style: 'medium' }
+                }
+            };
 
+            // 데이터 추가
+            wsData.forEach((rowData, rowIndex) => {
+                const row = ws.addRow(rowData);
+                const rowNum = rowIndex + 1;
+
+                // Row 1: 제목
+                if (rowNum === 1) {
+                    row.height = 25;
+                    row.eachCell((cell, colNum) => {
+                        cell.font = styles.titleFont;
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    });
+                }
+
+                // Row 4: 헤더 1단계 (중대한/비중대/총누적)
+                if (rowNum === 4) {
+                    row.height = 22;
+                    row.eachCell((cell, colNum) => {
+                        cell.font = { ...styles.headerFont, color: { argb: 'FFFFFFFF' } };
+                        cell.fill = styles.headerFill;
+                        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                        cell.border = styles.thinBorder;
+                    });
+                }
+
+                // Row 5: 헤더 2단계 (이상사례/약물이상반응)
+                if (rowNum === 5) {
+                    row.height = 20;
+                    row.eachCell((cell, colNum) => {
+                        cell.font = styles.headerFont;
+                        cell.fill = styles.subHeaderFill;
+                        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                        cell.border = styles.thinBorder;
+                    });
+                }
+
+                // Row 6: 헤더 3단계 (수/%/건)
+                if (rowNum === 6) {
+                    row.height = 18;
+                    row.eachCell((cell, colNum) => {
+                        cell.font = styles.headerFont;
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E2F3' } };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        cell.border = styles.thinBorder;
+                    });
+                }
+
+                // SOC 행 (볼드 + 회색 배경)
+                if (socRows.includes(rowNum)) {
+                    row.eachCell((cell, colNum) => {
+                        cell.font = styles.socFont;
+                        cell.fill = styles.socFill;
+                        cell.border = styles.thinBorder;
+                        if (colNum > 3) {
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+
+                // 합계 행 (볼드 + 노란 배경)
+                if (rowNum === totalRow) {
+                    row.height = 22;
+                    row.eachCell((cell, colNum) => {
+                        cell.font = styles.totalFont;
+                        cell.fill = styles.totalFill;
+                        cell.border = styles.mediumBorder;
+                        if (colNum > 3) {
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                        } else {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        }
+                    });
+                }
+
+                // PT 행 (일반 데이터)
+                if (rowNum >= 7 && !socRows.includes(rowNum) && rowNum !== totalRow) {
+                    row.eachCell((cell, colNum) => {
+                        cell.font = styles.dataFont;
+                        cell.border = styles.thinBorder;
+                        if (colNum > 3) {
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                }
+            });
+
+            // 셀 병합
+            ws.mergeCells('B4:C4');   // 이상사례 종류
+            ws.mergeCells('D4:I4');   // 중대한
+            ws.mergeCells('J4:O4');   // 중대하지 않은
+            ws.mergeCells('P4:U4');   // 총 누적
+            ws.mergeCells('V4:X4');   // 시판후 비중재 연구
+
+            ws.mergeCells('B5:C5');   // 구분
+            ws.mergeCells('D5:F5');   // 이상사례
+            ws.mergeCells('G5:I5');   // 약물이상반응
+            ws.mergeCells('J5:L5');   // 이상사례
+            ws.mergeCells('M5:O5');   // 약물이상반응
+            ws.mergeCells('P5:R5');   // 이상사례
+            ws.mergeCells('S5:U5');   // 약물이상반응
+            ws.mergeCells('V5:X5');   // 중대한 이상사례
+
+            return workbook;
+        }
+
+        /**
+         * Legacy XLSX 라이브러리용 폴백 (스타일 없음)
+         */
+        toExcelWorkbookLegacy() {
+            if (!window.XLSX) {
+                throw new Error('XLSX 라이브러리가 없습니다.');
+            }
+
+            const wb = XLSX.utils.book_new();
+            const aggregatedData = this.aggregateBySOCAndPT();
+            const { wsData } = this.buildCS59WorksheetDataWithMetadata(aggregatedData);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            ws['!cols'] = [
+                { wch: 5 }, { wch: 40 }, { wch: 30 },
+                { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 },
+                { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 },
+                { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 },
+                { wch: 7 }, { wch: 7 }, { wch: 7 },
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, '별첨1_개별증례');
             return wb;
+        }
+
+        /**
+         * CS59 워크시트 데이터 생성 (메타데이터 포함)
+         * @param {Object} aggregatedData - 집계된 SOC/PT 데이터
+         * @returns {Object} { wsData, socRows, totalRow, dataStartRow, dataEndRow }
+         */
+        buildCS59WorksheetDataWithMetadata(aggregatedData) {
+            const data = [];
+            const socRows = [];  // SOC 행 번호 (1부터 시작)
+            let currentRow = 1;
+
+            // 총계 계산
+            let grandTotal = {
+                seriousAE: { patients: 0, cases: 0 },
+                seriousADR: { patients: 0, cases: 0 },
+                nonSeriousAE: { patients: 0, cases: 0 },
+                nonSeriousADR: { patients: 0, cases: 0 }
+            };
+
+            Object.values(aggregatedData).forEach(socData => {
+                grandTotal.seriousAE.patients += socData.totals.seriousAE.patients;
+                grandTotal.seriousAE.cases += socData.totals.seriousAE.cases;
+                grandTotal.seriousADR.patients += socData.totals.seriousADR.patients;
+                grandTotal.seriousADR.cases += socData.totals.seriousADR.cases;
+                grandTotal.nonSeriousAE.patients += socData.totals.nonSeriousAE.patients;
+                grandTotal.nonSeriousAE.cases += socData.totals.nonSeriousAE.cases;
+                grandTotal.nonSeriousADR.patients += socData.totals.nonSeriousADR.patients;
+                grandTotal.nonSeriousADR.cases += socData.totals.nonSeriousADR.cases;
+            });
+
+            const totalPatients = grandTotal.seriousAE.patients + grandTotal.nonSeriousAE.patients;
+
+            // Row 1: 제목
+            data.push([null, null, '[별첨 1] 개별증례 Line Listing']);
+            currentRow++;
+
+            // Row 2: 빈 행
+            data.push([]);
+            currentRow++;
+
+            // Row 3: 빈 행
+            data.push([]);
+            currentRow++;
+
+            // Row 4: 헤더 1단계
+            data.push([
+                null, '이상사례 종류', null,
+                '중대한', null, null, null, null, null,
+                '중대하지 않은', null, null, null, null, null,
+                '총 누적', null, null, null, null, null,
+                '시판후 비중재 연구', null, null
+            ]);
+            currentRow++;
+
+            // Row 5: 헤더 2단계
+            data.push([
+                null, '구분', null,
+                '이상사례', null, null, '약물이상반응', null, null,
+                '이상사례', null, null, '약물이상반응', null, null,
+                '이상사례', null, null, '약물이상반응', null, null,
+                '중대한 이상사례', null, null
+            ]);
+            currentRow++;
+
+            // Row 6: 헤더 3단계
+            data.push([
+                'No.', 'SOC (기관계분류)', 'PT (이상사례명)',
+                '수', '%', '건', '수', '%', '건',
+                '수', '%', '건', '수', '%', '건',
+                '수', '%', '건', '수', '%', '건',
+                '수', '%', '건'
+            ]);
+            currentRow++;
+
+            const dataStartRow = currentRow;
+            let rowNum = 1;
+
+            // SOC/PT 데이터 행
+            Object.keys(aggregatedData).sort().forEach(soc => {
+                const socData = aggregatedData[soc];
+
+                // SOC 행 (볼드)
+                socRows.push(currentRow);
+                const socTotalPatients = socData.totals.seriousAE.patients + socData.totals.nonSeriousAE.patients;
+                const socTotalCases = socData.totals.seriousAE.cases + socData.totals.nonSeriousAE.cases;
+                const socTotalADRPatients = socData.totals.seriousADR.patients + socData.totals.nonSeriousADR.patients;
+                const socTotalADRCases = socData.totals.seriousADR.cases + socData.totals.nonSeriousADR.cases;
+
+                data.push([
+                    rowNum++,
+                    soc,
+                    '',  // PT 열은 비움
+                    socData.totals.seriousAE.patients,
+                    totalPatients > 0 ? ((socData.totals.seriousAE.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                    socData.totals.seriousAE.cases,
+                    socData.totals.seriousADR.patients,
+                    totalPatients > 0 ? ((socData.totals.seriousADR.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                    socData.totals.seriousADR.cases,
+                    socData.totals.nonSeriousAE.patients,
+                    totalPatients > 0 ? ((socData.totals.nonSeriousAE.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                    socData.totals.nonSeriousAE.cases,
+                    socData.totals.nonSeriousADR.patients,
+                    totalPatients > 0 ? ((socData.totals.nonSeriousADR.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                    socData.totals.nonSeriousADR.cases,
+                    socTotalPatients,
+                    totalPatients > 0 ? ((socTotalPatients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                    socTotalCases,
+                    socTotalADRPatients,
+                    totalPatients > 0 ? ((socTotalADRPatients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                    socTotalADRCases,
+                    0, '0%', 0  // 시판후 비중재 연구 (추후 구현)
+                ]);
+                currentRow++;
+
+                // PT 행들
+                Object.keys(socData.pts).sort().forEach(pt => {
+                    const ptData = socData.pts[pt];
+                    const ptTotalPatients = ptData.seriousAE.patients + ptData.nonSeriousAE.patients;
+                    const ptTotalCases = ptData.seriousAE.cases + ptData.nonSeriousAE.cases;
+                    const ptTotalADRPatients = ptData.seriousADR.patients + ptData.nonSeriousADR.patients;
+                    const ptTotalADRCases = ptData.seriousADR.cases + ptData.nonSeriousADR.cases;
+
+                    data.push([
+                        '',
+                        '',  // SOC 열은 비움
+                        '  ' + pt,  // PT (들여쓰기)
+                        ptData.seriousAE.patients,
+                        totalPatients > 0 ? ((ptData.seriousAE.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                        ptData.seriousAE.cases,
+                        ptData.seriousADR.patients,
+                        totalPatients > 0 ? ((ptData.seriousADR.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                        ptData.seriousADR.cases,
+                        ptData.nonSeriousAE.patients,
+                        totalPatients > 0 ? ((ptData.nonSeriousAE.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                        ptData.nonSeriousAE.cases,
+                        ptData.nonSeriousADR.patients,
+                        totalPatients > 0 ? ((ptData.nonSeriousADR.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                        ptData.nonSeriousADR.cases,
+                        ptTotalPatients,
+                        totalPatients > 0 ? ((ptTotalPatients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                        ptTotalCases,
+                        ptTotalADRPatients,
+                        totalPatients > 0 ? ((ptTotalADRPatients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                        ptTotalADRCases,
+                        0, '0%', 0  // 시판후 비중재 연구
+                    ]);
+                    currentRow++;
+                });
+            });
+
+            const dataEndRow = currentRow - 1;
+
+            // 합계 행
+            const totalAEPatients = grandTotal.seriousAE.patients + grandTotal.nonSeriousAE.patients;
+            const totalAECases = grandTotal.seriousAE.cases + grandTotal.nonSeriousAE.cases;
+            const totalADRPatients = grandTotal.seriousADR.patients + grandTotal.nonSeriousADR.patients;
+            const totalADRCases = grandTotal.seriousADR.cases + grandTotal.nonSeriousADR.cases;
+
+            data.push([
+                '',
+                '합계',
+                '',
+                grandTotal.seriousAE.patients,
+                '100%',
+                grandTotal.seriousAE.cases,
+                grandTotal.seriousADR.patients,
+                totalPatients > 0 ? ((grandTotal.seriousADR.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                grandTotal.seriousADR.cases,
+                grandTotal.nonSeriousAE.patients,
+                '100%',
+                grandTotal.nonSeriousAE.cases,
+                grandTotal.nonSeriousADR.patients,
+                totalPatients > 0 ? ((grandTotal.nonSeriousADR.patients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                grandTotal.nonSeriousADR.cases,
+                totalAEPatients,
+                '100%',
+                totalAECases,
+                totalADRPatients,
+                totalPatients > 0 ? ((totalADRPatients / totalPatients) * 100).toFixed(1) + '%' : '0%',
+                totalADRCases,
+                0, '0%', 0
+            ]);
+            const totalRow = currentRow;
+
+            return {
+                wsData: data,
+                socRows,
+                totalRow,
+                dataStartRow,
+                dataEndRow
+            };
         }
 
         /**
@@ -783,8 +1115,8 @@
 
             this.processedData.forEach(row => {
                 const soc = row.SOC || 'Unknown';
-                const pt = row['__EMPTY_2'] || row['이상사례·약물이상반응 MedDRA명(영문)'] ||
-                           row['PT'] || row['MedDRA명(영문)'] || 'Unknown PT';
+                const pt = row['E.i.3.2c'] || row['E.i.3.2d'] || row['__EMPTY_2'] ||
+                           row['이상사례·약물이상반응 MedDRA명(영문)'] || row['PT'] || row['MedDRA명(영문)'] || 'Unknown PT';
                 const isSerious = row.Seriousness === 'Yes';
                 const causality = row['인과성평가'] || row.Causality || '';
                 const causalityLower = causality.toLowerCase();
@@ -1008,10 +1340,30 @@
 
         /**
          * Excel 파일 다운로드 (CS59_별첨1_일람표 형식)
+         * ExcelJS 사용 시 스타일 포함
          */
-        downloadExcel(filename = 'CS59_별첨1_일람표.xlsx') {
-            const wb = this.toExcelWorkbook();
-            XLSX.writeFile(wb, filename);
+        async downloadExcel(filename = 'CS59_별첨1_일람표.xlsx') {
+            const workbook = await this.toExcelWorkbook();
+
+            // ExcelJS 워크북인지 확인
+            if (workbook.xlsx && typeof workbook.xlsx.writeBuffer === 'function') {
+                // ExcelJS - 스타일 포함 다운로드
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                // Legacy XLSX 라이브러리 폴백
+                XLSX.writeFile(workbook, filename);
+            }
         }
 
         /**
@@ -1132,7 +1484,8 @@
             if (data) {
                 const parsed = JSON.parse(data);
                 this.processedData = parsed.processedData;
-                this.reportMarkdown = parsed.reportMarkdown;
+                // reportMarkdown은 processedData에서 새로 생성 (PT 필드 매핑 최신화)
+                this.reportMarkdown = this.generateReportFromProcessedData(this.processedData);
                 this.statistics = parsed.statistics;
                 return true;
             }

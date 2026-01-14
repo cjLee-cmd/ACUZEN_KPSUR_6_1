@@ -537,13 +537,18 @@
     /**
      * Download Excel (CS59_별첨1_일람표 형식)
      */
-    function downloadExcel() {
+    async function downloadExcel() {
         if (!window.extractLineListings) return;
 
         const filename = `CS59_별첨1_일람표.xlsx`;
 
-        window.extractLineListings.downloadExcel(filename);
-        log('success', `Excel 파일 다운로드: ${filename}`);
+        try {
+            await window.extractLineListings.downloadExcel(filename);
+            log('success', `Excel 파일 다운로드: ${filename}`);
+        } catch (error) {
+            log('error', `Excel 다운로드 실패: ${error.message}`);
+            console.error('Excel download error:', error);
+        }
     }
 
     /**
