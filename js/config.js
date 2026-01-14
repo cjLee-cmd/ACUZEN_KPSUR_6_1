@@ -30,7 +30,32 @@ const CONFIG = {
     // 중복 제거됨 - Single Source of Truth 패턴 적용
 
     // PSUR 섹션별 데이터 의존성 (섹션 생성에 필요한 RAW 파일 정의)
+    // 모든 15개 섹션 정의 (00-14)
     SECTION_DATA_DEPENDENCIES: {
+        "00": {
+            name: "표지",
+            required: [],
+            optional: [],
+            description: "보고서 표지 (사용자 입력 데이터 기반)"
+        },
+        "01": {
+            name: "목차",
+            required: [],
+            optional: [],
+            description: "목차 (자동 생성)"
+        },
+        "02": {
+            name: "약어설명",
+            required: [],
+            optional: [],
+            description: "약어 설명 (보고서 내용 기반 자동 생성)"
+        },
+        "03": {
+            name: "서론",
+            required: [],
+            optional: ["RAW1.1", "RAW2.1", "RAW2.2"],
+            description: "서론 (제품 정보, 효능효과, 용법용량)"
+        },
         "04": {
             name: "전세계판매허가현황",
             required: ["RAW4"],
@@ -42,6 +67,12 @@ const CONFIG = {
             required: ["RAW7"],
             optional: ["RAW5", "RAW6"],
             description: "안전성 조치 이력 (허가팀 메일, 변경 내역)"
+        },
+        "06": {
+            name: "안전성정보참고정보변경",
+            required: [],
+            optional: ["RAW7", "RAW2.3", "RAW2.6"],
+            description: "허가사항 변경 이력 (사용상의주의사항 비교)"
         },
         "07": {
             name: "환자노출",
@@ -60,6 +91,36 @@ const CONFIG = {
             required: [],
             optional: ["RAW8", "RAW17"],
             description: "임상 시험 데이터 (회사 주관 임상, IIT/NIS)"
+        },
+        "10": {
+            name: "기타정보",
+            required: [],
+            optional: ["RAW9"],
+            description: "문헌 자료 및 기타 안전성 정보"
+        },
+        "11": {
+            name: "종합적인안전성평가",
+            required: [],
+            optional: [],
+            description: "종합적인 안전성 평가 (이전 섹션 종합)"
+        },
+        "12": {
+            name: "결론",
+            required: [],
+            optional: [],
+            description: "결론 (유익성-위해성 평가)"
+        },
+        "13": {
+            name: "참고문헌",
+            required: [],
+            optional: ["RAW9"],
+            description: "참고문헌 (학술 논문 목록)"
+        },
+        "14": {
+            name: "별첨",
+            required: [],
+            optional: [],
+            description: "별첨 자료"
         }
     },
 

@@ -1605,8 +1605,13 @@ ${markdownsWithRawId.length > 0 ? allMarkdowns : '제공된 RAW 데이터가 없
             content += `**권장 파일**: ${warningInfo.missingFiles.join(', ')}\n\n`;
             content += `기본 템플릿으로 작성되었습니다. 상세 데이터를 추가하려면 권장 파일을 업로드하고 재생성하십시오.\n`;
         } else {
-            content += `[이 섹션은 생성되지 않았습니다]\n\n`;
-            content += `예상치 못한 오류가 발생했습니다. 로그를 확인하십시오.\n`;
+            // 필수/선택 데이터가 없는 섹션 (00, 01, 02, 11, 12, 14 등)
+            // LLM 생성 실패 시 재생성 안내
+            content += `**LLM 생성 실패**\n\n`;
+            content += `이 섹션은 LLM 응답에서 파싱되지 않았습니다.\n\n`;
+            content += `**다음 단계**:\n`;
+            content += `1. "재생성" 버튼을 클릭하여 이 섹션을 다시 생성하십시오\n`;
+            content += `2. 문제가 지속되면 API 키 및 네트워크 연결을 확인하세요\n`;
         }
 
         return {
