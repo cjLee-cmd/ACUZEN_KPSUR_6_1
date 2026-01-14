@@ -30,6 +30,8 @@
             this.isVisible = false;
             this.streamingBuffer = [];
             this._initialized = false;
+            this._showTime = 0;  // show() 호출 시간 기록
+            this._minDisplayTime = 2000;  // 최소 표시 시간 (ms)
 
             // DOM이 준비되면 컨테이너 생성
             if (document.body) {
@@ -442,8 +444,10 @@
                 this._initDOM();
             }
             this.isVisible = true;
+            this._showTime = Date.now();  // 표시 시작 시간 기록
             if (this.container) {
                 this.container.classList.add('visible');
+                console.log('[LLMProgressBar] 표시됨');
             }
             return this;
         }
@@ -576,6 +580,7 @@
         complete(message = '처리 완료!') {
             if (!this.container) return this;
 
+            console.log('[LLMProgressBar] 완료:', message);
             this._updateProgress(100);
 
             // 모든 단계 완료 표시
@@ -594,8 +599,12 @@
             const titleEl = this.container.querySelector('.llm-progress-title span');
             if (titleEl) titleEl.textContent = message;
 
-            // 1.5초 후 자동 숨김
-            setTimeout(() => this.hide(), 1500);
+            // 최소 표시 시간 보장 후 숨김 (3초 후)
+            const elapsed = Date.now() - this._showTime;
+            const remainingTime = Math.max(0, this._minDisplayTime - elapsed);
+            const hideDelay = remainingTime + 3000;  // 최소 시간 + 3초 추가 표시
+
+            setTimeout(() => this.hide(), hideDelay);
 
             return this;
         }
@@ -606,6 +615,8 @@
          */
         error(message = '처리 중 오류가 발생했습니다.') {
             if (!this.container) return this;
+
+            console.log('[LLMProgressBar] 에러:', message);
 
             const spinner = this.container.querySelector('.llm-progress-spinner');
             if (spinner) spinner.style.display = 'none';
@@ -619,8 +630,12 @@
             const fill = this.container.querySelector('.llm-progress-bar-fill');
             if (fill) fill.style.background = 'var(--color-error, #DC2626)';
 
-            // 3초 후 자동 숨김
-            setTimeout(() => this.hide(), 3000);
+            // 최소 표시 시간 보장 후 숨김 (5초 후)
+            const elapsed = Date.now() - this._showTime;
+            const remainingTime = Math.max(0, this._minDisplayTime - elapsed);
+            const hideDelay = remainingTime + 5000;  // 최소 시간 + 5초 추가 표시
+
+            setTimeout(() => this.hide(), hideDelay);
 
             return this;
         }
