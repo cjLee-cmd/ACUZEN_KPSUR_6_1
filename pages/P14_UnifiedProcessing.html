@@ -1441,10 +1441,11 @@
                 nextBtn.classList.add('btn-wizard-next');
             }
 
-            // Skip 버튼 표시/숨김 (Step 3에서 이미 분류 완료된 경우에만 표시)
+            // Skip 버튼 표시/숨김 (Step 3에서 마크다운 변환 + 분류 완료된 경우에만 표시)
             const skipBtn = document.getElementById('skipBtn');
             const hasGeneratedSections = localStorage.getItem('generatedSections');
-            if (currentStep === totalSteps && hasGeneratedSections) {
+            const hasConvertedMarkdowns = localStorage.getItem('convertedMarkdowns');
+            if (currentStep === totalSteps && hasGeneratedSections && hasConvertedMarkdowns) {
                 skipBtn.style.display = 'inline-block';
             } else {
                 skipBtn.style.display = 'none';
@@ -1478,7 +1479,28 @@
         // 다음 페이지로 건너뛰기 (이미 분류 완료된 경우)
         // ========================================
         function skipToNextPage() {
-            const reportId = getUrlParam('reportId') || localStorage.getItem('current_report');
+            // reportId 추출 (URL 파라미터 또는 localStorage에서)
+            let reportId = getUrlParam('reportId');
+
+            // localStorage의 current_report가 JSON 객체인 경우 내부의 reportId 추출
+            if (!reportId) {
+                const currentReport = localStorage.getItem('current_report');
+                if (currentReport) {
+                    try {
+                        const parsed = JSON.parse(currentReport);
+                        reportId = parsed.reportId || currentReport;
+                    } catch (e) {
+                        // JSON 파싱 실패 시 그대로 사용 (이미 UUID인 경우)
+                        reportId = currentReport;
+                    }
+                }
+            }
+
+            if (!reportId) {
+                console.error('[P14] Skip: reportId를 찾을 수 없습니다');
+                showToast('보고서 ID를 찾을 수 없습니다', 'error');
+                return;
+            }
 
             // convertedMarkdowns에서 Line Listing 파일 존재 여부 확인
             const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
