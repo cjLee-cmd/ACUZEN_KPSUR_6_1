@@ -398,22 +398,22 @@ const PSURGenerator = {
     },
 
     /**
-     * UserPrompt 템플릿 로드 (UserPrompt.md)
+     * UserPrompt 템플릿 로드 (UserPrompt_2_260115.md)
      */
     async loadUserPromptTemplate() {
         if (this.userPromptTemplateLoaded && this.userPromptTemplate) {
             return this.userPromptTemplate;
         }
 
-        console.log('[PSURGenerator] Loading UserPrompt.md...');
+        console.log('[PSURGenerator] Loading UserPrompt_2_260115.md...');
 
         const paths = [
-            '../01_Context/UserPrompt.md',
-            './01_Context/UserPrompt.md',
-            '/01_Context/UserPrompt.md',
+            '../01_Context/UserPrompt_2_260115.md',
+            './01_Context/UserPrompt_2_260115.md',
+            '/01_Context/UserPrompt_2_260115.md',
             // Fallback paths
-            '../UserPrompt.md',
-            './UserPrompt.md'
+            '../UserPrompt_2_260115.md',
+            './UserPrompt_2_260115.md'
         ];
 
         for (const path of paths) {
@@ -430,7 +430,7 @@ const PSURGenerator = {
             }
         }
 
-        console.warn('[PSURGenerator] UserPrompt.md not found');
+        console.warn('[PSURGenerator] UserPrompt_2_260115.md not found');
         return null;
     },
 
@@ -669,14 +669,14 @@ ${this.lineListingAnalysis.reportMarkdown}
 
         // UserPrompt 로드 성공 시: 불필요한 로드 스킵
         if (this.userPromptTemplate) {
-            console.log('[PSURGenerator] UserPrompt.md 사용 - 추가 로드 스킵');
+            console.log('[PSURGenerator] UserPrompt_2_260115.md 사용 - 추가 로드 스킵');
             if (onProgress) onProgress({ step: 'prompt', message: '프롬프트 생성 중 (UserPrompt 모드)...' });
 
-            // UserPrompt.md에 모든 정보가 포함되어 있으므로 추가 로드 불필요
+            // UserPrompt_2_260115.md에 모든 정보가 포함되어 있으므로 추가 로드 불필요
             prompt = this.buildFullReportPrompt(combinedMarkdown, '', '', '');
         } else {
             // Fallback: 모든 리소스 로드
-            console.warn('[PSURGenerator] UserPrompt.md 로드 실패 - Fallback 모드');
+            console.warn('[PSURGenerator] UserPrompt_2_260115.md 로드 실패 - Fallback 모드');
 
             // 템플릿 로드
             if (!this.templatesLoaded || Object.keys(this.templates).length === 0) {
@@ -752,12 +752,12 @@ ${this.lineListingAnalysis.reportMarkdown}
 
     /**
      * 전체 보고서 생성용 프롬프트
-     * UserPrompt.md 템플릿을 사용하고 {{RAW_DATA_PLACEHOLDER}}를 교체
+     * UserPrompt_2_260115.md 템플릿을 사용하고 {{RAW_DATA_PLACEHOLDER}}를 교체
      */
     buildFullReportPrompt(combinedMarkdown, userInputData, templatesText, examplesText = '') {
-        // UserPrompt.md 템플릿이 로드되어 있으면 사용
+        // UserPrompt_2_260115.md 템플릿이 로드되어 있으면 사용
         if (this.userPromptTemplate) {
-            console.log('[PSURGenerator] Using UserPrompt.md template with placeholder replacement');
+            console.log('[PSURGenerator] Using UserPrompt_2_260115.md template with placeholder replacement');
 
             // 플레이스홀더를 실제 원시자료로 교체
             const prompt = this.userPromptTemplate.replace(
@@ -1119,7 +1119,7 @@ ${examplesText.substring(0, 35000)}
             '14': '별첨'
         };
 
-        // === JSON 응답 처리 (UserPrompt.md 형식) ===
+        // === JSON 응답 처리 (UserPrompt_2_260115.md 형식) ===
         try {
             // markdown code block 제거
             let cleanText = responseText.trim();

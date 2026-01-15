@@ -789,6 +789,65 @@
             color: #fbbf24;
         }
 
+        /* ========================================
+           Footer Navigation - Glass
+           ======================================== */
+        .footer-nav {
+            position: fixed;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-top: 1px solid var(--glass-border);
+            z-index: 100;
+        }
+
+        .btn-nav {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-nav-prev {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-nav-prev:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateX(-2px);
+        }
+
+        .btn-nav-next {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-nav-next:hover:not(:disabled) {
+            transform: translateY(-2px) translateX(2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        [data-theme="dark"] .footer-nav {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
         @media (max-width: 1024px) {
             .qc-main-grid {
                 grid-template-columns: 1fr;
@@ -1059,6 +1118,11 @@
         let issues = [];
         let qcInProgress = false;
 
+        // URL에서 reportId 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('reportId');
+        console.log('[P19] Report ID from URL:', reportId);
+
         // Initialize the page
         function init() {
             const layout = new AppLayout({
@@ -1238,6 +1302,15 @@
                 </div>
                 </main>
                 </div>
+
+                <!-- Footer Navigation -->
+                <footer class="footer-nav">
+                    <button class="btn-nav btn-nav-prev" onclick="navigateTo('P15_SectionEditor.html')">
+                        ← 이전: 섹션 편집
+                    </button>
+                    <div></div>
+                    <button class="btn-nav btn-nav-next" onclick="navigateTo('P20_Output.html')">다음: 최종 출력 →</button>
+                </footer>
 
                 <!-- Footer -->
                 <footer class="app-footer">
@@ -1670,10 +1743,49 @@
             });
         }
 
+        // 현재 Stage 업데이트 (DB)
+        async function updateCurrentStage(targetReportId, stage) {
+            if (!targetReportId) return;
+
+            // localStorage 업데이트 (local_ 포함 모든 reportId)
+            try {
+                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+                currentReport.current_stage = stage;
+                currentReport.updated_at = new Date().toISOString();
+                localStorage.setItem('current_report', JSON.stringify(currentReport));
+                console.log(`✅ [P19] localStorage Stage ${stage}로 업데이트됨`);
+            } catch (e) {
+                console.warn('[P19] localStorage 업데이트 실패:', e);
+            }
+
+            // DB 업데이트 (local_이 아닌 경우만)
+            if (targetReportId.startsWith('local_')) return;
+            if (!window.supabaseClient) return;
+
+            try {
+                const result = await window.supabaseClient.updateReport(targetReportId, {
+                    current_stage: stage
+                });
+
+                if (result.success) {
+                    console.log(`✅ [P19] DB Stage ${stage}로 업데이트됨`);
+                } else {
+                    console.warn('[P19] Stage 업데이트 실패:', result.error);
+                }
+            } catch (error) {
+                console.warn('[P19] Stage 업데이트 오류:', error.message);
+            }
+        }
+
         // Initialize on load
         init();
         setupManualChecklistListeners();
         restoreManualCheckStates();
+
+        // 페이지 로드 시 Stage 9 (QC 검증)로 업데이트
+        if (reportId) {
+            updateCurrentStage(reportId, 9);
+        }
     </script>
 </body>
 

@@ -89,9 +89,9 @@
          * 전체 보고서 생성용 프롬프트
          */
         buildFullReportPrompt(combinedMarkdown, userInputData, templatesText, examplesText = '') {
-            // UserPrompt.md 템플릿이 로드되어 있으면 사용
+            // UserPrompt_2_260115.md 템플릿이 로드되어 있으면 사용
             if (this.templates && this.templates.userPromptTemplate) {
-                console.log('[PSURPrompts] Using UserPrompt.md template with placeholder replacement');
+                console.log('[PSURPrompts] Using UserPrompt_2_260115.md template with placeholder replacement');
 
                 const prompt = this.templates.userPromptTemplate.replace(
                     '{{RAW_DATA_PLACEHOLDER}}',

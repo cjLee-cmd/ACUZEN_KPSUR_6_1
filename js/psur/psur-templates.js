@@ -211,17 +211,17 @@
                 return this.userPromptTemplate;
             }
 
-            console.log('[PSURTemplates] Loading UserPrompt.md...' + (forceReload ? ' (force reload)' : ''));
+            console.log('[PSURTemplates] Loading UserPrompt_2_260115.md...' + (forceReload ? ' (force reload)' : ''));
 
             // Cache-busting을 위한 타임스탬프
             const cacheBuster = `?t=${Date.now()}`;
 
             const paths = [
-                '../01_Context/UserPrompt.md',
-                './01_Context/UserPrompt.md',
-                '/01_Context/UserPrompt.md',
-                '../UserPrompt.md',
-                './UserPrompt.md'
+                '../01_Context/UserPrompt_2_260115.md',
+                './01_Context/UserPrompt_2_260115.md',
+                '/01_Context/UserPrompt_2_260115.md',
+                '../UserPrompt_2_260115.md',
+                './UserPrompt_2_260115.md'
             ];
 
             for (const path of paths) {
@@ -238,7 +238,7 @@
                 }
             }
 
-            console.warn('[PSURTemplates] UserPrompt.md not found');
+            console.warn('[PSURTemplates] UserPrompt_2_260115.md not found');
             return null;
         }
 

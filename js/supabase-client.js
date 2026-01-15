@@ -158,8 +158,14 @@
 
         async updateReport(reportId, updates) {
             await this.init();
-            const { data, error } = await this.client.from('reports').update(updates).eq('id', reportId).select().single();
+            // updated_at 자동 갱신
+            const updateData = {
+                ...updates,
+                updated_at: new Date().toISOString()
+            };
+            const { data, error } = await this.client.from('reports').update(updateData).eq('id', reportId).select().maybeSingle();
             if (error) return { success: false, error: error.message };
+            if (!data) return { success: false, error: 'Report not found or no update permission' };
             return { success: true, report: data };
         }
 

@@ -1070,6 +1070,7 @@
                 <div class="editor-title" id="editorTitle">섹션을 선택하세요</div>
                 <div class="editor-actions">
                     <button class="btn btn-outline" onclick="resetSection()">↺ 초기화</button>
+                    <button class="btn btn-warning" id="regenerateBtn" onclick="regenerateSection()" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); display: none;">🔄 재생성</button>
                     <button class="btn btn-primary" onclick="saveSection()">💾 저장</button>
                 </div>
             </div>
@@ -1213,6 +1214,7 @@
     <script src="../js/page-guard.js"></script>
     <script src="../js/section-editor.js"></script>
     <script src="../js/multi-llm-client.js"></script>
+    <script src="../js/components/llm-progress-bar.js"></script>
     <script src="../js/llm-session-manager.js"></script>
     <script src="../js/chat-modal.js"></script>
 
@@ -1252,10 +1254,10 @@
             await loadMarkdownFiles();
             await loadExtractedData();  // CS/PH/Table 데이터 로드
 
-            // 보고서 ID가 있으면 Stage 업데이트
+            // 보고서 ID가 있으면 Stage 업데이트 (5 = 섹션 편집)
             const reportId = getReportId();
             if (reportId) {
-                await updateCurrentStage(reportId, 3);
+                await updateCurrentStage(reportId, 5);
             }
 
             // 채팅 모달 초기화
@@ -1381,6 +1383,15 @@
             document.getElementById('editStatus').textContent = '저장됨';
             document.getElementById('editStatus').style.color = '#64748B';
 
+            // 재생성 버튼 표시 여부 결정 (LLM 생성 실패 또는 API 키 미설정)
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            const content = section.content || '';
+            const needsRegeneration = content.includes('LLM 생성 실패') ||
+                                      content.includes('API 키 미설정') ||
+                                      content.includes('섹션 생성 실패') ||
+                                      content.includes('데이터 상태');
+            regenerateBtn.style.display = needsRegeneration ? 'inline-block' : 'none';
+
             // 채팅 모달에 현재 섹션 컨텍스트 전달
             if (window.chatModal) {
                 const contextText = `[섹션 ${section.id}. ${section.name}]\n\n${section.content || ''}`;
@@ -1443,6 +1454,284 @@
             showToast('섹션이 초기화되었습니다', 'info');
         }
 
+        /**
+         * 섹션별 프롬프트 파일 로드
+         * @param {string} sectionId - 섹션 ID (00-14)
+         * @param {string} sectionName - 섹션 이름
+         * @returns {string} 조합된 프롬프트
+         */
+        async function loadSectionPrompt(sectionId, sectionName) {
+            const basePath = '../01_Context/sectionPrompt/';
+            const sectionFileNames = {
+                '00': '00_표지.md',
+                '01': '01_목차.md',
+                '02': '02_약어설명.md',
+                '03': '03_서론.md',
+                '04': '04_전세계판매허가현황.md',
+                '05': '05_안전성조치.md',
+                '06': '06_안전성정보참고정보변경.md',
+                '07': '07_환자노출.md',
+                '08': '08_개별증례병력.md',
+                '09': '09_시험.md',
+                '10': '10_기타정보.md',
+                '11': '11_종합적인안전성평가.md',
+                '12': '12_결론.md',
+                '13': '13_참고문헌.md',
+                '14': '14_별첨.md'
+            };
+
+            try {
+                // 1. 공통 규칙 로드
+                let commonRules = '';
+                try {
+                    const commonResponse = await fetch(basePath + '_common.md');
+                    if (commonResponse.ok) {
+                        commonRules = await commonResponse.text();
+                        console.log(`[loadSectionPrompt] 공통 규칙 로드 완료 (${commonRules.length}자)`);
+                    }
+                } catch (e) {
+                    console.warn('[loadSectionPrompt] 공통 규칙 로드 실패:', e);
+                }
+
+                // 2. 섹션별 프롬프트 로드
+                let sectionPromptContent = '';
+                const sectionFileName = sectionFileNames[sectionId];
+                if (sectionFileName) {
+                    try {
+                        const sectionResponse = await fetch(basePath + sectionFileName);
+                        if (sectionResponse.ok) {
+                            sectionPromptContent = await sectionResponse.text();
+                            console.log(`[loadSectionPrompt] 섹션 프롬프트 로드 완료: ${sectionFileName} (${sectionPromptContent.length}자)`);
+                        }
+                    } catch (e) {
+                        console.warn(`[loadSectionPrompt] 섹션 프롬프트 로드 실패: ${sectionFileName}`, e);
+                    }
+                }
+
+                // 3. 프롬프트 조합
+                if (sectionPromptContent) {
+                    // {{COMMON_RULES}} placeholder를 공통 규칙으로 치환
+                    const combinedPrompt = sectionPromptContent.replace('{{COMMON_RULES}}', commonRules);
+
+                    // 실행 지시 추가
+                    const finalPrompt = combinedPrompt + `
+
+---
+
+## 실행 지시
+
+위 템플릿과 지침에 따라 "${sectionId}. ${sectionName}" 섹션을 작성하세요.
+
+**필수 사항**:
+1. 이전에 제공된 RAW 데이터만 사용한다
+2. 없는 데이터는 "[해당 데이터 없음]"으로 표시한다
+3. 마크다운 형식으로 출력한다 (코드블록으로 감싸지 않음)
+4. 모든 문장은 '~이다'체로 작성한다
+
+지금 바로 "${sectionName}" 섹션 내용만 출력하세요.`;
+
+                    return finalPrompt;
+                }
+
+                // 4. 폴백: 섹션 프롬프트 로드 실패 시 기본 프롬프트 사용
+                console.warn('[loadSectionPrompt] 섹션 프롬프트 로드 실패, 기본 프롬프트 사용');
+                return `PSUR "${sectionId}. ${sectionName}" 섹션을 작성해주세요.
+
+${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 작성\n2. 이전에 제공된 RAW 데이터만 사용\n3. 없는 데이터는 "[해당 데이터 없음]"으로 표시\n4. 마크다운 형식으로 출력 (코드블록 불필요)'}
+
+지금 바로 "${sectionName}" 섹션 내용만 출력하세요.`;
+
+            } catch (error) {
+                console.error('[loadSectionPrompt] 프롬프트 로드 오류:', error);
+                // 최소한의 폴백 프롬프트
+                return `PSUR "${sectionId}. ${sectionName}" 섹션을 작성해주세요.
+
+필수 규칙:
+1. 문체: 모든 문장은 '~이다'체로 작성
+2. 이전에 제공된 RAW 데이터만 사용
+3. 없는 데이터는 "[해당 데이터 없음]"으로 표시
+4. 마크다운 형식으로 출력 (코드블록 불필요)
+
+지금 바로 "${sectionName}" 섹션 내용만 출력하세요.`;
+            }
+        }
+
+        // 섹션 재생성 (LLM)
+        async function regenerateSection() {
+            if (!currentSectionId) {
+                showToast('재생성할 섹션이 선택되지 않았습니다', 'error');
+                return;
+            }
+
+            // API 키 확인
+            const apiKey = localStorage.getItem('GOOGLE_API_KEY');
+            if (!apiKey) {
+                const goToSettings = confirm(
+                    '⚠️ Google API 키가 설정되지 않았습니다.\n\n' +
+                    '섹션 재생성을 위해 API 키가 필요합니다.\n' +
+                    '설정 페이지로 이동하시겠습니까?'
+                );
+                if (goToSettings) {
+                    window.location.href = `P91_Settings.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+                }
+                return;
+            }
+
+            const sectionNames = {
+                '00': '표지', '01': '목차', '02': '약어설명', '03': '서론',
+                '04': '전세계판매허가현황', '05': '안전성조치', '06': '안전성정보참고정보변경',
+                '07': '환자노출', '08': '개별증례병력', '09': '시험', '10': '기타정보',
+                '11': '종합적인안전성평가', '12': '결론', '13': '참고문헌', '14': '별첨'
+            };
+
+            const sectionName = sectionNames[currentSectionId] || `섹션 ${currentSectionId}`;
+
+            if (!confirm(`"${currentSectionId}. ${sectionName}" 섹션을 LLM으로 재생성하시겠습니까?\n\n이 작업은 시간이 소요될 수 있습니다.`)) {
+                return;
+            }
+
+            // UI 업데이트 - 재생성 중 표시
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            const originalText = regenerateBtn.textContent;
+            regenerateBtn.disabled = true;
+            regenerateBtn.textContent = '⏳ 재생성 중...';
+
+            // 프로그레스 바 초기화 및 표시
+            if (window.llmProgressBar) {
+                window.llmProgressBar.init({
+                    title: `${sectionName} 재생성 중...`,
+                    steps: [
+                        { id: 'session', name: '세션 연결', icon: '🔗' },
+                        { id: 'prompt', name: '프롬프트 로드', icon: '📄' },
+                        { id: 'llm', name: 'LLM 호출', icon: '🤖' },
+                        { id: 'save', name: '저장', icon: '💾' }
+                    ],
+                    onCancel: () => {
+                        showToast('재생성이 취소되었습니다', 'warning');
+                    }
+                }).show();
+            }
+
+            try {
+                // Step 1: 세션 연결 (기존 컨텍스트 활용)
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.startStep('session');
+                    window.llmProgressBar.setStreamText('기존 세션에 연결 중...');
+                }
+
+                const reportId = getReportId();
+                if (!window.llmSessionManager) {
+                    throw new Error('LLM 세션 매니저가 초기화되지 않았습니다.');
+                }
+
+                // 세션 초기화 (기존 세션 복원 또는 새 세션 생성)
+                // 시스템 프롬프트에 마크다운 데이터가 이미 포함됨
+                await window.llmSessionManager.initSession(reportId);
+                const sessionInfo = window.llmSessionManager.getSessionInfo();
+
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.completeStep('session');
+                    window.llmProgressBar.setStreamText(`세션 연결 완료 (메시지 ${sessionInfo.messageCount}개)`);
+                }
+
+                // Step 2: 섹션별 프롬프트 로드
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.startStep('prompt');
+                    window.llmProgressBar.setStreamText('섹션 프롬프트 로드 중...');
+                }
+
+                // 🎯 섹션별 프롬프트 파일 로드
+                const sectionPrompt = await loadSectionPrompt(currentSectionId, sectionName);
+
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.completeStep('prompt');
+                    window.llmProgressBar.setStreamText(`프롬프트 로드 완료 (${sectionPrompt.length.toLocaleString()}자)`);
+                }
+
+                // Step 3: LLM 호출
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.startStep('llm');
+                    window.llmProgressBar.setStreamText('LLM API 호출 중... (섹션 프롬프트 기반)');
+                }
+
+                console.log(`[regenerateSection] 섹션 프롬프트 기반 호출 - 프롬프트 길이: ${sectionPrompt.length}자`);
+
+                // 세션 매니저를 통한 메시지 전송 (히스토리 + 컨텍스트 유지)
+                const response = await window.llmSessionManager.sendMessage(sectionPrompt, {
+                    dialogType: 'psur_generation',
+                    temperature: 0.3
+                });
+
+                if (!response.success) {
+                    throw new Error(response.error || 'LLM 응답 실패');
+                }
+
+                const generatedContent = response.text;
+
+                if (!generatedContent || generatedContent.length < 50) {
+                    throw new Error('LLM 응답이 너무 짧습니다.');
+                }
+
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.completeStep('llm');
+                    const tokenSaved = response.usage ?
+                        `입력 ${response.usage.inputTokens?.toLocaleString() || 0} / 출력 ${response.usage.outputTokens?.toLocaleString() || 0}` :
+                        `${generatedContent.length.toLocaleString()}자 생성`;
+                    window.llmProgressBar.setStreamText(`LLM 응답 완료 (${tokenSaved})`);
+                }
+
+                // Step 3: 저장
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.startStep('save');
+                    window.llmProgressBar.setStreamText('섹션 저장 중...');
+                }
+
+                // 섹션 업데이트
+                const updatedSection = {
+                    id: currentSectionId,
+                    name: sectionName,
+                    content: generatedContent,
+                    generatedAt: new Date().toISOString(),
+                    isEdited: false
+                };
+
+                // localStorage 업데이트
+                const generatedSections = JSON.parse(localStorage.getItem('generatedSections') || '{}');
+                generatedSections[currentSectionId] = updatedSection;
+                localStorage.setItem('generatedSections', JSON.stringify(generatedSections));
+
+                // Editor 업데이트
+                if (editor && editor.sections) {
+                    editor.sections[currentSectionId] = updatedSection;
+                }
+
+                // UI 갱신
+                loadSectionContent();
+                renderSectionList();
+                updateSummary();
+
+                // 재생성 버튼 숨기기 (성공 시)
+                regenerateBtn.style.display = 'none';
+
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.completeStep('save');
+                    window.llmProgressBar.complete(`✅ ${sectionName} 재생성 완료!`);
+                }
+
+                showToast(`✅ ${sectionName} 섹션이 재생성되었습니다!`, 'success');
+
+            } catch (error) {
+                console.error('섹션 재생성 실패:', error);
+                if (window.llmProgressBar) {
+                    window.llmProgressBar.error(`❌ 재생성 실패: ${error.message}`);
+                }
+                showToast(`❌ 재생성 실패: ${error.message}`, 'error');
+            } finally {
+                regenerateBtn.disabled = false;
+                regenerateBtn.textContent = originalText;
+            }
+        }
+
         // 마크다운 소스 복사
         function copySource() {
             const source = document.getElementById('markdownSource').textContent;
@@ -1483,22 +1772,31 @@
         }
 
         // 현재 Stage 업데이트 (DB)
-        async function updateCurrentStage(reportId, stage) {
-            if (!reportId || reportId.startsWith('local_')) return;
+        async function updateCurrentStage(targetReportId, stage) {
+            if (!targetReportId) return;
+
+            // localStorage 업데이트 (local_ 포함 모든 reportId)
+            try {
+                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+                currentReport.current_stage = stage;
+                currentReport.updated_at = new Date().toISOString();
+                localStorage.setItem('current_report', JSON.stringify(currentReport));
+                console.log(`✅ [P15] localStorage Stage ${stage}로 업데이트됨`);
+            } catch (e) {
+                console.warn('[P15] localStorage 업데이트 실패:', e);
+            }
+
+            // DB 업데이트 (local_이 아닌 경우만)
+            if (targetReportId.startsWith('local_')) return;
             if (!window.supabaseClient) return;
 
             try {
-                const result = await window.supabaseClient.updateReport(reportId, {
+                const result = await window.supabaseClient.updateReport(targetReportId, {
                     current_stage: stage
                 });
 
                 if (result.success) {
-                    console.log(`✅ [P15] Stage ${stage}로 업데이트됨`);
-
-                    // localStorage의 current_report도 업데이트
-                    const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
-                    currentReport.current_stage = stage;
-                    localStorage.setItem('current_report', JSON.stringify(currentReport));
+                    console.log(`✅ [P15] DB Stage ${stage}로 업데이트됨`);
                 } else {
                     console.warn('[P15] Stage 업데이트 실패:', result.error);
                 }

@@ -2954,7 +2954,37 @@
             };
 
             try {
-                // 0. PRE-CHECK: Validate data completeness
+                // 0-1. PRE-CHECK: API 키 검증
+                const apiKey = localStorage.getItem('GOOGLE_API_KEY');
+                if (!apiKey) {
+                    console.warn('[generatePSURSections] API 키가 없습니다. 설정 페이지로 이동을 권장합니다.');
+                    const goToSettings = confirm(
+                        '⚠️ Google API 키가 설정되지 않았습니다.\n\n' +
+                        'PSUR 섹션 생성을 위해 API 키가 필요합니다.\n' +
+                        '설정 페이지로 이동하시겠습니까?\n\n' +
+                        '(취소를 누르면 기본 템플릿으로 생성됩니다)'
+                    );
+                    if (goToSettings) {
+                        const reportId = getUrlParam('reportId') || 'local_' + Date.now();
+                        window.location.href = `P91_Settings.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+                        return {};
+                    }
+                    // API 키 없이 진행 - 기본 템플릿 생성
+                    console.log('[generatePSURSections] API 키 없이 기본 템플릿으로 생성');
+                    const sections = {};
+                    for (const [id, name] of Object.entries(sectionNames)) {
+                        sections[id] = {
+                            id,
+                            name,
+                            content: `## ${id}. ${name}\n\n**⚠️ API 키 미설정**\n\n이 섹션은 API 키가 설정되지 않아 LLM으로 생성되지 않았습니다.\n\n**다음 단계**:\n1. 설정 페이지에서 Google API 키를 입력하세요\n2. "재생성" 버튼을 클릭하여 이 섹션을 다시 생성하세요\n`,
+                            generatedAt: new Date().toISOString(),
+                            isEdited: false
+                        };
+                    }
+                    return sections;
+                }
+
+                // 0-2. PRE-CHECK: Validate data completeness
                 const uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '{}');
                 const validation = validateDataCompleteness(uploadedFiles);
 

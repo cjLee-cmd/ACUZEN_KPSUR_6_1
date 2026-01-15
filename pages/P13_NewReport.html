@@ -608,6 +608,65 @@
             color: #34d399;
         }
 
+        /* ========================================
+           Footer Navigation - Glass
+           ======================================== */
+        .footer-nav {
+            position: fixed;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-top: 1px solid var(--glass-border);
+            z-index: 100;
+        }
+
+        .btn-nav {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-nav-prev {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-nav-prev:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateX(-2px);
+        }
+
+        .btn-nav-next {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-nav-next:hover:not(:disabled) {
+            transform: translateY(-2px) translateX(2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        [data-theme="dark"] .footer-nav {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .page-header {
@@ -1012,6 +1071,15 @@
                 </div>
             </aside>
         </div>
+
+        <!-- Footer Navigation -->
+        <footer class="footer-nav">
+            <button class="btn-nav btn-nav-prev" onclick="navigateTo('P10_Dashboard.html')">
+                ← 이전: 대시보드
+            </button>
+            <div></div>
+            <button class="btn-nav btn-nav-next" onclick="navigateTo('P14_UnifiedProcessing.html')">다음: 통합 처리 →</button>
+        </footer>
 
         <!-- Footer -->
         <footer class="app-footer">

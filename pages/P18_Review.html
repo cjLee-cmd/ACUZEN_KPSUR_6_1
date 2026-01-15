@@ -2394,8 +2394,47 @@
             document.getElementById('changeCount').textContent = changeHistory.length;
         }
 
+        // 현재 Stage 업데이트 (DB)
+        async function updateCurrentStage(targetReportId, stage) {
+            if (!targetReportId) return;
+
+            // localStorage 업데이트 (local_ 포함 모든 reportId)
+            try {
+                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+                currentReport.current_stage = stage;
+                currentReport.updated_at = new Date().toISOString();
+                localStorage.setItem('current_report', JSON.stringify(currentReport));
+                console.log(`✅ [P18] localStorage Stage ${stage}로 업데이트됨`);
+            } catch (e) {
+                console.warn('[P18] localStorage 업데이트 실패:', e);
+            }
+
+            // DB 업데이트 (local_이 아닌 경우만)
+            if (targetReportId.startsWith('local_')) return;
+            if (!window.supabaseClient) return;
+
+            try {
+                const result = await window.supabaseClient.updateReport(targetReportId, {
+                    current_stage: stage
+                });
+
+                if (result.success) {
+                    console.log(`✅ [P18] DB Stage ${stage}로 업데이트됨`);
+                } else {
+                    console.warn('[P18] Stage 업데이트 실패:', result.error);
+                }
+            } catch (error) {
+                console.warn('[P18] Stage 업데이트 오류:', error.message);
+            }
+        }
+
         // Initialize on load
         init();
+
+        // 페이지 로드 시 Stage 8 (리뷰)로 업데이트
+        if (reportId) {
+            updateCurrentStage(reportId, 8);
+        }
     </script>
 </body>
 

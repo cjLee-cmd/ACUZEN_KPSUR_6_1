@@ -70,8 +70,8 @@ class LLMSessionManager {
             console.log('[LLMSessionManager] Restoring from cache');
             this.currentSession = cachedSession.session;
             this.messages = cachedSession.messages || [];
-            // 시스템 프롬프트 - 항상 최신 마크다운 데이터 포함하여 재생성
-            this.systemPrompt = this.getDefaultSystemPrompt();
+            // 시스템 프롬프트 - DB 우선으로 마크다운 컨텍스트 로드
+            this.systemPrompt = await this.getDefaultSystemPromptAsync(reportId);
             this.currentTokens = cachedSession.currentTokens || 0;
             this.sequenceNumber = cachedSession.sequenceNumber || 0;
             return this.getSessionInfo();
@@ -98,8 +98,8 @@ class LLMSessionManager {
             lastActivityAt: dbSession.last_activity_at
         };
 
-        // 시스템 프롬프트 - 항상 최신 마크다운 데이터 포함하여 재생성
-        this.systemPrompt = this.getDefaultSystemPrompt();
+        // 시스템 프롬프트 - DB 우선으로 마크다운 컨텍스트 로드
+        this.systemPrompt = await this.getDefaultSystemPromptAsync(dbSession.report_id);
         this.currentTokens = dbSession.context_window_tokens || 0;
 
         // 대화 히스토리 복원
@@ -135,8 +135,8 @@ class LLMSessionManager {
 
         console.log('[LLMSessionManager] Creating new session:', sessionId, 'model:', modelName);
 
-        // 기본 시스템 프롬프트
-        this.systemPrompt = options.systemPrompt || this.getDefaultSystemPrompt();
+        // 기본 시스템 프롬프트 - DB 우선으로 마크다운 컨텍스트 로드
+        this.systemPrompt = options.systemPrompt || await this.getDefaultSystemPromptAsync(reportId);
 
         this.currentSession = {
             sessionId: sessionId,
@@ -175,12 +175,28 @@ class LLMSessionManager {
     }
 
     /**
-     * 기본 시스템 프롬프트
+     * 기본 시스템 프롬프트 (동기 - localStorage만 사용)
      */
     getDefaultSystemPrompt() {
         // 업로드된 마크다운 데이터 로드
         const markdownContext = this.loadMarkdownContext();
+        return this._buildSystemPrompt(markdownContext);
+    }
 
+    /**
+     * 기본 시스템 프롬프트 (비동기 - DB 우선, localStorage 폴백)
+     * @param {string} reportId - 보고서 ID
+     */
+    async getDefaultSystemPromptAsync(reportId) {
+        // DB 우선으로 마크다운 컨텍스트 로드
+        const markdownContext = await this.loadMarkdownContextAsync(reportId);
+        return this._buildSystemPrompt(markdownContext);
+    }
+
+    /**
+     * 시스템 프롬프트 빌드 (내부용)
+     */
+    _buildSystemPrompt(markdownContext) {
         let basePrompt = `당신은 한국 식품의약품안전처(MFDS) PSUR 보고서 작성을 전문으로 하는 AI 어시스턴트입니다.
 
 역할:
@@ -204,9 +220,38 @@ class LLMSessionManager {
     }
 
     /**
-     * localStorage에서 마크다운 컨텍스트 로드
+     * 마크다운 컨텍스트 로드 (DB 우선, localStorage 폴백)
+     * @param {string} reportId - 보고서 ID (DB 조회용)
+     */
+    async loadMarkdownContextAsync(reportId) {
+        // 1. DB에서 마크다운 문서 로드 시도 (UUID 보고서만)
+        if (reportId && !reportId.startsWith('local_') && window.supabaseClient) {
+            try {
+                const result = await window.supabaseClient.getMarkdownDocumentsByReport(reportId);
+                if (result.success && result.documents && result.documents.length > 0) {
+                    console.log(`[LLMSessionManager] DB에서 ${result.documents.length}개 마크다운 문서 로드`);
+                    return this.formatMarkdownDocumentsFromDB(result.documents);
+                }
+            } catch (error) {
+                console.warn('[LLMSessionManager] DB 마크다운 로드 실패, localStorage 폴백:', error);
+            }
+        }
+
+        // 2. localStorage 폴백
+        return this.loadMarkdownContextFromLocalStorage();
+    }
+
+    /**
+     * localStorage에서 마크다운 컨텍스트 로드 (동기)
      */
     loadMarkdownContext() {
+        return this.loadMarkdownContextFromLocalStorage();
+    }
+
+    /**
+     * localStorage에서 마크다운 컨텍스트 로드 (내부용)
+     */
+    loadMarkdownContextFromLocalStorage() {
         try {
             // 1. current_report에서 user_inputs.convertedMarkdowns 확인
             const currentReport = localStorage.getItem('current_report');
@@ -234,6 +279,27 @@ class LLMSessionManager {
             console.warn('[LLMSessionManager] Failed to load markdown context:', error);
             return null;
         }
+    }
+
+    /**
+     * DB 마크다운 문서를 컨텍스트 문자열로 포맷팅
+     */
+    formatMarkdownDocumentsFromDB(documents) {
+        if (!documents || documents.length === 0) return null;
+
+        const MAX_CHARS_PER_DOC = 50000;
+
+        return documents.map(doc => {
+            const rawId = doc.source_documents?.raw_id || 'UNKNOWN';
+            const fileName = doc.source_documents?.file_name || 'Untitled';
+            let content = doc.markdown_content || '';
+
+            if (content.length > MAX_CHARS_PER_DOC) {
+                content = content.substring(0, MAX_CHARS_PER_DOC) + '\n... (내용 생략됨)';
+            }
+
+            return `\n--- [${rawId}] ${fileName} ---\n${content}`;
+        }).join('\n');
     }
 
     /**
@@ -613,13 +679,15 @@ class LLMSessionManager {
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
                 const data = JSON.parse(cached);
-                // 캐시 유효성 검사 (7일)
+                // 캐시 유효성 검사 (30일)
                 const cachedDate = new Date(data.cachedAt);
                 const daysDiff = (Date.now() - cachedDate.getTime()) / (1000 * 60 * 60 * 24);
 
-                if (daysDiff < 7) {
+                // 캐시 유효기간: 30일 (기존 7일에서 연장)
+                if (daysDiff < 30) {
                     return data;
                 }
+                console.warn(`[LLMSessionManager] 캐시 만료됨 (${Math.floor(daysDiff)}일 경과)`)
             }
         } catch (error) {
             console.warn('[LLMSessionManager] Failed to load cache:', error);

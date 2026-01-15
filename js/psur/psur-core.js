@@ -137,12 +137,12 @@
 
             // UserPrompt 로드 성공 시
             if (this.templates && this.templates.userPromptTemplate) {
-                console.log('[PSURCore] UserPrompt.md 사용 - 추가 로드 스킵');
+                console.log('[PSURCore] UserPrompt_2_260115.md 사용 - 추가 로드 스킵');
                 if (onProgress) onProgress({ step: 'prompt', message: '프롬프트 생성 중 (UserPrompt 모드)...' });
                 prompt = this.prompts.buildFullReportPrompt(combinedMarkdown, '', '', '');
             } else {
                 // Fallback: 모든 리소스 로드
-                console.warn('[PSURCore] UserPrompt.md 로드 실패 - Fallback 모드');
+                console.warn('[PSURCore] UserPrompt_2_260115.md 로드 실패 - Fallback 모드');
 
                 if (this.templates && (!this.templates.templatesLoaded || Object.keys(this.templates.templates).length === 0)) {
                     if (onProgress) onProgress({ step: 'templates', message: '템플릿 로드 중...' });

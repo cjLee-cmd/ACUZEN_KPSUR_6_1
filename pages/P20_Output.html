@@ -151,7 +151,7 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(8px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            padding: 70px 90px;
+            padding: 30px 40px;
             min-height: 1000px;
             border-radius: var(--radius-lg);
             border: 1px solid var(--glass-border);
@@ -162,8 +162,8 @@
             font-weight: 700;
             color: var(--text-primary);
             text-align: center;
-            margin-bottom: 48px;
-            padding-bottom: 20px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
             border-bottom: 2px solid var(--glass-border);
         }
 
@@ -195,7 +195,6 @@
             font-size: 13px;
             border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: var(--glass-shadow);
         }
 
         .document-preview th {
@@ -209,7 +208,35 @@
         .document-preview td {
             padding: 14px;
             border-bottom: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+        }
+
+        .document-preview tr:nth-child(even) td {
+            background: rgba(241, 245, 249, 0.95);
+        }
+
+        /* Dark Mode Table Styles */
+        [data-theme="dark"] .document-preview table {
+            border: 2px solid #64748b;
+            background: #0f172a;
+        }
+
+        [data-theme="dark"] .document-preview th {
+            background: #1e40af !important;
+            color: #ffffff !important;
+            border: 1px solid #3b82f6;
+            font-weight: 700;
+        }
+
+        [data-theme="dark"] .document-preview td {
+            background: #1e293b !important;
+            color: #f8fafc !important;
+            border: 1px solid #475569;
+        }
+
+        [data-theme="dark"] .document-preview tr:nth-child(even) td {
+            background: #334155 !important;
         }
 
         /* Right Panel - Export Options */
@@ -573,6 +600,65 @@
             background: rgba(50, 50, 50, 0.8);
             border-color: #D4D4D4;
             color: #FFFFFF;
+        }
+
+        /* ========================================
+           Footer Navigation - Glass
+           ======================================== */
+        .footer-nav {
+            position: fixed;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-top: 1px solid var(--glass-border);
+            z-index: 100;
+        }
+
+        .btn-nav {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-nav-prev {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-nav-prev:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateX(-2px);
+        }
+
+        .btn-nav-next {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-nav-next:hover:not(:disabled) {
+            transform: translateY(-2px) translateX(2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        [data-theme="dark"] .footer-nav {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(71, 85, 105, 0.5);
         }
 
         @media (max-width: 1024px) {
@@ -1070,6 +1156,15 @@
                 </div>
                 </main>
                 </div>
+
+                <!-- Footer Navigation -->
+                <footer class="footer-nav">
+                    <button class="btn-nav btn-nav-prev" onclick="navigateTo('P19_QC.html')">
+                        ← 이전: QC 검증
+                    </button>
+                    <div></div>
+                    <button class="btn-nav btn-nav-next" onclick="navigateTo('P10_Dashboard.html')">대시보드로 →</button>
+                </footer>
 
                 <!-- Footer -->
                 <footer class="app-footer">
