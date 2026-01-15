@@ -708,6 +708,259 @@
             opacity: 0.5;
         }
 
+        /* ========================================
+           Extracted Data Button & Modal
+           ======================================== */
+        .extracted-data-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .extracted-data-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .extracted-data-btn .data-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+        }
+
+        /* Data List Panel */
+        .data-list-panel {
+            width: 320px;
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            background: var(--glass-bg);
+        }
+
+        .data-tabs {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(31, 78, 140, 0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-primary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+        }
+
+        .tab-btn:hover {
+            background: rgba(31, 78, 140, 0.1);
+        }
+
+        .tab-btn.active {
+            background: var(--gradient-primary);
+            color: white;
+            border-color: transparent;
+        }
+
+        .data-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            border-left: 3px solid transparent;
+        }
+
+        .data-item:hover {
+            background: rgba(31, 78, 140, 0.08);
+        }
+
+        .data-item.active {
+            background: rgba(31, 78, 140, 0.12);
+            border-left-color: var(--color-primary);
+        }
+
+        .data-item .variable-id {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .data-item .variable-value {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .data-item .source-badge {
+            font-size: 0.65rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            width: fit-content;
+        }
+
+        /* Data Preview Panel */
+        .data-preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .data-preview-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(31, 78, 140, 0.05);
+        }
+
+        .data-preview-title {
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .data-source {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: var(--glass-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--glass-border);
+        }
+
+        .data-preview-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.25rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: var(--bg-primary);
+        }
+
+        .data-preview-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .data-preview-empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Table Preview Styles */
+        .table-preview-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+
+        .preview-table th {
+            background: rgba(31, 78, 140, 0.1);
+            font-weight: 600;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+        }
+
+        .preview-table tbody tr:hover {
+            background: rgba(31, 78, 140, 0.05);
+        }
+
+        .preview-table td {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .table-info {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+
+        [data-theme="dark"] .preview-table th {
+            background: rgba(31, 78, 140, 0.2);
+        }
+
+        [data-theme="dark"] .preview-table tbody tr:hover {
+            background: rgba(31, 78, 140, 0.1);
+        }
+
+        /* Dark Mode for Extracted Data Modal */
+        [data-theme="dark"] .data-list-panel {
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        [data-theme="dark"] .tab-btn {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
+        [data-theme="dark"] .data-item:hover {
+            background: rgba(31, 78, 140, 0.15);
+        }
+
         /* Dark Mode for Modal */
         [data-theme="dark"] .modal-content {
             background: var(--bg-primary);
@@ -799,6 +1052,11 @@
                 <button class="converted-files-btn" onclick="openMarkdownFilesModal()">
                     📄 마크다운화일 보기
                     <span class="file-count" id="convertedFileCount">0</span>
+                </button>
+                <!-- CS/PH/Table 데이터 보기 버튼 -->
+                <button class="extracted-data-btn" onclick="openExtractedDataModal()">
+                    📊 CS/PH/Table 데이터 보기
+                    <span class="data-count" id="extractedDataCount">0</span>
                 </button>
             </div>
             <div class="section-list" id="sectionList">
@@ -904,6 +1162,42 @@
         </div>
     </div>
 
+    <!-- Extracted Data Modal (CS/PH/Table) -->
+    <div class="modal-overlay" id="extractedDataModal" onclick="closeExtractedDataModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>📊 추출된 데이터 (CS/PH/Table)</h2>
+                <button class="modal-close" onclick="closeExtractedDataModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 좌측: 탭 + 데이터 목록 -->
+                <div class="data-list-panel">
+                    <div class="data-tabs">
+                        <button class="tab-btn active" data-type="CS" onclick="renderDataList('CS')">CS (0)</button>
+                        <button class="tab-btn" data-type="PH" onclick="renderDataList('PH')">PH (0)</button>
+                        <button class="tab-btn" data-type="Table" onclick="renderDataList('Table')">Table (0)</button>
+                    </div>
+                    <div class="data-list" id="extractedDataList">
+                        <!-- 동적 렌더링 -->
+                    </div>
+                </div>
+                <!-- 우측: 상세 보기 -->
+                <div class="data-preview-panel">
+                    <div class="data-preview-header">
+                        <span class="data-preview-title" id="dataPreviewTitle">데이터를 선택하세요</span>
+                        <span class="data-source" id="dataSourceRawId"></span>
+                    </div>
+                    <div class="data-preview-content" id="dataPreviewContent">
+                        <div class="data-preview-empty">
+                            <div class="data-preview-empty-icon">📊</div>
+                            <p>왼쪽 목록에서 데이터를 선택하면<br>추출된 값을 확인할 수 있습니다</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
@@ -930,6 +1224,11 @@
         let convertedFiles = [];
         let selectedFileIndex = -1;
 
+        // Extracted Data 관련 변수
+        let extractedDataItems = [];
+        let currentDataType = 'CS';
+        let selectedDataIndex = -1;
+
         // 보고서 ID 가져오기 함수 (전역)
         function getReportId() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -951,6 +1250,7 @@
             renderSectionList();
             updateSummary();
             await loadMarkdownFiles();
+            await loadExtractedData();  // CS/PH/Table 데이터 로드
 
             // 보고서 ID가 있으면 Stage 업데이트
             const reportId = getReportId();
@@ -1411,12 +1711,321 @@
             showToast(`${mdFileName} 다운로드됨`, 'success');
         }
 
+        // ========================================
+        // CS/PH/Table 데이터 모달 기능
+        // ========================================
+
+        // 모달 열기
+        async function openExtractedDataModal() {
+            await loadExtractedData();
+            if (extractedDataItems.length === 0) {
+                showToast('추출된 데이터가 없습니다', 'warning');
+                return;
+            }
+            renderDataList(currentDataType);
+            document.getElementById('extractedDataModal').classList.add('show');
+        }
+
+        // DB에서 데이터 로드
+        async function loadExtractedData() {
+            const reportId = getReportId();
+
+            // 1. DB 로드 시도 (valid UUID인 경우)
+            if (reportId && !reportId.startsWith('local_') && window.supabaseClient) {
+                try {
+                    console.log('[P15] Loading extracted data from DB for reportId:', reportId);
+                    const result = await window.supabaseClient.getExtractedData(reportId);
+                    if (result.success && result.data && result.data.length > 0) {
+                        extractedDataItems = result.data;
+                        console.log('[P15] Loaded', extractedDataItems.length, 'extracted data items from DB');
+                        updateDataCount();
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('[P15] DB load failed:', error);
+                }
+            }
+
+            // 2. localStorage 폴백
+            try {
+                const stored = localStorage.getItem('extractedData');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    extractedDataItems = convertLocalStorageToArray(parsed);
+                    console.log('[P15] Loaded', extractedDataItems.length, 'extracted data items from localStorage');
+                }
+            } catch (error) {
+                console.warn('[P15] localStorage parse error:', error);
+                extractedDataItems = [];
+            }
+            updateDataCount();
+        }
+
+        // localStorage 형식을 배열로 변환
+        function convertLocalStorageToArray(data) {
+            const items = [];
+            if (!data) return items;
+
+            // data가 이미 배열인 경우
+            if (Array.isArray(data)) {
+                return data.map(item => ({
+                    data_type: item.data_type || item.type || 'CS',
+                    variable_id: item.variable_id || item.key || '',
+                    data_value: item.data_value || item.value || '',
+                    source_raw_id: item.source_raw_id || item.source || 'N/A'
+                }));
+            }
+
+            // 객체 형식인 경우 (예: { CS: [...], PH: [...], Table: [...] })
+            for (const [type, values] of Object.entries(data)) {
+                if (Array.isArray(values)) {
+                    values.forEach(item => {
+                        items.push({
+                            data_type: type,
+                            variable_id: item.variable_id || item.key || '',
+                            data_value: item.data_value || item.value || '',
+                            source_raw_id: item.source_raw_id || item.source || 'N/A'
+                        });
+                    });
+                } else if (typeof values === 'object') {
+                    // 객체 형식인 경우 (예: { CS0_성분명: '값', ... })
+                    for (const [key, value] of Object.entries(values)) {
+                        items.push({
+                            data_type: type,
+                            variable_id: key,
+                            data_value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+                            source_raw_id: 'N/A'
+                        });
+                    }
+                }
+            }
+            return items;
+        }
+
+        // 데이터 목록 렌더링
+        function renderDataList(dataType) {
+            currentDataType = dataType;
+            selectedDataIndex = -1;
+
+            const filtered = extractedDataItems.filter(item =>
+                (item.data_type || item.type) === dataType
+            );
+
+            const listEl = document.getElementById('extractedDataList');
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div>
+                        <p>${dataType} 타입 데이터가 없습니다</p>
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = filtered.map((item, index) => `
+                    <div class="data-item" onclick="selectDataItem(${index}, '${dataType}')">
+                        <div class="variable-id">${item.variable_id || item.key || '(unknown)'}</div>
+                        <div class="variable-value">${truncateStr(item.data_value || item.value, 60)}</div>
+                        <span class="source-badge">${item.source_raw_id || 'N/A'}</span>
+                    </div>
+                `).join('');
+            }
+
+            // 탭 버튼 활성화 업데이트
+            document.querySelectorAll('#extractedDataModal .tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === dataType);
+            });
+
+            // 탭별 개수 업데이트
+            updateTabCounts();
+
+            // 미리보기 초기화
+            resetDataPreview();
+        }
+
+        // 데이터 선택 및 미리보기
+        function selectDataItem(index, dataType) {
+            selectedDataIndex = index;
+            const filtered = extractedDataItems.filter(item =>
+                (item.data_type || item.type) === dataType
+            );
+            const item = filtered[index];
+
+            if (!item) return;
+
+            // 제목 업데이트
+            document.getElementById('dataPreviewTitle').textContent = item.variable_id || item.key || '(unknown)';
+            document.getElementById('dataSourceRawId').textContent = `출처: ${item.source_raw_id || 'N/A'}`;
+
+            // 내용 업데이트
+            const previewEl = document.getElementById('dataPreviewContent');
+            const value = item.data_value || item.value;
+
+            // Table 타입은 HTML 테이블로 렌더링
+            if (dataType === 'Table') {
+                try {
+                    const jsonValue = typeof value === 'string' ? JSON.parse(value) : value;
+                    previewEl.innerHTML = renderTableAsHTML(jsonValue);
+                } catch (e) {
+                    previewEl.textContent = value || '(빈 값)';
+                }
+            } else if (typeof value === 'string' && value.trim().startsWith('{')) {
+                // 일반 JSON 형식은 포맷팅
+                try {
+                    const jsonValue = JSON.parse(value);
+                    previewEl.innerHTML = `<pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(jsonValue, null, 2)}</pre>`;
+                } catch (e) {
+                    previewEl.textContent = value || '(빈 값)';
+                }
+            } else {
+                previewEl.textContent = value || '(빈 값)';
+            }
+
+            // 목록 UI 업데이트 (활성 상태 표시)
+            document.querySelectorAll('#extractedDataList .data-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+        }
+
+        // 미리보기 초기화
+        function resetDataPreview() {
+            document.getElementById('dataPreviewTitle').textContent = '데이터를 선택하세요';
+            document.getElementById('dataSourceRawId').textContent = '';
+            document.getElementById('dataPreviewContent').innerHTML = `
+                <div class="data-preview-empty">
+                    <div class="data-preview-empty-icon">📊</div>
+                    <p>왼쪽 목록에서 데이터를 선택하면<br>추출된 값을 확인할 수 있습니다</p>
+                </div>
+            `;
+        }
+
+        // 모달 닫기
+        function closeExtractedDataModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('extractedDataModal').classList.remove('show');
+            selectedDataIndex = -1;
+        }
+
+        // 데이터 개수 업데이트 (버튼 뱃지)
+        function updateDataCount() {
+            const countEl = document.getElementById('extractedDataCount');
+            if (countEl) {
+                countEl.textContent = extractedDataItems.length;
+            }
+        }
+
+        // 탭별 개수 업데이트
+        function updateTabCounts() {
+            const counts = { CS: 0, PH: 0, Table: 0 };
+            extractedDataItems.forEach(item => {
+                const type = item.data_type || item.type;
+                if (counts[type] !== undefined) counts[type]++;
+            });
+            document.querySelectorAll('#extractedDataModal .tab-btn').forEach(btn => {
+                const type = btn.dataset.type;
+                btn.textContent = `${type} (${counts[type]})`;
+            });
+        }
+
+        // 문자열 자르기 유틸리티
+        function truncateStr(str, maxLen) {
+            if (!str) return '';
+            const s = String(str);
+            return s.length > maxLen ? s.substring(0, maxLen) + '...' : s;
+        }
+
+        // Table JSON을 HTML 테이블로 렌더링
+        function renderTableAsHTML(tableData) {
+            // 문자열이면 그대로 반환
+            if (typeof tableData === 'string') {
+                return `<p>${tableData}</p>`;
+            }
+
+            // headers와 rows/data가 있는 형식
+            const rows = tableData.rows || tableData.data;
+            if (tableData.headers && rows && Array.isArray(rows)) {
+                let html = `
+                    <div class="table-preview-container">
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    ${tableData.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                rows.forEach(row => {
+                    html += '<tr>';
+                    if (Array.isArray(row)) {
+                        row.forEach(cell => {
+                            html += `<td>${escapeHtml(cell)}</td>`;
+                        });
+                    } else {
+                        // row가 객체인 경우
+                        tableData.headers.forEach(header => {
+                            html += `<td>${escapeHtml(row[header] || '')}</td>`;
+                        });
+                    }
+                    html += '</tr>';
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                        <div class="table-info">총 ${rows.length}개 행</div>
+                    </div>
+                `;
+                return html;
+            }
+
+            // 일반 객체는 key-value 테이블로
+            if (typeof tableData === 'object') {
+                let html = `
+                    <div class="table-preview-container">
+                        <table class="preview-table">
+                            <thead>
+                                <tr><th>항목</th><th>값</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                Object.entries(tableData).forEach(([key, value]) => {
+                    const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
+                    html += `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(displayValue)}</td></tr>`;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                return html;
+            }
+
+            return `<p>${String(tableData)}</p>`;
+        }
+
+        // HTML 이스케이프 함수
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // ESC 키로 모달 닫기
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                const modal = document.getElementById('markdownFilesModal');
-                if (modal.classList.contains('show')) {
+                const markdownModal = document.getElementById('markdownFilesModal');
+                const dataModal = document.getElementById('extractedDataModal');
+
+                if (markdownModal.classList.contains('show')) {
                     closeMarkdownFilesModal();
+                } else if (dataModal.classList.contains('show')) {
+                    closeExtractedDataModal();
                 }
             }
         });

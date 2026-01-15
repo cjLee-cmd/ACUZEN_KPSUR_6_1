@@ -1623,30 +1623,132 @@ ${markdownsWithRawId.length > 0 ? allMarkdowns : '제공된 RAW 데이터가 없
         };
     }
 
+    /**
+     * PSUR 컨텍스트 로드 - 02_relateDocs/02_Templates/ 디렉토리에서 템플릿 파일 로드
+     */
     async function loadPSURContext() {
-        // 기본 컨텍스트 (나중에 01_Context/UserPrompt.md에서 로드 가능)
+        const templateBasePath = '../02_relateDocs/02_Templates/';
+        const templateFiles = [
+            '00_표지.md',
+            '01_목차.md',
+            '02_약어설명.md',
+            '03_서론.md',
+            '04_전세계판매허가현황.md',
+            '05_안전성조치.md',
+            '06_안전성정보참고정보변경.md',
+            '07_환자노출.md',
+            '08_개별증례병력.md',
+            '09_시험.md',
+            '10_기타정보.md',
+            '11_종합적인안전성평가.md',
+            '12_결론.md',
+            '13_참고문헌.md',
+            '14_별첨.md'
+        ];
+
+        try {
+            // 모든 템플릿 파일 병렬 로드
+            const templatePromises = templateFiles.map(async (filename) => {
+                try {
+                    const response = await fetch(`${templateBasePath}${filename}`);
+                    if (!response.ok) {
+                        console.warn(`[loadPSURContext] 템플릿 로드 실패: ${filename}`);
+                        return null;
+                    }
+                    const content = await response.text();
+                    const sectionId = filename.split('_')[0]; // "00", "01", etc.
+                    const sectionName = filename.replace('.md', '').replace(/^\d+_/, '');
+                    return { sectionId, sectionName, content, filename };
+                } catch (err) {
+                    console.warn(`[loadPSURContext] 템플릿 로드 오류: ${filename}`, err);
+                    return null;
+                }
+            });
+
+            const templates = await Promise.all(templatePromises);
+            const loadedTemplates = templates.filter(t => t !== null);
+
+            if (loadedTemplates.length === 0) {
+                console.warn('[loadPSURContext] 템플릿 로드 실패 - 기본 컨텍스트 사용');
+                return getDefaultPSURContext();
+            }
+
+            console.log(`[loadPSURContext] ${loadedTemplates.length}개 템플릿 로드 완료`);
+
+            // 컨텍스트 문자열 생성
+            let context = `# PSUR(정기적 안전성 갱신 보고서) 생성 AI 어시스턴트
+
+당신은 의약품 안전성 보고서(PSUR/PBRER) 작성을 전문으로 하는 AI 어시스턴트입니다.
+식품의약품안전처 가이드라인에 따라 정확하고 규정을 준수하는 보고서를 작성합니다.
+
+## ⚠️ 필수 출력 규칙 (CRITICAL OUTPUT RULES)
+
+### 1. 문체 규칙: '~이다'체 사용 필수
+모든 서술문은 반드시 **'~이다'체**로 작성한다. '~습니다', '~입니다' 등의 경어체는 절대 사용하지 않는다.
+
+| ✅ 올바른 표현 | ❌ 잘못된 표현 |
+|---------------|---------------|
+| 작성되었다 | 작성되었습니다 |
+| 평가한다 | 평가합니다 |
+| ~이다 | ~입니다 |
+
+### 2. 데이터 사용 규칙
+- 원시자료에 있는 데이터만 사용하세요.
+- 데이터가 없으면 "[해당 데이터 없음]"으로 표시하세요.
+- 추정이나 가정을 하지 마세요.
+
+## 섹션별 템플릿
+
+아래 템플릿을 기준으로 각 섹션을 작성하세요. \`[변수명]\` 형식의 플레이스홀더는 추출된 데이터로 대체합니다.
+
+`;
+
+            // 각 템플릿을 섹션별로 추가
+            for (const template of loadedTemplates) {
+                context += `### ${template.sectionId}. ${template.sectionName}\n\n`;
+                context += '```markdown\n';
+                context += template.content;
+                context += '\n```\n\n---\n\n';
+            }
+
+            return context;
+
+        } catch (error) {
+            console.error('[loadPSURContext] 템플릿 로드 중 오류:', error);
+            return getDefaultPSURContext();
+        }
+    }
+
+    /**
+     * 기본 PSUR 컨텍스트 (템플릿 로드 실패 시 폴백)
+     */
+    function getDefaultPSURContext() {
         return `# PSUR(정기적 안전성 갱신 보고서) 생성 AI 어시스턴트
 
 당신은 의약품 안전성 보고서(PSUR/PBRER) 작성을 전문으로 하는 AI 어시스턴트입니다.
 식품의약품안전처 가이드라인에 따라 정확하고 규정을 준수하는 보고서를 작성합니다.
 
+## ⚠️ 필수 출력 규칙
+
+### 1. 문체 규칙: '~이다'체 사용 필수
+모든 서술문은 반드시 '~이다'체로 작성한다. '~습니다', '~입니다' 등의 경어체는 절대 사용하지 않는다.
+
 ## 섹션별 작성 가이드
 
 ### 00. 표지
-- 제품명, 성분명, 회사명, 보고 기간 정보
+- 제품명, 성분명, 회사명, 보고 기간, 국내허가일자, 보고서제출일, 버전 정보
 
 ### 01. 목차
-- 전체 문서의 목차 구성
+- 전체 문서의 목차 구성 (마크다운 앵커 링크 포함)
 
 ### 02. 약어설명
-- 보고서에 사용된 약어 정리 (반드시 마크다운 테이블 형식으로 작성)
-- 테이블 형식: | 약어 | 약어 설명 (영문) | 약어 설명 (국문) |
+- 보고서에 사용된 약어 정리 (마크다운 테이블 형식)
 
 ### 03. 서론
-- 보고서 목적 및 제품 소개, 적응증 설명
+- 보고서 목적 및 제품 소개, 적응증, 유효기간 정보
 
 ### 04. 전세계판매허가현황
-- 국가별 허가 현황, 허가일, 허가 상태
+- 국가별 허가 현황 표 (국가, 허가일, 품목명, 허가권자, 비고)
 
 ### 05. 안전성조치
 - 안전성 관련 규제 조치 내역
@@ -1655,10 +1757,10 @@ ${markdownsWithRawId.length > 0 ? allMarkdowns : '제공된 RAW 데이터가 없
 - 허가사항 변경 이력
 
 ### 07. 환자노출
-- 판매량 데이터 기반 환자 노출 추정
+- 판매량 데이터 기반 환자 노출 추정 (연도별 판매량 표)
 
 ### 08. 개별증례병력
-- 이상사례 보고 분석 (신속보고, 정기보고)
+- 이상사례 보고 분석 (신속보고, 정기보고, 원시자료)
 
 ### 09. 시험
 - 임상시험 정보 및 결과
@@ -1673,15 +1775,16 @@ ${markdownsWithRawId.length > 0 ? allMarkdowns : '제공된 RAW 데이터가 없
 - 유익성-위해성 평가 결론
 
 ### 13. 참고문헌
-- 인용 문헌 목록
+- 학술 논문 목록 (RAW 파일 목록이 아님)
 
 ### 14. 별첨
-- 별첨 자료
+- Line Listing, 허가사항 변경 대비표, 규제기관 서한
 
 ## 중요 규칙
 1. 원시자료에 있는 데이터만 사용하세요.
 2. 데이터가 없으면 "[해당 데이터 없음]"으로 표시하세요.
-3. 추정이나 가정을 하지 마세요.`;
+3. 추정이나 가정을 하지 마세요.
+4. 참고문헌에는 학술 논문만 기재 (RAW 파일 목록 아님).`;
     }
 
     // ========================================

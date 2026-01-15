@@ -170,6 +170,11 @@
             return this.documents.bulkUpsertExtractedData(reportId, items);
         }
 
+        // saveExtractedData는 bulkUpsertExtractedData의 alias (P14에서 사용)
+        async saveExtractedData(reportId, items) {
+            return this.documents.bulkUpsertExtractedData(reportId, items);
+        }
+
         // ==========================================
         // LLM Methods (Delegation)
         // ==========================================

@@ -1443,11 +1443,26 @@
                 nextBtn.classList.add('btn-wizard-next');
             }
 
-            // Skip 버튼 표시/숨김 (Step 3에서 마크다운 변환 + 분류 완료된 경우에만 표시)
+            // Skip 버튼 표시/숨김 (Step 3에서 마크다운 변환 + 유효한 PSUR 섹션이 있는 경우에만 표시)
             const skipBtn = document.getElementById('skipBtn');
-            const hasGeneratedSections = localStorage.getItem('generatedSections');
-            const hasConvertedMarkdowns = localStorage.getItem('convertedMarkdowns');
-            if (currentStep === totalSteps && hasGeneratedSections && hasConvertedMarkdowns) {
+            const hasConvertedMarkdowns = (() => {
+                try {
+                    const data = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
+                    return Object.keys(data).length > 0;
+                } catch { return false; }
+            })();
+            const hasValidGeneratedSections = (() => {
+                try {
+                    const sections = JSON.parse(localStorage.getItem('generatedSections') || '{}');
+                    if (Object.keys(sections).length === 0) return false;
+                    // "LLM 생성 실패" 플레이스홀더가 아닌 유효한 섹션이 하나라도 있는지 확인
+                    return Object.values(sections).some(s => {
+                        const content = s?.content || s || '';
+                        return content.length > 200 && !content.includes('LLM 생성 실패');
+                    });
+                } catch { return false; }
+            })();
+            if (currentStep === totalSteps && hasValidGeneratedSections && hasConvertedMarkdowns) {
                 skipBtn.style.display = 'inline-block';
             } else {
                 skipBtn.style.display = 'none';
@@ -2357,7 +2372,274 @@
                 }
             }
 
+            // ========================================
+            // extractedData 생성 및 저장 (P15 CS/PH/Table 뷰어용)
+            // ========================================
+            // P13에서 CS 데이터가 최상위 또는 user_inputs에 저장될 수 있으므로 병합
+            const mergedUserInputs = { ...currentReport, ...(currentReport.user_inputs || {}) };
+            const extractedData = buildExtractedData(mergedUserInputs, validatedFiles);
+            localStorage.setItem('extractedData', JSON.stringify(extractedData));
+            console.log('✅ extractedData 저장 완료:', extractedData.length, '개 항목');
+
+            // DB에 extracted_data 저장
+            if (reportId && window.supabaseClient && typeof window.supabaseClient.saveExtractedData === 'function') {
+                try {
+                    await window.supabaseClient.saveExtractedData(reportId, extractedData);
+                    console.log('✅ DB에 extractedData 저장 완료');
+                } catch (dbError) {
+                    console.warn('⚠️ DB extractedData 저장 실패 (localStorage는 성공):', dbError);
+                }
+            }
+
             console.log('✅ 처리 결과 저장 완료:', validatedFiles.length, '개 파일');
+        }
+
+        /**
+         * extractedData 배열 생성
+         * @param {Object} userInputs - P13에서 입력한 사용자 데이터
+         * @param {Array} convertedFiles - 변환된 파일 목록 (RAW ID 정보 포함)
+         * @returns {Array} P15 CS/PH/Table 뷰어용 데이터 배열
+         */
+        function buildExtractedData(userInputs, convertedFiles) {
+            const extractedData = [];
+
+            // 1. CS 데이터 (P13에서 입력한 사용자 데이터)
+            const csKeys = Object.keys(userInputs || {}).filter(key => key.startsWith('CS'));
+            csKeys.forEach(key => {
+                const value = userInputs[key];
+                if (value && value !== '' && value !== null && value !== undefined) {
+                    extractedData.push({
+                        data_type: 'CS',
+                        variable_id: key,
+                        data_value: String(value),
+                        source_raw_id: 'P13_UserInput',
+                        validation_status: 'Validated'
+                    });
+                }
+            });
+
+            // 1.5. 계산 필드 (Calculated Fields)
+            // CS3_보고시작날짜 = CS4 - 5년 (정확히 5년 전 날짜)
+            const cs4Value = userInputs?.CS4_보고종료날짜;
+            if (cs4Value) {
+                try {
+                    const cs4Date = new Date(cs4Value);
+                    const cs3Date = new Date(cs4Date);
+                    cs3Date.setFullYear(cs3Date.getFullYear() - 5);
+                    const cs3Value = cs3Date.toISOString().split('T')[0];
+                    extractedData.push({
+                        data_type: 'CS',
+                        variable_id: 'CS3_보고시작날짜',
+                        data_value: cs3Value,
+                        source_raw_id: 'Calculated',
+                        validation_status: 'Validated'
+                    });
+                    console.log(`📅 CS3_보고시작날짜 계산: ${cs4Value} - 5년 = ${cs3Value}`);
+                } catch (e) {
+                    console.warn('CS3 계산 실패:', e);
+                }
+
+                // CS8_버전날짜 = CS4와 동일
+                extractedData.push({
+                    data_type: 'CS',
+                    variable_id: 'CS8_버전날짜',
+                    data_value: cs4Value,
+                    source_raw_id: 'Calculated',
+                    validation_status: 'Validated'
+                });
+            }
+
+            // CS14_신청기한 = CS13 - 6개월
+            const cs13Value = userInputs?.CS13_유효기간;
+            if (cs13Value) {
+                try {
+                    const cs13Date = new Date(cs13Value);
+                    const cs14Date = new Date(cs13Date);
+                    cs14Date.setMonth(cs14Date.getMonth() - 6);
+                    const cs14Value = cs14Date.toISOString().split('T')[0];
+                    extractedData.push({
+                        data_type: 'CS',
+                        variable_id: 'CS14_신청기한',
+                        data_value: cs14Value,
+                        source_raw_id: 'Calculated',
+                        validation_status: 'Validated'
+                    });
+                    console.log(`📅 CS14_신청기한 계산: ${cs13Value} - 6개월 = ${cs14Value}`);
+                } catch (e) {
+                    console.warn('CS14 계산 실패:', e);
+                }
+            }
+
+            // 숫자 계산 필드들 (Line Listing 분석 후 계산 - 값이 있을 때만)
+            const cs33 = parseFloat(userInputs?.CS33_신속보고총사례수) || 0;
+            const cs34 = parseFloat(userInputs?.CS34_정기보고총사례수) || 0;
+            const cs29 = parseFloat(userInputs?.CS29_원시총이상사례수) || 0;
+            const cs36 = parseFloat(userInputs?.CS36_중대한총사례수) || 0;
+
+            // CS32_신속정기보고총사례수 = CS33 + CS34
+            if (cs33 > 0 || cs34 > 0) {
+                const cs32Value = cs33 + cs34;
+                extractedData.push({
+                    data_type: 'CS',
+                    variable_id: 'CS32_신속정기보고총사례수',
+                    data_value: String(cs32Value),
+                    source_raw_id: 'Calculated',
+                    validation_status: 'Validated'
+                });
+            }
+
+            // CS35_신속정기원시총사례수 = CS33 + CS34 + CS29
+            if (cs33 > 0 || cs34 > 0 || cs29 > 0) {
+                const cs35Value = cs33 + cs34 + cs29;
+                extractedData.push({
+                    data_type: 'CS',
+                    variable_id: 'CS35_신속정기원시총사례수',
+                    data_value: String(cs35Value),
+                    source_raw_id: 'Calculated',
+                    validation_status: 'Validated'
+                });
+
+                // CS37_중대하지않은총사례수 = CS35 - CS36
+                if (cs36 > 0) {
+                    const cs37Value = cs35Value - cs36;
+                    extractedData.push({
+                        data_type: 'CS',
+                        variable_id: 'CS37_중대하지않은총사례수',
+                        data_value: String(cs37Value),
+                        source_raw_id: 'Calculated',
+                        validation_status: 'Validated'
+                    });
+                }
+            }
+
+            // 2. RAW 파일에서 추가 CS 데이터 매핑
+            // RAW1.1 → 최신첨부문서에서 추출 가능한 CS 데이터
+            const rawFileMapping = {
+                'RAW1.1': ['CS0_성분명', 'CS1_브랜드명', 'CS15_효능효과', 'CS16_용법용량'],
+                'RAW4': ['CS7_최초허가국'],
+                'RAW3': ['CS21_연간판매량', 'CS22_누적판매량']
+            };
+
+            // convertedFiles에서 RAW ID별로 source 정보 업데이트
+            convertedFiles.forEach(file => {
+                const rawId = file.assignedRawId || file.rawId;
+                if (rawId && rawFileMapping[rawId]) {
+                    rawFileMapping[rawId].forEach(csKey => {
+                        // 이미 추가된 데이터의 source_raw_id 업데이트
+                        const existing = extractedData.find(d => d.variable_id === csKey);
+                        if (existing && existing.source_raw_id === 'P13_UserInput') {
+                            existing.source_raw_id = rawId;
+                        }
+                    });
+                }
+            });
+
+            // 3. PH 데이터 (서술문 - 마크다운 기반 생성)
+            const phDefinitions = [
+                { id: 'PH1_국내판매량서술문', source: 'RAW3', template: '보고 기간 동안 국내 판매량 데이터 기반 서술문' },
+                { id: 'PH2_노출환자수서술문', source: 'RAW3', template: '노출 환자 수 산출 근거 서술문' },
+                { id: 'PH3_시판후안전성서술문', source: 'RAW14', template: '시판 후 안전성 데이터 요약' },
+                { id: 'PH4_원시자료서술문', source: 'RAW14', template: '원시 자료 분석 결과 서술문' },
+                { id: 'PH5_국외신속보고서술문', source: 'RAW12', template: '국외 신속보고 현황 요약' },
+                { id: 'PH6_국내신속보고서술문', source: 'RAW13', template: '국내 신속보고 현황 요약' },
+                { id: 'PH7_정기보고서술문', source: 'RAW15', template: '정기보고 데이터 요약' },
+                { id: 'PH8_허가현황서술문', source: 'RAW4', template: '전세계 허가현황 요약' },
+                { id: 'PH9_안전성조치서술문', source: 'RAW7', template: '안전성 조치 이력 요약' },
+                { id: 'PH10_문헌자료서술문', source: 'RAW9', template: '문헌 검토 결과 요약' },
+                { id: 'PH11_총괄평가문', source: 'Multiple', template: '종합 안전성 평가 결론' }
+            ];
+
+            const uploadedRawIds = convertedFiles.map(f => f.assignedRawId || f.rawId).filter(Boolean);
+            phDefinitions.forEach(ph => {
+                // 해당 RAW 파일이 업로드되었으면 PH 항목 생성
+                const hasSource = ph.source === 'Multiple' ||
+                    uploadedRawIds.includes(ph.source);
+                if (hasSource) {
+                    extractedData.push({
+                        data_type: 'PH',
+                        variable_id: ph.id,
+                        data_value: `[${ph.template}] - PSUR 섹션 생성 시 LLM이 작성`,
+                        source_raw_id: ph.source,
+                        validation_status: 'Pending'
+                    });
+                }
+            });
+
+            // 4. Table 데이터 (Excel 파일 기반)
+            const tableDefinitions = [
+                { id: '표1_허가현황', source: 'RAW4', description: '전세계 판매허가 현황' },
+                { id: '표2_연도별판매량', source: 'RAW3', description: '연도별 국내 판매량' },
+                { id: '표3_노출환자수', source: 'RAW3', description: '노출 환자 수 산출' },
+                { id: '표4_문헌목록', source: 'RAW9', description: '참고 문헌 목록' },
+                { id: '표5_신속보고내역', source: 'RAW12', description: '국외 신속보고 Line Listing' },
+                { id: '표6_국내신속보고', source: 'RAW13', description: '국내 신속보고 Line Listing' },
+                { id: '표7_원시자료요약', source: 'RAW14', description: '원시자료 Line Listing 요약' },
+                { id: '표8_임상시험현황', source: 'RAW8', description: '회사 주관 임상시험 현황' }
+            ];
+
+            tableDefinitions.forEach(table => {
+                const hasSource = uploadedRawIds.includes(table.source);
+                if (hasSource) {
+                    // 해당 RAW 파일의 마크다운에서 표 데이터 추출
+                    const sourceFile = convertedFiles.find(f =>
+                        (f.assignedRawId || f.rawId) === table.source
+                    );
+                    const tableData = sourceFile && sourceFile.markdown
+                        ? extractTableFromMarkdown(sourceFile.markdown, table.id)
+                        : null;
+
+                    extractedData.push({
+                        data_type: 'Table',
+                        variable_id: table.id,
+                        data_value: tableData
+                            ? JSON.stringify(tableData)
+                            : `[${table.description}] - 마크다운 파일 참조`,
+                        source_raw_id: table.source,
+                        validation_status: tableData ? 'Validated' : 'Pending'
+                    });
+                }
+            });
+
+            console.log(`📊 extractedData 생성: CS ${extractedData.filter(d => d.data_type === 'CS').length}개, ` +
+                `PH ${extractedData.filter(d => d.data_type === 'PH').length}개, ` +
+                `Table ${extractedData.filter(d => d.data_type === 'Table').length}개`);
+
+            return extractedData;
+        }
+
+        /**
+         * 마크다운에서 표 데이터 추출 (간단한 파싱)
+         */
+        function extractTableFromMarkdown(markdown, tableId) {
+            try {
+                // 마크다운 테이블 패턴 찾기
+                const tablePattern = /\|[^\n]+\|\n\|[-:\s|]+\|\n((?:\|[^\n]+\|\n?)+)/g;
+                const matches = [...markdown.matchAll(tablePattern)];
+
+                if (matches.length === 0) return null;
+
+                // 첫 번째 테이블 파싱
+                const firstTable = matches[0][0];
+                const rows = firstTable.split('\n').filter(row => row.trim() && !row.match(/^[\s|:-]+$/));
+
+                if (rows.length < 2) return null;
+
+                // 헤더와 데이터 분리
+                const headers = rows[0].split('|').map(h => h.trim()).filter(Boolean);
+                const data = rows.slice(1).map(row => {
+                    const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+                    const rowObj = {};
+                    headers.forEach((h, i) => {
+                        rowObj[h] = cells[i] || '';
+                    });
+                    return rowObj;
+                });
+
+                return { headers, data, rowCount: data.length };
+            } catch (error) {
+                console.warn(`표 추출 실패 (${tableId}):`, error);
+                return null;
+            }
         }
 
         // 라디오 버튼 상태 수집
@@ -2988,30 +3270,132 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
             };
         }
 
+        /**
+         * PSUR 컨텍스트 로드 - 02_relateDocs/02_Templates/ 디렉토리에서 템플릿 파일 로드
+         */
         async function loadPSURContext() {
-            // 기본 컨텍스트 (나중에 01_Context/UserPrompt.md에서 로드 가능)
+            const templateBasePath = '../02_relateDocs/02_Templates/';
+            const templateFiles = [
+                '00_표지.md',
+                '01_목차.md',
+                '02_약어설명.md',
+                '03_서론.md',
+                '04_전세계판매허가현황.md',
+                '05_안전성조치.md',
+                '06_안전성정보참고정보변경.md',
+                '07_환자노출.md',
+                '08_개별증례병력.md',
+                '09_시험.md',
+                '10_기타정보.md',
+                '11_종합적인안전성평가.md',
+                '12_결론.md',
+                '13_참고문헌.md',
+                '14_별첨.md'
+            ];
+
+            try {
+                // 모든 템플릿 파일 병렬 로드
+                const templatePromises = templateFiles.map(async (filename) => {
+                    try {
+                        const response = await fetch(`${templateBasePath}${filename}`);
+                        if (!response.ok) {
+                            console.warn(`[loadPSURContext] 템플릿 로드 실패: ${filename}`);
+                            return null;
+                        }
+                        const content = await response.text();
+                        const sectionId = filename.split('_')[0]; // "00", "01", etc.
+                        const sectionName = filename.replace('.md', '').replace(/^\d+_/, '');
+                        return { sectionId, sectionName, content, filename };
+                    } catch (err) {
+                        console.warn(`[loadPSURContext] 템플릿 로드 오류: ${filename}`, err);
+                        return null;
+                    }
+                });
+
+                const templates = await Promise.all(templatePromises);
+                const loadedTemplates = templates.filter(t => t !== null);
+
+                if (loadedTemplates.length === 0) {
+                    console.warn('[loadPSURContext] 템플릿 로드 실패 - 기본 컨텍스트 사용');
+                    return getDefaultPSURContext();
+                }
+
+                console.log(`[loadPSURContext] ${loadedTemplates.length}개 템플릿 로드 완료`);
+
+                // 컨텍스트 문자열 생성
+                let context = `# PSUR(정기적 안전성 갱신 보고서) 생성 AI 어시스턴트
+
+당신은 의약품 안전성 보고서(PSUR/PBRER) 작성을 전문으로 하는 AI 어시스턴트입니다.
+식품의약품안전처 가이드라인에 따라 정확하고 규정을 준수하는 보고서를 작성합니다.
+
+## ⚠️ 필수 출력 규칙 (CRITICAL OUTPUT RULES)
+
+### 1. 문체 규칙: '~이다'체 사용 필수
+모든 서술문은 반드시 **'~이다'체**로 작성한다. '~습니다', '~입니다' 등의 경어체는 절대 사용하지 않는다.
+
+| ✅ 올바른 표현 | ❌ 잘못된 표현 |
+|---------------|---------------|
+| 작성되었다 | 작성되었습니다 |
+| 평가한다 | 평가합니다 |
+| ~이다 | ~입니다 |
+
+### 2. 데이터 사용 규칙
+- 원시자료에 있는 데이터만 사용하세요.
+- 데이터가 없으면 "[해당 데이터 없음]"으로 표시하세요.
+- 추정이나 가정을 하지 마세요.
+
+## 섹션별 템플릿
+
+아래 템플릿을 기준으로 각 섹션을 작성하세요. \`[변수명]\` 형식의 플레이스홀더는 추출된 데이터로 대체합니다.
+
+`;
+
+                // 각 템플릿을 섹션별로 추가
+                for (const template of loadedTemplates) {
+                    context += `### ${template.sectionId}. ${template.sectionName}\n\n`;
+                    context += '```markdown\n';
+                    context += template.content;
+                    context += '\n```\n\n---\n\n';
+                }
+
+                return context;
+
+            } catch (error) {
+                console.error('[loadPSURContext] 템플릿 로드 중 오류:', error);
+                return getDefaultPSURContext();
+            }
+        }
+
+        /**
+         * 기본 PSUR 컨텍스트 (템플릿 로드 실패 시 폴백)
+         */
+        function getDefaultPSURContext() {
             return `# PSUR(정기적 안전성 갱신 보고서) 생성 AI 어시스턴트
 
 당신은 의약품 안전성 보고서(PSUR/PBRER) 작성을 전문으로 하는 AI 어시스턴트입니다.
 식품의약품안전처 가이드라인에 따라 정확하고 규정을 준수하는 보고서를 작성합니다.
 
+## ⚠️ 필수 출력 규칙
+
+### 1. 문체 규칙: '~이다'체 사용 필수
+모든 서술문은 반드시 '~이다'체로 작성한다. '~습니다', '~입니다' 등의 경어체는 절대 사용하지 않는다.
+
 ## 섹션별 작성 가이드
 
 ### 00. 표지
-- 제품명, 성분명, 회사명, 보고 기간 정보
+- 제품명, 성분명, 회사명, 보고 기간, 국내허가일자, 보고서제출일, 버전 정보
 
 ### 01. 목차
-- 전체 문서의 목차 구성
+- 전체 문서의 목차 구성 (마크다운 앵커 링크 포함)
 
 ### 02. 약어설명
-- 보고서에 사용된 약어 정리 (반드시 마크다운 테이블 형식으로 작성)
-- 테이블 형식: | 약어 | 약어 설명 (영문) | 약어 설명 (국문) |
+- 보고서에 사용된 약어 정리 (마크다운 테이블 형식)
 
 ### 03. 서론
-- 보고서 목적 및 제품 소개, 적응증 설명
+- 보고서 목적 및 제품 소개, 적응증, 유효기간 정보
 
 ### 04. 전세계판매허가현황
-- 국가별 허가 현황, 허가일, 허가 상태
+- 국가별 허가 현황 표 (국가, 허가일, 품목명, 허가권자, 비고)
 
 ### 05. 안전성조치
 - 안전성 관련 규제 조치 내역
@@ -3020,10 +3404,10 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
 - 허가사항 변경 이력
 
 ### 07. 환자노출
-- 판매량 데이터 기반 환자 노출 추정
+- 판매량 데이터 기반 환자 노출 추정 (연도별 판매량 표)
 
 ### 08. 개별증례병력
-- 이상사례 보고 분석 (신속보고, 정기보고)
+- 이상사례 보고 분석 (신속보고, 정기보고, 원시자료)
 
 ### 09. 시험
 - 임상시험 정보 및 결과
@@ -3038,15 +3422,16 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
 - 유익성-위해성 평가 결론
 
 ### 13. 참고문헌
-- 인용 문헌 목록
+- 학술 논문 목록 (RAW 파일 목록이 아님)
 
 ### 14. 별첨
-- 별첨 자료
+- Line Listing, 허가사항 변경 대비표, 규제기관 서한
 
 ## 중요 규칙
 1. 원시자료에 있는 데이터만 사용하세요.
 2. 데이터가 없으면 "[해당 데이터 없음]"으로 표시하세요.
-3. 추정이나 가정을 하지 마세요.`;
+3. 추정이나 가정을 하지 마세요.
+4. 참고문헌에는 학술 논문만 기재 (RAW 파일 목록 아님).`;
         }
 
         // ========================================

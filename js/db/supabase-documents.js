@@ -309,8 +309,14 @@
 
                 if (error) throw error;
 
-                console.log(`✅ Retrieved ${data.length} extracted data items`);
-                return { success: true, data: data };
+                // P15 호환성: data_key를 variable_id로도 제공
+                const mappedData = data.map(item => ({
+                    ...item,
+                    variable_id: item.data_key  // P15 CS/PH/Table 뷰어 호환
+                }));
+
+                console.log(`✅ Retrieved ${mappedData.length} extracted data items`);
+                return { success: true, data: mappedData };
 
             } catch (error) {
                 console.error('❌ Get extracted data failed:', error.message);
@@ -328,7 +334,7 @@
                 const dataItems = items.map(item => ({
                     report_id: reportId,
                     data_type: item.type || item.data_type,
-                    data_key: item.key || item.data_key,
+                    data_key: item.key || item.data_key || item.variable_id,  // variable_id도 지원
                     data_value: item.value || item.data_value,
                     source_raw_id: item.sourceRawId || item.source_raw_id || null,
                     confidence: item.confidence || 1.0

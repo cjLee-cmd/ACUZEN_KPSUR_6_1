@@ -1307,11 +1307,17 @@
                 const reportName = `${selectedDrug.brand}_PSUR_${new Date().toISOString().slice(0, 7).replace('-', 'Q')}_${timestamp}`;
 
                 // user_inputs에 저장할 데이터 구조 (DB 스키마에 맞춤)
+                // CS4, CS3 값 가져오기
+                const cs4Value = document.getElementById('af_cs4')?.value || '';
+                const cs3Value = document.getElementById('af_cs3')?.textContent || '';
+
                 const userInputs = {
                     // CS 데이터 매핑
                     CS0_성분명: selectedDrug.ingredient,
                     CS1_브랜드명: selectedDrug.brand,
                     CS2_회사명: selectedDrug.company,
+                    CS3_보고시작날짜: cs3Value !== '-' ? cs3Value : '',
+                    CS4_보고종료날짜: cs4Value,
                     CS5_국내허가일자: selectedDrug.approval_date,
                     CS6_보고서제출일: formData.first_approval_date,
                     CS7_최초허가국: formData.first_approval_country,

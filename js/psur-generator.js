@@ -1207,8 +1207,10 @@ ${examplesText.substring(0, 35000)}
                         }
 
                         // 섹션 13 (참고문헌) 후처리 검증
+                        // RAW 파일 목록이 참고문헌으로 잘못 출력되는 문제 수정
                         if (sections['13']) {
-                            const rawPattern = /RAW\d+(\.\d+)?[：:\s]*[가-힣]/g;
+                            // 패턴: RAW 파일명 형식 (RAW1.1_한글, RAW1.1: 한글, RAW1.1 한글 등)
+                            const rawPattern = /RAW\d+(\.\d+)?[_：:\s]/g;
                             if (rawPattern.test(sections['13'].content)) {
                                 console.warn('[PSURGenerator] 섹션 13에서 RAW 파일 목록 감지 → "해당사항 없음"으로 대체');
                                 sections['13'].content = '## 13. 참고문헌\n\n해당사항 없음';
@@ -1302,8 +1304,10 @@ ${examplesText.substring(0, 35000)}
         }
 
         // 섹션 13 (참고문헌) 후처리 검증
+        // RAW 파일 목록이 참고문헌으로 잘못 출력되는 문제 수정
         if (sections['13']) {
-            const rawPattern = /RAW\d+(\.\d+)?[：:\s]*[가-힣]/g;
+            // 패턴: RAW 파일명 형식 (RAW1.1_한글, RAW1.1: 한글, RAW1.1 한글 등)
+            const rawPattern = /RAW\d+(\.\d+)?[_：:\s]/g;
             if (rawPattern.test(sections['13'].content)) {
                 console.warn('[PSURGenerator] 섹션 13에서 RAW 파일 목록 감지 → "해당사항 없음"으로 대체');
                 sections['13'].content = '## 13. 참고문헌\n\n해당사항 없음';
