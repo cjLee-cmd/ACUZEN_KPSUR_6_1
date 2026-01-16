@@ -8,23 +8,49 @@
 (function() {
     'use strict';
 
-    // Table 정의 (표1-표15)
+    // Table 정의 - extractData.md 명세서 기반 (6개)
+    // 표 데이터는 RAW 데이터에서 추출하여 가공
     const TABLE_DEFINITIONS = {
-        '표1_전세계허가현황': { rawIds: ['RAW4'], description: '국가별 허가 현황 표' },
-        '표2_연도별판매량': { rawIds: ['RAW3'], description: '연도별 판매량/매출 표' },
-        '표3_환자노출추정': { rawIds: ['RAW3'], description: '환자 노출 추정치 표' },
-        '표4_허가사항변경내역': { rawIds: ['RAW7'], description: '허가사항 변경 내역 표' },
-        '표5_신속보고내역': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 이상사례 요약 표' },
-        '표6_정기보고내역': { rawIds: ['RAW15'], description: '정기보고 이상사례 요약 표' },
-        '표7_원시자료요약': { rawIds: ['RAW14'], description: '원시자료 이상사례 요약 표' },
-        '표8_문헌검토결과': { rawIds: ['RAW9'], description: '문헌 검토 결과 표' },
-        '표9_임상시험현황': { rawIds: ['RAW8', 'RAW17'], description: '진행중/완료 임상시험 표' },
-        '표10_SOC별이상사례': { rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'], description: 'SOC별 이상사례 분류 표' },
-        '표11_중대한이상사례': { rawIds: ['RAW12', 'RAW13'], description: '중대한 이상사례 상세 표' },
-        '표12_안전성조치내역': { rawIds: ['RAW5', 'RAW6'], description: '안전성 조치 내역 표' },
-        '표13_MedDRA_SMQ': { rawIds: ['RAW16'], description: 'MedDRA SMQ 분석 표' },
-        '표14_IIT_NIS현황': { rawIds: ['RAW17'], description: 'IIT/NIS 트래커 현황 표' },
-        '표15_약어목록': { rawIds: ['RAW2.1'], description: '약어 및 정의 목록 표' }
+        // === 시판후 노출 관련 표 (RAW3) ===
+        '표2_연도별판매량': {
+            rawIds: ['RAW3'],
+            description: '연도별 판매량 표',
+            columns: ['연도', '판매량', '단위'],
+            dependencies: ['CS19_시판후노출count시작날짜', 'CS19_.1_시판후노출count종료날짜']
+        },
+        '표3_연평균환자노출': {
+            rawIds: ['RAW3', 'RAW1.1', 'RAW2.1'],
+            description: '연 평균 환자 노출 추정표',
+            columns: ['항목', '수치', '비고'],
+            dependencies: ['표2_연도별판매량', 'CS20_1일사용량', 'CS21_환자1명당사용량']
+        },
+
+        // === 이상사례 보고 내역 표 ===
+        '표5_신속보고내역': {
+            rawIds: ['RAW12', 'RAW13'],
+            description: '신속보고 이상사례 내역 표',
+            columns: ['보고일자', '관리번호', '이상사례명', '비고'],
+            note: '국외신속보고 + 국내신속보고 LineListing 합침'
+        },
+        '표6_정기보고내역': {
+            rawIds: ['RAW15'],
+            description: '정기보고 이상사례 내역 표',
+            columns: ['보고일자', '관리번호', '이상사례명', '비고']
+        },
+        '표7_원시자료내역': {
+            rawIds: ['RAW14'],
+            description: '원시자료(KIDS) 이상사례 내역 표',
+            columns: ['보고일자', '관리번호', '이상사례명', '비고']
+        },
+
+        // === SOC별 분석 표 ===
+        '표9_SOC별건수': {
+            rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],
+            description: 'SOC별 이상사례 건수 표 (중대/비중대)',
+            columns: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
+            type: 'A',  // 모든 LineListing 합쳐서 피벗 분석 필요
+            note: 'MedDRA SOC/PT 기준으로 피벗테이블 형태'
+        }
     };
 
     /**
@@ -85,6 +111,95 @@
             }
 
             return tables;
+        }
+
+        /**
+         * RAW3 시판후 판매 데이터에서 모든 연도 테이블 추출 및 병합
+         */
+        parseAllYearTablesFromRAW3(markdownContent) {
+            // 연도별 섹션 분리 (## 2017, ## 2018 등)
+            const yearSectionRegex = /## (\d{4})\s*\n([\s\S]*?)(?=## \d{4}|$)/g;
+            const allYearData = {
+                headers: ['Month', 'Korea', 'Japan', 'Taiwan', 'Malaysia', 'USA', 'Canada', 'India', 'Total'],
+                rows: [],
+                rowCount: 0,
+                yearSummary: {} // 연도별 합계
+            };
+
+            let match;
+            while ((match = yearSectionRegex.exec(markdownContent)) !== null) {
+                const year = match[1];
+                const sectionContent = match[2];
+
+                // 해당 섹션에서 테이블 추출
+                const tableRegex = /\|[^\n]+\|\n\|[-:\s|]+\|\n((\|[^\n]+\|\n)+)/;
+                const tableMatch = sectionContent.match(tableRegex);
+
+                if (tableMatch) {
+                    const parsedTable = this.parseMarkdownTable(tableMatch[0]);
+                    if (parsedTable && parsedTable.rows) {
+                        // 각 행에 연도 정보 추가하여 저장
+                        parsedTable.rows.forEach(row => {
+                            // Total 행은 연도별 합계로 저장
+                            if (row.Month && row.Month.includes('Total')) {
+                                allYearData.yearSummary[year] = {
+                                    year: year,
+                                    Korea: row.Korea || '0',
+                                    Japan: row.Japan || '0',
+                                    Taiwan: row.Taiwan || '0',
+                                    Malaysia: row.Malaysia || '0',
+                                    USA: row.USA || '0',
+                                    Canada: row.Canada || '0',
+                                    India: row.India || '0',
+                                    Total: row.Total || '0'
+                                };
+                            }
+                            allYearData.rows.push(row);
+                        });
+                    }
+                }
+            }
+
+            allYearData.rowCount = allYearData.rows.length;
+            return allYearData;
+        }
+
+        /**
+         * 연도별 합계 테이블 생성 (표2_연도별판매량용)
+         */
+        createYearlySummaryTable(markdownContent, startYear = null, endYear = null) {
+            const allData = this.parseAllYearTablesFromRAW3(markdownContent);
+
+            // 연도별 합계만 추출
+            const summaryRows = [];
+            const years = Object.keys(allData.yearSummary).sort();
+
+            years.forEach(year => {
+                const yearNum = parseInt(year);
+                // 시작/종료 연도 필터링
+                if (startYear && yearNum < startYear) return;
+                if (endYear && yearNum > endYear) return;
+
+                const data = allData.yearSummary[year];
+                summaryRows.push({
+                    연도: year,
+                    Korea: data.Korea,
+                    Japan: data.Japan,
+                    Taiwan: data.Taiwan,
+                    Malaysia: data.Malaysia,
+                    USA: data.USA,
+                    Canada: data.Canada,
+                    India: data.India,
+                    Total: data.Total
+                });
+            });
+
+            return {
+                headers: ['연도', 'Korea', 'Japan', 'Taiwan', 'Malaysia', 'USA', 'Canada', 'India', 'Total'],
+                rows: summaryRows,
+                rowCount: summaryRows.length,
+                allYearData: allData // 전체 월별 데이터도 포함
+            };
         }
 
         /**
