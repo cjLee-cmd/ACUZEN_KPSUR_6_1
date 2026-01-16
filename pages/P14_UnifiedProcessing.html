@@ -1090,26 +1090,21 @@
         // ========================================
         async function loadSavedState() {
             const urlParams = new URLSearchParams(window.location.search);
-            const reportId = urlParams.get('reportId');
+            let reportId = urlParams.get('reportId') || localStorage.getItem('current_report');
 
-            if (!reportId) {
-                console.log('📌 reportId 없음 - 새 세션');
-                // reportId가 없어도 IndexedDB에 파일이 있으면 복원 시도
-                if (window.fileStorage) {
-                    try {
-                        const idbCount = await window.fileStorage.getFileCount();
-                        if (idbCount > 0) {
-                            console.log(`📌 IndexedDB에 ${idbCount}개 파일 발견 - 복원 시도`);
-                            const restored = await restoreStateFromLocalStorage();
-                            if (restored) {
-                                showToast(`이전 세션의 ${idbCount}개 파일을 복원했습니다`, 'success');
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('⚠️ IndexedDB 확인 실패:', err);
-                    }
-                }
+            // reportId 유효성 검사 - 없거나 local_로 시작하면 P13으로 리다이렉트
+            if (!reportId || reportId.startsWith('local_')) {
+                console.warn('⚠️ 유효한 reportId 없음 - P13으로 이동');
+                alert('보고서를 먼저 생성해주세요.\n(P13 새 보고서 생성 페이지로 이동합니다)');
+                window.location.href = 'P13_NewReport.html';
                 return;
+            }
+
+            // URL에 reportId가 없으면 추가
+            if (!urlParams.get('reportId')) {
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('reportId', reportId);
+                window.history.replaceState({}, '', newUrl);
             }
 
             console.log('📌 저장된 상태 복원 시작, reportId:', reportId);
@@ -2071,9 +2066,9 @@
                     sourceFiles: Object.keys(convertedMarkdowns).length
                 }));
 
-                // DB에 report_sections 저장 (local_ 접두사 보고서는 스킵)
+                // DB에 report_sections 저장
                 const currentReportId = getUrlParam('reportId') || localStorage.getItem('current_report');
-                if (currentReportId && !currentReportId.startsWith('local_') && window.PSURGenerator) {
+                if (currentReportId && window.PSURGenerator) {
                     try {
                         window.PSURGenerator.reportId = currentReportId;
                         const dbResult = await window.PSURGenerator.saveSectionsToDB(generatedSections);
@@ -2085,8 +2080,6 @@
                     } catch (dbError) {
                         console.warn('⚠️ DB report_sections 저장 중 오류:', dbError);
                     }
-                } else if (currentReportId && currentReportId.startsWith('local_')) {
-                    console.log('ℹ️ 로컬 보고서 - DB report_sections 저장 스킵');
                 }
 
                 updateProcessingStep(4, 'completed', '완료');
@@ -2096,7 +2089,7 @@
 
                 // 다음 페이지로 이동 (Line Listing 파일이 있으면 P16, 없으면 P15)
                 setTimeout(() => {
-                    const reportId = getUrlParam('reportId') || 'local_' + Date.now();
+                    const reportId = getUrlParam('reportId') || localStorage.getItem('current_report');
 
                     // Line Listing 파일 존재 여부 확인 (RAW12-15)
                     const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
@@ -2412,11 +2405,12 @@
             const extractedData = await hybridExtractWithLLM(regexExtractedData, convertedMarkdowns);
             console.log('📊 [Step 2] 하이브리드 추출 완료:', extractedData.length, '개 항목');
 
+            // localStorage에 캐시 저장 (빠른 접근용)
             localStorage.setItem('extractedData', JSON.stringify(extractedData));
-            console.log('✅ extractedData 저장 완료:', extractedData.length, '개 항목');
+            console.log('✅ extractedData 캐시 저장 완료:', extractedData.length, '개 항목');
 
-            // DB에 extracted_data 저장 (local_ 접두사 보고서는 DB 저장 스킵)
-            if (reportId && !reportId.startsWith('local_') && window.supabaseClient && typeof window.supabaseClient.bulkUpsertExtractedData === 'function') {
+            // DB에 extracted_data 저장 (Primary Storage)
+            if (reportId && window.supabaseClient && typeof window.supabaseClient.bulkUpsertExtractedData === 'function') {
                 try {
                     const dbResult = await window.supabaseClient.bulkUpsertExtractedData(reportId, extractedData);
                     if (dbResult.success) {
@@ -2425,10 +2419,8 @@
                         console.warn('⚠️ DB extractedData 저장 실패:', dbResult.error);
                     }
                 } catch (dbError) {
-                    console.warn('⚠️ DB extractedData 저장 실패 (localStorage는 성공):', dbError);
+                    console.warn('⚠️ DB extractedData 저장 실패:', dbError);
                 }
-            } else if (reportId && reportId.startsWith('local_')) {
-                console.log('ℹ️ 로컬 보고서 - DB extractedData 저장 스킵');
             }
 
             console.log('✅ 처리 결과 저장 완료:', validatedFiles.length, '개 파일');
@@ -2715,17 +2707,41 @@
                 Object.entries(window.TABLE_DEFINITIONS).forEach(([tableKey, def]) => {
                     // 해당 RAW 파일이 업로드되었는지 확인
                     const actualRawIds = def.rawIds || [];
-                    const hasSource = actualRawIds.some(rawId => uploadedRawIds.includes(rawId));
+                    const availableRawIds = actualRawIds.filter(rawId => uploadedRawIds.includes(rawId));
+                    const hasSource = availableRawIds.length > 0;
 
                     if (hasSource) {
-                        // 해당 RAW 파일의 마크다운에서 표 데이터 추출
-                        const sourceRawId = actualRawIds.find(rawId => uploadedRawIds.includes(rawId));
-                        const sourceFile = convertedFiles.find(f =>
-                            (f.assignedRawId || f.rawId) === sourceRawId
-                        );
-                        const tableData = sourceFile && sourceFile.markdown
-                            ? extractTableFromMarkdown(sourceFile.markdown, tableKey)
-                            : null;
+                        let tableData = null;
+                        let sourceRawId = availableRawIds[0];
+
+                        // 다중 소스 테이블 처리
+                        if (tableKey === '표5_신속보고내역') {
+                            // RAW12 + RAW13 병합
+                            tableData = extractAndMergeLineListing(convertedFiles, availableRawIds, '신속보고');
+                            sourceRawId = availableRawIds.join('+');
+                        } else if (tableKey === '표9_SOC별건수') {
+                            // RAW12 + RAW13 + RAW14 + RAW15 병합 후 SOC 피벗 분석
+                            tableData = extractAndPivotSOC(convertedFiles, availableRawIds);
+                            sourceRawId = availableRawIds.join('+');
+                        } else if (tableKey === '표3_연평균환자노출') {
+                            // 표3은 계산 기반 테이블 (표2 + CS20 + CS21 의존)
+                            tableData = {
+                                headers: ['항목', '수치', '비고'],
+                                data: [],
+                                rowCount: 0,
+                                note: '계산 필요: 표2_연도별판매량 + CS20_1일사용량 + CS21_환자1명당사용량',
+                                calculationRequired: true
+                            };
+                            sourceRawId = 'Calculated';
+                        } else {
+                            // 단일 소스 테이블 (표2, 표6, 표7)
+                            const sourceFile = convertedFiles.find(f =>
+                                (f.assignedRawId || f.rawId) === sourceRawId
+                            );
+                            tableData = sourceFile && sourceFile.markdown
+                                ? extractTableFromMarkdown(sourceFile.markdown, tableKey)
+                                : null;
+                        }
 
                         extractedData.push({
                             data_type: 'Table',
@@ -2764,10 +2780,13 @@
          */
         function extractTableFromMarkdown(markdown, tableId) {
             try {
-                // 표2_연도별판매량 또는 표3_연평균환자노출인 경우 RAW3 전용 파싱 사용
-                if (tableId === '표2_연도별판매량' || tableId === '표3_연평균환자노출') {
+                // 표2_연도별판매량인 경우 RAW3 전용 파싱 사용
+                if (tableId === '표2_연도별판매량') {
                     return extractAllYearTablesFromRAW3(markdown);
                 }
+
+                // 표3_연평균환자노출은 계산 기반 테이블 (표2 + CS20 + CS21 의존)
+                // 별도 계산 로직 필요, 여기서는 일반 테이블 파싱 사용
 
                 // 마크다운 테이블 패턴 찾기
                 const tablePattern = /\|[^\n]+\|\n\|[-:\s|]+\|\n((?:\|[^\n]+\|\n?)+)/g;
@@ -2868,6 +2887,128 @@
                 };
             } catch (error) {
                 console.warn('RAW3 연도별 데이터 추출 실패:', error);
+                return null;
+            }
+        }
+
+        /**
+         * 표5_신속보고내역: RAW12(국외) + RAW13(국내) LineListing 병합
+         */
+        function extractAndMergeLineListing(convertedFiles, rawIds, reportType) {
+            try {
+                const allRows = [];
+                const headers = ['보고일자', '관리번호', '이상사례명', '중대성', '국내외', '비고'];
+
+                rawIds.forEach(rawId => {
+                    const file = convertedFiles.find(f => (f.assignedRawId || f.rawId) === rawId);
+                    if (!file || !file.markdown) return;
+
+                    // 마크다운에서 테이블 추출
+                    const tableData = extractTableFromMarkdown(file.markdown, `LineListing_${rawId}`);
+                    if (tableData && tableData.data) {
+                        // 각 행에 소스 정보 추가
+                        const isKorea = rawId === 'RAW13';
+                        tableData.data.forEach(row => {
+                            allRows.push({
+                                보고일자: row['보고일자'] || row['Report Date'] || row['날짜'] || '',
+                                관리번호: row['관리번호'] || row['Case ID'] || row['ID'] || '',
+                                이상사례명: row['이상사례명'] || row['PT'] || row['Event'] || '',
+                                중대성: row['중대성'] || row['Seriousness'] || '',
+                                국내외: isKorea ? '국내' : '국외',
+                                비고: row['비고'] || row['Note'] || ''
+                            });
+                        });
+                    }
+                });
+
+                console.log(`📋 ${reportType} LineListing 병합: ${allRows.length}건 (${rawIds.join(' + ')})`);
+
+                return {
+                    headers: headers,
+                    data: allRows,
+                    rowCount: allRows.length,
+                    sources: rawIds
+                };
+            } catch (error) {
+                console.warn(`LineListing 병합 실패 (${reportType}):`, error);
+                return null;
+            }
+        }
+
+        /**
+         * 표9_SOC별건수: RAW12-15 병합 후 SOC/PT 피벗 분석
+         */
+        function extractAndPivotSOC(convertedFiles, rawIds) {
+            try {
+                // 1. 모든 LineListing 데이터 수집
+                const allCases = [];
+
+                rawIds.forEach(rawId => {
+                    const file = convertedFiles.find(f => (f.assignedRawId || f.rawId) === rawId);
+                    if (!file || !file.markdown) return;
+
+                    const tableData = extractTableFromMarkdown(file.markdown, `LineListing_${rawId}`);
+                    if (tableData && tableData.data) {
+                        tableData.data.forEach(row => {
+                            allCases.push({
+                                SOC: row['SOC'] || row['System Organ Class'] || 'Unknown',
+                                PT: row['PT'] || row['Preferred Term'] || row['이상사례명'] || 'Unknown',
+                                중대성: row['중대성'] || row['Seriousness'] || '',
+                                source: rawId
+                            });
+                        });
+                    }
+                });
+
+                // 2. SOC/PT별 집계 (피벗 테이블)
+                const pivotData = {};
+                allCases.forEach(c => {
+                    const key = `${c.SOC}||${c.PT}`;
+                    if (!pivotData[key]) {
+                        pivotData[key] = {
+                            SOC: c.SOC,
+                            PT: c.PT,
+                            중대한: 0,
+                            중대하지않은: 0,
+                            총누적: 0
+                        };
+                    }
+                    pivotData[key].총누적++;
+                    if (c.중대성 === '중대' || c.중대성 === 'Serious' || c.중대성 === 'Yes') {
+                        pivotData[key].중대한++;
+                    } else {
+                        pivotData[key].중대하지않은++;
+                    }
+                });
+
+                // 3. 비율 계산 및 배열 변환
+                const total = allCases.length || 1;
+                const rows = Object.values(pivotData).map(row => ({
+                    SOC: row.SOC,
+                    PT: row.PT,
+                    '중대한(건)': row.중대한,
+                    '중대하지않은(건)': row.중대하지않은,
+                    '총누적(건)': row.총누적,
+                    '비율(%)': ((row.총누적 / total) * 100).toFixed(1)
+                }));
+
+                // SOC 기준 정렬
+                rows.sort((a, b) => {
+                    if (a.SOC !== b.SOC) return a.SOC.localeCompare(b.SOC);
+                    return b['총누적(건)'] - a['총누적(건)'];
+                });
+
+                console.log(`📊 SOC별 건수 피벗 분석: ${rows.length}개 SOC/PT, 총 ${allCases.length}건`);
+
+                return {
+                    headers: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
+                    data: rows,
+                    rowCount: rows.length,
+                    totalCases: allCases.length,
+                    sources: rawIds
+                };
+            } catch (error) {
+                console.warn('SOC 피벗 분석 실패:', error);
                 return null;
             }
         }
@@ -3434,7 +3575,6 @@ ${allMarkdowns.substring(0, 30000)}
                         '(취소를 누르면 기본 템플릿으로 생성됩니다)'
                     );
                     if (goToSettings) {
-                        const reportId = getUrlParam('reportId') || 'local_' + Date.now();
                         window.location.href = `P91_Settings.html?returnUrl=${encodeURIComponent(window.location.href)}`;
                         return {};
                     }
@@ -3611,8 +3751,7 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 // LLM 대화 로그 저장 (세션 매니저가 있으면)
                 if (window.llmSessionManager) {
                     const reportId = new URLSearchParams(window.location.search).get('reportId') ||
-                                     localStorage.getItem('current_report_id') ||
-                                     'local_' + Date.now();
+                                     localStorage.getItem('current_report');
                     try {
                         await window.llmSessionManager.initSession(reportId, {
                             model: 'gemini-3-flash-preview',

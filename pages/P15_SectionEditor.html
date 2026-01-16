@@ -132,6 +132,11 @@
             color: white;
         }
 
+        .section-status.failed {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            color: white;
+        }
+
         .section-info { flex: 1; min-width: 0; }
         .section-id { font-weight: 600; font-size: 0.875rem; }
         .section-name {
@@ -452,6 +457,12 @@
             background: rgba(245, 158, 11, 0.2);
             color: #F59E0B;
             border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .badge-gray {
@@ -1115,7 +1126,7 @@
                 <div class="footer-info" id="footerInfo">
                     15개 섹션 중 0개 완료
                 </div>
-                <button class="btn-nav btn-nav-next" onclick="navigateTo('P19_QC.html')">다음: QC →</button>
+                <button class="btn-nav btn-nav-next" onclick="goToNextStage()">다음: QC →</button>
             </footer>
         </div>
 
@@ -1212,6 +1223,12 @@
     <script src="../js/auth.js"></script>
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
+    <!-- SectionEditor에서 사용할 Supabase 참조 설정 -->
+    <script>
+        // section-editor.js가 사용할 _sectionEditorSupabase를 supabaseClient로 매핑
+        window._sectionEditorSupabase = window.supabaseClient;
+        console.log('[P15] _sectionEditorSupabase 설정 완료:', !!window._sectionEditorSupabase);
+    </script>
     <script src="../js/section-editor.js"></script>
     <script src="../js/multi-llm-client.js"></script>
     <script src="../js/components/llm-progress-bar.js"></script>
@@ -1247,6 +1264,15 @@
 
         // 초기화
         document.addEventListener('DOMContentLoaded', async function() {
+            // reportId 유효성 검사 - 없거나 local_로 시작하면 P13으로 리다이렉트
+            const reportId = getReportId();
+            if (!reportId || reportId.startsWith('local_')) {
+                console.warn('[P15] 유효한 reportId 없음 - P13으로 이동');
+                alert('보고서를 먼저 생성해주세요.\n(P13 새 보고서 생성 페이지로 이동합니다)');
+                window.location.href = 'P13_NewReport.html';
+                return;
+            }
+
             initDarkMode();
             initEditor();
             renderSectionList();
@@ -1254,8 +1280,7 @@
             await loadMarkdownFiles();
             await loadExtractedData();  // CS/PH/Table 데이터 로드
 
-            // 보고서 ID가 있으면 Stage 업데이트 (5 = 섹션 편집)
-            const reportId = getReportId();
+            // Stage 업데이트 (5 = 섹션 편집)
             if (reportId) {
                 await updateCurrentStage(reportId, 5);
             }
@@ -1304,6 +1329,14 @@
         // Editor 초기화
         function initEditor() {
             editor = new window.SectionEditor();
+
+            // reportId 가져와서 설정 (DB 저장용)
+            const reportId = getReportId();
+            if (reportId) {
+                editor.setReportId(reportId);
+                console.log('[P15] SectionEditor reportId 설정:', reportId);
+            }
+
             const loaded = editor.loadSections();
 
             if (!loaded) {
@@ -1320,11 +1353,13 @@
                 const section = editor.getSection(def.id);
                 const status = editor.getSectionStatus(def.id);
                 const statusIcon = status === 'edited' ? '✏️' :
-                                   status === 'generated' ? '✓' : '○';
+                                   status === 'generated' ? '✓' :
+                                   status === 'failed' ? '✗' : '○';
 
                 // Check if section is incomplete (missing required data)
                 const isIncomplete = section?.content?.includes('필요한 소스 파일이 업로드되지 않았습니다') ||
-                                     section?.content?.includes('[이 섹션은 생성되지 않았습니다]');
+                                     section?.content?.includes('[이 섹션은 생성되지 않았습니다]') ||
+                                     section?.content?.includes('LLM 생성 실패');
                 const badge = isIncomplete ? '<span class="badge badge-warning" style="margin-left: 8px; font-size: 0.7rem;">⚠️ 데이터 부족</span>' : '';
 
                 return `
@@ -1414,8 +1449,8 @@
             }
         }
 
-        // 섹션 저장
-        function saveSection() {
+        // 섹션 저장 (async - DB 저장 포함)
+        async function saveSection() {
             if (!currentSectionId) {
                 showToast('저장할 섹션이 선택되지 않았습니다', 'error');
                 return;
@@ -1425,7 +1460,12 @@
             const markdown = editor.htmlToMarkdown(html);
 
             editor.updateSection(currentSectionId, markdown);
-            editor.saveSection(currentSectionId);
+
+            // DB + localStorage 저장 (await으로 대기)
+            const saved = await editor.saveSection(currentSectionId);
+            if (saved) {
+                console.log('[P15] 섹션 저장 완료:', currentSectionId);
+            }
 
             isEdited = false;
             document.getElementById('editStatus').textContent = '저장됨';
@@ -1744,13 +1784,26 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
         function updateSummary() {
             const summary = editor.getSummary();
 
-            document.getElementById('summaryBadge').innerHTML = `
+            // 실패한 섹션이 있으면 실패 뱃지 추가
+            let badgeHtml = `
                 <span class="badge badge-success">${summary.generated} 완료</span>
                 <span class="badge badge-warning">${summary.edited} 수정</span>
             `;
 
-            document.getElementById('footerInfo').textContent =
-                `15개 섹션 중 ${summary.generated}개 완료`;
+            if (summary.failed > 0) {
+                badgeHtml += `<span class="badge badge-danger">${summary.failed} 실패</span>`;
+            }
+
+            document.getElementById('summaryBadge').innerHTML = badgeHtml;
+
+            // 푸터 정보도 실패 수 반영
+            if (summary.failed > 0) {
+                document.getElementById('footerInfo').textContent =
+                    `15개 섹션 중 ${summary.generated}개 완료, ${summary.failed}개 실패`;
+            } else {
+                document.getElementById('footerInfo').textContent =
+                    `15개 섹션 중 ${summary.generated}개 완료`;
+            }
         }
 
         // Toast 표시
@@ -1771,23 +1824,35 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             }
         }
 
+        // 다음 Stage로 이동 (P19 QC)
+        async function goToNextStage() {
+            const reportId = getReportId();
+
+            // DB에 Stage 업데이트 (P19 = Stage 8)
+            if (reportId) {
+                await updateCurrentStage(reportId, 8);
+                navigateTo(`P19_QC.html?reportId=${reportId}`);
+            } else {
+                navigateTo('P19_QC.html');
+            }
+        }
+
         // 현재 Stage 업데이트 (DB)
         async function updateCurrentStage(targetReportId, stage) {
             if (!targetReportId) return;
 
-            // localStorage 업데이트 (local_ 포함 모든 reportId)
+            // localStorage 캐시 업데이트
             try {
                 const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
                 currentReport.current_stage = stage;
                 currentReport.updated_at = new Date().toISOString();
                 localStorage.setItem('current_report', JSON.stringify(currentReport));
-                console.log(`✅ [P15] localStorage Stage ${stage}로 업데이트됨`);
+                console.log(`✅ [P15] localStorage Stage ${stage}로 업데이트됨 (캐시)`);
             } catch (e) {
-                console.warn('[P15] localStorage 업데이트 실패:', e);
+                console.warn('[P15] localStorage 캐시 업데이트 실패:', e);
             }
 
-            // DB 업데이트 (local_이 아닌 경우만)
-            if (targetReportId.startsWith('local_')) return;
+            // DB 업데이트 (Primary)
             if (!window.supabaseClient) return;
 
             try {
@@ -1809,12 +1874,17 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
         // 마크다운 파일 모달 관련 함수
         // ========================================
 
-        // 마크다운 파일 로드 (DB 우선, localStorage 폴백)
+        // 마크다운 파일 로드 (DB Only)
         async function loadMarkdownFiles() {
             const reportId = getReportId();
 
-            // 1. DB에서 로드 시도 (valid UUID인 경우)
-            if (reportId && !reportId.startsWith('local_') && window.supabaseClient) {
+            if (!reportId) {
+                console.warn('[P15] reportId 없음 - 마크다운 파일 로드 불가');
+                return;
+            }
+
+            // DB에서 로드 (Primary)
+            if (window.supabaseClient) {
                 try {
                     console.log('[P15] DB에서 마크다운 파일 로드 중...', reportId);
                     const result = await window.supabaseClient.getMarkdownDocumentsByReport(reportId);
@@ -1831,39 +1901,17 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
                         document.getElementById('convertedFileCount').textContent = convertedFiles.length;
                         console.log(`✅ [P15] DB에서 마크다운 파일 ${convertedFiles.length}개 로드됨`);
                         return;
+                    } else {
+                        console.warn('[P15] DB에 마크다운 파일 없음 - P14에서 처리가 완료되었는지 확인하세요');
                     }
                 } catch (error) {
-                    console.warn('[P15] DB 로드 실패, localStorage로 폴백:', error);
+                    console.error('[P15] DB 로드 실패:', error);
                 }
             }
 
-            // 2. localStorage에서 로드 (폴백)
-            try {
-                const stored = localStorage.getItem('convertedMarkdowns');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    // 배열 또는 객체 형태 처리
-                    if (Array.isArray(parsed)) {
-                        convertedFiles = parsed;
-                    } else if (typeof parsed === 'object') {
-                        // 객체 형태인 경우 배열로 변환
-                        convertedFiles = Object.entries(parsed).map(([key, value]) => {
-                            if (typeof value === 'string') {
-                                return { fileName: key, content: value, rawId: extractRawId(key) };
-                            } else {
-                                return { fileName: key, ...value };
-                            }
-                        });
-                    }
-                }
-
-                // 파일 개수 업데이트
-                document.getElementById('convertedFileCount').textContent = convertedFiles.length;
-                console.log(`📄 [P15] localStorage에서 마크다운 파일 ${convertedFiles.length}개 로드됨`);
-            } catch (error) {
-                console.warn('[P15] 마크다운 파일 로드 실패:', error);
-                convertedFiles = [];
-            }
+            // DB 로드 실패 시 빈 배열
+            convertedFiles = [];
+            document.getElementById('convertedFileCount').textContent = 0;
         }
 
         // RAW ID 추출 (파일명에서)
@@ -2024,38 +2072,39 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             document.getElementById('extractedDataModal').classList.add('show');
         }
 
-        // DB에서 데이터 로드
+        // DB에서 데이터 로드 (Primary Source)
         async function loadExtractedData() {
             const reportId = getReportId();
 
-            // 1. DB 로드 시도 (valid UUID인 경우)
-            if (reportId && !reportId.startsWith('local_') && window.supabaseClient) {
+            if (!reportId) {
+                console.warn('[P15] reportId 없음 - 데이터 로드 불가');
+                extractedDataItems = [];
+                updateDataCount();
+                return;
+            }
+
+            // DB 로드 (Primary)
+            if (window.supabaseClient) {
                 try {
                     console.log('[P15] Loading extracted data from DB for reportId:', reportId);
                     const result = await window.supabaseClient.getExtractedData(reportId);
                     if (result.success && result.data && result.data.length > 0) {
                         extractedDataItems = result.data;
-                        console.log('[P15] Loaded', extractedDataItems.length, 'extracted data items from DB');
+                        console.log('[P15] ✅ DB에서 로드 완료:', extractedDataItems.length, '개 항목');
                         updateDataCount();
                         return;
+                    } else {
+                        console.warn('[P15] DB에 데이터 없음 - P14에서 처리가 완료되었는지 확인하세요');
                     }
                 } catch (error) {
-                    console.warn('[P15] DB load failed:', error);
+                    console.error('[P15] DB 로드 실패:', error);
                 }
+            } else {
+                console.warn('[P15] supabaseClient 없음');
             }
 
-            // 2. localStorage 폴백
-            try {
-                const stored = localStorage.getItem('extractedData');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    extractedDataItems = convertLocalStorageToArray(parsed);
-                    console.log('[P15] Loaded', extractedDataItems.length, 'extracted data items from localStorage');
-                }
-            } catch (error) {
-                console.warn('[P15] localStorage parse error:', error);
-                extractedDataItems = [];
-            }
+            // DB 로드 실패 시 - 빈 배열 (localStorage 폴백 제거)
+            extractedDataItems = [];
             updateDataCount();
         }
 

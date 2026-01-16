@@ -912,6 +912,8 @@
     <script src="../js/auth.js"></script>
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="../js/supabase-client.js"></script>
     <script src="../js/multi-llm-client.js"></script>
     <script src="../js/workflow-manager.js"></script>
     <script src="../js/qc-validator.js"></script>
@@ -1120,8 +1122,15 @@
 
         // URL에서 reportId 가져오기
         const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('reportId');
-        console.log('[P19] Report ID from URL:', reportId);
+        let reportId = urlParams.get('reportId') || localStorage.getItem('current_report');
+
+        // reportId 유효성 검사 - 없거나 local_로 시작하면 P13으로 리다이렉트
+        if (!reportId || reportId.startsWith('local_')) {
+            console.warn('[P19] 유효한 reportId 없음 - P13으로 이동');
+            alert('보고서를 먼저 생성해주세요.\n(P13 새 보고서 생성 페이지로 이동합니다)');
+            window.location.href = 'P13_NewReport.html';
+        }
+        console.log('[P19] Report ID:', reportId);
 
         // Initialize the page
         function init() {
@@ -1309,7 +1318,7 @@
                         ← 이전: 섹션 편집
                     </button>
                     <div></div>
-                    <button class="btn-nav btn-nav-next" onclick="navigateTo('P20_Output.html')">다음: 최종 출력 →</button>
+                    <button class="btn-nav btn-nav-next" onclick="proceedToOutput()">다음: 최종 출력 →</button>
                 </footer>
 
                 <!-- Footer -->
@@ -1688,7 +1697,7 @@
         }
 
         // Proceed to output stage
-        function proceedToOutput() {
+        async function proceedToOutput() {
             // Save QC results to localStorage
             Storage.set('qcResults', {
                 issues: issues,
@@ -1696,7 +1705,11 @@
                 validatedAt: DateHelper.formatISO()
             });
 
-            const reportId = new URLSearchParams(window.location.search).get('reportId') || Date.now().toString();
+            const reportId = new URLSearchParams(window.location.search).get('reportId') || localStorage.getItem('current_report');
+
+            // DB에 Stage 업데이트 (P20 = Stage 9)
+            await updateCurrentStage(reportId, 9);
+
             navigateTo(`P20_Output.html?reportId=${reportId}`);
         }
 
@@ -1746,20 +1759,6 @@
         // 현재 Stage 업데이트 (DB)
         async function updateCurrentStage(targetReportId, stage) {
             if (!targetReportId) return;
-
-            // localStorage 업데이트 (local_ 포함 모든 reportId)
-            try {
-                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
-                currentReport.current_stage = stage;
-                currentReport.updated_at = new Date().toISOString();
-                localStorage.setItem('current_report', JSON.stringify(currentReport));
-                console.log(`✅ [P19] localStorage Stage ${stage}로 업데이트됨`);
-            } catch (e) {
-                console.warn('[P19] localStorage 업데이트 실패:', e);
-            }
-
-            // DB 업데이트 (local_이 아닌 경우만)
-            if (targetReportId.startsWith('local_')) return;
             if (!window.supabaseClient) return;
 
             try {

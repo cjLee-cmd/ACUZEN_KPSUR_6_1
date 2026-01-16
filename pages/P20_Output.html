@@ -725,6 +725,8 @@
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
     <script src="../js/workflow-manager.js"></script>
+    <!-- DOCX 스타일 설정 (output-generator.js 전에 로드 필수) -->
+    <script src="../js/docx-styles-config.js"></script>
     <script src="../js/output-generator.js"></script>
     <script src="../js/hybrid-generator.js"></script>
     <script src="../js/supabase-client.js" type="module"></script>
@@ -819,10 +821,17 @@
         }
         // window.authManager 직접 사용
 
-        // URL에서 reportId 가져오기
+        // URL에서 reportId 가져오기 (localStorage fallback 포함)
         const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('reportId');
-        console.log('[P20] Report ID from URL:', reportId);
+        const reportId = urlParams.get('reportId') || localStorage.getItem('current_report');
+
+        // reportId 유효성 검사 - 없거나 local_로 시작하면 P13으로 리다이렉트
+        if (!reportId || reportId.startsWith('local_')) {
+            console.warn('[P20] 유효한 reportId 없음 - P13으로 이동');
+            alert('보고서를 먼저 생성해주세요.\n(P13 새 보고서 생성 페이지로 이동합니다)');
+            window.location.href = 'P13_NewReport.html';
+        }
+        console.log('[P20] Report ID:', reportId);
 
         // Load draft report and QC results
         const draftReport = window.Storage.get('draftReport') || {};
@@ -833,7 +842,7 @@
         // DB에서 섹션 로드 함수
         async function loadSectionsFromDB() {
             if (!reportId) {
-                console.log('[P20] No reportId, using localStorage');
+                console.warn('[P20] reportId가 없어 DB 로드를 건너뜁니다');
                 return;
             }
 
@@ -1280,13 +1289,40 @@
             showLLMLoading('최종 문서를 생성하고 있습니다...');
 
             try {
-                // 저장된 보고서 내용 가져오기
-                let content = reportContent;
+                // 원본 마크다운 콘텐츠 가져오기 (HTML이 아닌 순수 마크다운)
+                let content = '';
 
-                // 내용이 없으면 현재 미리보기에서 가져오기
+                // 1. generatedSections에서 마크다운 콘텐츠 결합
+                if (generatedSections && Object.keys(generatedSections).length > 0) {
+                    // 섹션 번호순 정렬
+                    const sortedIds = Object.keys(generatedSections).sort((a, b) => {
+                        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+                        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+                        return numA - numB;
+                    });
+
+                    for (const id of sortedIds) {
+                        const section = generatedSections[id];
+                        if (section && section.content) {
+                            content += section.content + '\n\n';
+                        }
+                    }
+                    console.log(`[Export] Combined ${sortedIds.length} sections from generatedSections`);
+                }
+
+                // 2. reportContent가 있고 HTML이 아니면 사용
+                if (!content || content.trim().length === 0) {
+                    if (reportContent && !reportContent.includes('<div') && !reportContent.includes('<h1>')) {
+                        content = reportContent;
+                        console.log('[Export] Using reportContent (markdown)');
+                    }
+                }
+
+                // 3. 최종 fallback - 경고와 함께 미리보기 사용 (HTML)
                 if (!content || content.trim().length === 0) {
                     const preview = document.getElementById('documentPreview');
                     if (preview) {
+                        console.warn('[Export] Falling back to preview innerHTML (HTML content)');
                         content = preview.innerHTML;
                     }
                 }

@@ -1299,7 +1299,7 @@
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
     <script src="../js/workflow-manager.js"></script>
-    <script src="../js/supabase-client.js" type="module"></script>
+    <script src="../js/supabase-client.js"></script>
 
     <!-- Dark Mode Script -->
     <script>
@@ -1494,8 +1494,15 @@
 
         // URL에서 reportId 가져오기
         const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('reportId');
-        console.log('[P18] Report ID from URL:', reportId);
+        let reportId = urlParams.get('reportId') || localStorage.getItem('current_report');
+
+        // reportId 유효성 검사 - 없거나 local_로 시작하면 P13으로 리다이렉트
+        if (!reportId || reportId.startsWith('local_')) {
+            console.warn('[P18] 유효한 reportId 없음 - P13으로 이동');
+            alert('보고서를 먼저 생성해주세요.\n(P13 새 보고서 생성 페이지로 이동합니다)');
+            window.location.href = 'P13_NewReport.html';
+        }
+        console.log('[P18] Report ID:', reportId);
 
         // Load draft report from P17 (localStorage fallback)
         const draftReport = Storage.get('draftReport') || {};
@@ -1529,15 +1536,15 @@
             }
 
             try {
-                // supabaseClient 대기
-                if (typeof window.supabaseClient === 'undefined') {
-                    // 동적 import 시도
-                    const module = await import('../js/supabase-client.js');
-                    window.supabaseClient = module.default;
+                // supabaseClient 대기 (스크립트 로드 대기)
+                let retries = 0;
+                while (!window.supabaseClient && retries < 10) {
+                    await new Promise(r => setTimeout(r, 100));
+                    retries++;
                 }
 
                 if (!window.supabaseClient) {
-                    console.warn('[P18] supabaseClient not available');
+                    console.warn('[P18] supabaseClient not available after waiting');
                     return;
                 }
 
@@ -2383,7 +2390,11 @@
             Storage.set('reviewedSections', reviewedSections);
             Storage.set('reviewChangeHistory', changeHistory);
 
-            const reportId = new URLSearchParams(window.location.search).get('reportId') || Date.now().toString();
+            const reportId = new URLSearchParams(window.location.search).get('reportId') || localStorage.getItem('current_report');
+
+            // DB에 Stage 업데이트 (P19 = Stage 7)
+            await updateCurrentStage(reportId, 7);
+
             window.location.href = `P19_QC.html?reportId=${reportId}`;
         }
 
@@ -2398,19 +2409,18 @@
         async function updateCurrentStage(targetReportId, stage) {
             if (!targetReportId) return;
 
-            // localStorage 업데이트 (local_ 포함 모든 reportId)
+            // localStorage 캐시 업데이트
             try {
                 const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
                 currentReport.current_stage = stage;
                 currentReport.updated_at = new Date().toISOString();
                 localStorage.setItem('current_report', JSON.stringify(currentReport));
-                console.log(`✅ [P18] localStorage Stage ${stage}로 업데이트됨`);
+                console.log(`✅ [P18] localStorage Stage ${stage}로 업데이트됨 (캐시)`);
             } catch (e) {
-                console.warn('[P18] localStorage 업데이트 실패:', e);
+                console.warn('[P18] localStorage 캐시 업데이트 실패:', e);
             }
 
-            // DB 업데이트 (local_이 아닌 경우만)
-            if (targetReportId.startsWith('local_')) return;
+            // DB 업데이트 (Primary)
             if (!window.supabaseClient) return;
 
             try {

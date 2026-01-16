@@ -334,16 +334,16 @@
                 const dataItems = items.map(item => ({
                     report_id: reportId,
                     data_type: item.type || item.data_type,
-                    data_key: item.key || item.data_key || item.variable_id,  // variable_id도 지원
+                    variable_id: item.variable_id || item.key || item.data_key,  // DB 컬럼명: variable_id
                     data_value: item.value || item.data_value,
                     source_raw_id: item.sourceRawId || item.source_raw_id || null,
-                    confidence: item.confidence || 1.0
+                    validation_status: item.validation_status || 'Pending'
                 }));
 
                 const { data, error } = await this.core.client
                     .from('extracted_data')
                     .upsert(dataItems, {
-                        onConflict: 'report_id,data_type,data_key',
+                        onConflict: 'report_id,data_type,variable_id',
                         ignoreDuplicates: false
                     })
                     .select();
