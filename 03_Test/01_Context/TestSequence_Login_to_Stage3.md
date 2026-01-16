@@ -204,6 +204,178 @@
 | CS21 | 환자1명당사용량 | `365` |
 | CS24 | MedDRA 버전 | `27.0` |
 
+---
+
+### 🤖 E2E 테스트 자동화 스크립트 (AI 에이전트 전용)
+
+> **이 스크립트는 E2E 테스트에서만 사용합니다.**
+> AI 에이전트(Claude 등)가 P13_NewReport.html에서 브라우저 콘솔에 실행하여 테스트 데이터를 자동으로 입력합니다.
+
+#### 사용 방법
+
+1. P13_NewReport.html 페이지 로드
+2. 브라우저 콘솔(F12 → Console)에서 아래 스크립트 실행
+3. 스크립트 실행 후 "보고서 생성" 버튼 클릭
+
+#### 자동화 스크립트
+
+```javascript
+/**
+ * E2E 테스트용 P13 자동 입력 스크립트
+ * 실행: 브라우저 콘솔에서 전체 복사하여 붙여넣기
+ */
+(function fillE2ETestData() {
+    console.log('🧪 E2E 테스트 데이터 자동 입력 시작...');
+
+    // === 테스트 데이터 정의 ===
+    const testData = {
+        // 약품 정보 (자동 채워지는 필드)
+        drug: {
+            ingredient: '메만틴염산염',           // CS0_성분명
+            brand: '에빅사정10mg',                // CS1_브랜드명
+            company: '테스트제약',                // CS2_회사명
+            approvalDate: '2020-01-15',          // CS5_국내허가일자
+            efficacy: '알츠하이머형 치매',        // CS15_효능효과
+            dosage: '1일 1회 10mg'                // CS16_용법용량
+        },
+        // 보고서 정보
+        report: {
+            cs4EndDate: '2025-12-31',            // CS4_보고종료날짜
+            cs7Version: '1.0',                   // CS7_버전넘버
+            cs6SubmitDate: '2026-01-15',         // CS6_보고서제출일
+            authorName: '홍길동',                 // 작성자
+            authorPosition: '약물감시팀장',       // 작성자 직책
+            cs24Period: '5',                     // CS24_보고주기 (5년)
+            cs13Expiry: '36개월',                // CS13_유효기간
+            llmModel: 'gemini-3-flash-preview', // LLM 모델
+            description: 'E2E 테스트용 보고서'   // 보고서 설명
+        }
+    };
+
+    // === 1. 약품 정보 자동 채우기 ===
+    // 약품 선택 버튼 텍스트 변경
+    const drugNameBtn = document.getElementById('selectedDrugName');
+    if (drugNameBtn) {
+        drugNameBtn.textContent = `${testData.drug.ingredient} (${testData.drug.brand})`;
+    }
+
+    // 자동 채워지는 섹션 표시
+    const autoFilledSection = document.getElementById('autoFilledSection');
+    if (autoFilledSection) {
+        autoFilledSection.style.display = 'block';
+    }
+
+    // CS0_성분명
+    const afIngredient = document.getElementById('af_ingredient');
+    if (afIngredient) afIngredient.textContent = testData.drug.ingredient;
+
+    // CS1_브랜드명
+    const afBrand = document.getElementById('af_brand');
+    if (afBrand) afBrand.textContent = testData.drug.brand;
+
+    // CS2_회사명
+    const afCompany = document.getElementById('af_company');
+    if (afCompany) afCompany.textContent = testData.drug.company;
+
+    // CS5_국내허가일자
+    const afApprovalDate = document.getElementById('af_approval_date');
+    if (afApprovalDate) afApprovalDate.textContent = testData.drug.approvalDate;
+
+    // CS15_효능효과
+    const afEfficacy = document.getElementById('af_efficacy');
+    if (afEfficacy) afEfficacy.textContent = testData.drug.efficacy;
+
+    // CS16_용법용량
+    const afDosage = document.getElementById('af_dosage');
+    if (afDosage) afDosage.textContent = testData.drug.dosage;
+
+    // CS4_보고종료날짜 (input)
+    const afCs4 = document.getElementById('af_cs4');
+    if (afCs4) {
+        afCs4.value = testData.report.cs4EndDate;
+        afCs4.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // === 2. 보고서 정보 입력 ===
+    // CS7_버전넘버
+    const versionInput = document.getElementById('first_approval_country');
+    if (versionInput) versionInput.value = testData.report.cs7Version;
+
+    // CS6_보고서제출일
+    const submitDateInput = document.getElementById('first_approval_date');
+    if (submitDateInput) submitDateInput.value = testData.report.cs6SubmitDate;
+
+    // 작성자
+    const authorNameInput = document.getElementById('author_name');
+    if (authorNameInput) authorNameInput.value = testData.report.authorName;
+
+    // 작성자 직책
+    const authorPositionInput = document.getElementById('author_position');
+    if (authorPositionInput) authorPositionInput.value = testData.report.authorPosition;
+
+    // CS24_보고주기 (select)
+    const periodSelect = document.getElementById('report_period');
+    if (periodSelect) {
+        periodSelect.value = testData.report.cs24Period;
+        periodSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // CS13_유효기간
+    const expiryInput = document.getElementById('submitter');
+    if (expiryInput) expiryInput.value = testData.report.cs13Expiry;
+
+    // === 3. LLM 설정 ===
+    const llmSelect = document.getElementById('llm_model');
+    if (llmSelect) {
+        llmSelect.value = testData.report.llmModel;
+        llmSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // === 4. 추가 정보 ===
+    const descriptionInput = document.getElementById('report_description');
+    if (descriptionInput) descriptionInput.value = testData.report.description;
+
+    // === 5. 내부 데이터 구조 설정 (selectedDrug 객체) ===
+    // P13의 submitForm()에서 사용하는 selectedDrug 전역 변수 설정
+    window.selectedDrug = {
+        id: 999,
+        ingredient_name: testData.drug.ingredient,
+        brand_name: testData.drug.brand,
+        company_name: testData.drug.company,
+        domestic_approval_date: testData.drug.approvalDate,
+        efficacy: testData.drug.efficacy,
+        dosage: testData.drug.dosage
+    };
+
+    console.log('✅ E2E 테스트 데이터 자동 입력 완료!');
+    console.log('📋 입력된 데이터:', { testData, selectedDrug: window.selectedDrug });
+    console.log('👉 이제 "보고서 생성" 버튼을 클릭하세요.');
+
+    return { success: true, data: testData };
+})();
+```
+
+#### 스크립트 검증
+
+스크립트 실행 후 아래 항목이 채워졌는지 확인:
+
+| 필드 | 예상 값 | 확인 |
+|------|---------|------|
+| 약품명 버튼 | `메만틴염산염 (에빅사정10mg)` | ☐ |
+| CS0_성분명 | `메만틴염산염` | ☐ |
+| CS1_브랜드명 | `에빅사정10mg` | ☐ |
+| CS2_회사명 | `테스트제약` | ☐ |
+| CS4_보고종료날짜 | `2025-12-31` | ☐ |
+| CS7_버전넘버 | `1.0` | ☐ |
+| CS6_보고서제출일 | `2026-01-15` | ☐ |
+| 작성자 | `홍길동` | ☐ |
+| 작성자 직책 | `약물감시팀장` | ☐ |
+| CS24_보고주기 | `5년` | ☐ |
+| CS13_유효기간 | `36개월` | ☐ |
+| LLM 모델 | `gemini-3-flash-preview` | ☐ |
+
+---
+
 #### TC-02-04: 보고서 생성 실행
 | Step | Action | Expected Result |
 |------|--------|-----------------|
@@ -586,9 +758,9 @@ localStorage.removeItem('extractedData');
 
 ---
 
-*문서 버전: 1.7*
+*문서 버전: 1.8*
 *최초작성일: 2026-01-05*
-*최종수정일: 2026-01-08*
+*최종수정일: 2026-01-16*
 *대상 시스템: KPSUR AGENT v1.0*
 
 ---
@@ -906,6 +1078,185 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 
 ---
 
+---
+
+## 2026-01-16 구현 완료 사항
+
+### 1. 데이터 추출 정의 동기화 (하드코딩 제거) ✅
+
+**근본 원인**: P14_UnifiedProcessing.html의 `buildExtractedData()` 함수가 하드코딩된 CS/PH/Table 변수명을 사용하여 명세서(extractData.md)와 불일치
+
+**수정 파일**:
+| 파일 | 수정 내용 |
+|------|----------|
+| `js/extract/extract-cs.js` | CS_DEFINITIONS 65개 변수 정의 (명세서 기준) |
+| `js/extract/extract-ph.js` | PH_DEFINITIONS 11개 변수 정의 (명세서 기준) |
+| `js/extract/extract-tables.js` | TABLE_DEFINITIONS 6개 변수 정의 (명세서 기준) |
+| `pages/P14_UnifiedProcessing.html` | buildExtractedData() 함수가 전역 정의 사용하도록 변경 |
+
+**P14 코드 변경 위치**:
+- Lines 2555-2611: CS 추출 설정이 `CS_DEFINITIONS` 기반으로 동적 생성
+- Lines 2683-2708: PH 추출이 `PH_DEFINITIONS` 기반으로 동적 생성
+- Lines 2710-2742: Table 추출이 `TABLE_DEFINITIONS` 기반으로 동적 생성
+
+**제거된 하드코딩 변수 (더 이상 사용하지 않음)**:
+```
+❌ CS3_적응증, CS11_효능효과, CS12_용법용량, CS13_사용상주의사항
+❌ PH1_국내판매량서술문, PH2_노출환자수서술문, PH3_국외판매량서술문
+❌ 표1_허가현황, 표3_노출환자수, 표4_문헌목록, 표8_이상사례통계
+```
+
+**신규 명세서 기반 변수 (현재 사용 중)**:
+```
+✅ CS0_성분명, CS15_효능효과, CS16_용법용량, CS24_제형, CS27_사용상주의사항
+✅ PH4_원시자료서술문, PH9_문헌에발표된안전성, PH10_유효성관련정보
+✅ 표2_연도별판매량, 표5_신속보고내역, 표6_정기보고내역, 표9_SOC별건수
+```
+
+---
+
+### TC-03-11: 하이브리드 추출 하드코딩 검증 테스트 (NEW)
+
+> **목적**: P14 추출 로직이 전역 정의(CS_DEFINITIONS, PH_DEFINITIONS, TABLE_DEFINITIONS)를 사용하는지 검증
+
+#### 사전 조건
+
+1. 새 세션에서 테스트 시작 (메모리 효과 방지)
+2. localStorage 초기화:
+```javascript
+// 브라우저 콘솔에서 실행
+localStorage.removeItem('extractedData');
+localStorage.removeItem('generatedSections');
+```
+
+#### TC-03-11-01: 전역 정의 로드 확인
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | P14 페이지 로드 | 페이지 정상 표시 |
+| 2 | 브라우저 콘솔에서 전역 정의 확인 | 아래 스크립트 실행 |
+
+**검증 스크립트**:
+```javascript
+// 전역 정의 개수 확인
+console.log('CS_DEFINITIONS:', Object.keys(window.CS_DEFINITIONS || {}).length);
+console.log('PH_DEFINITIONS:', Object.keys(window.PH_DEFINITIONS || {}).length);
+console.log('TABLE_DEFINITIONS:', Object.keys(window.TABLE_DEFINITIONS || {}).length);
+```
+
+**Expected Result**:
+```
+CS_DEFINITIONS: 65
+PH_DEFINITIONS: 11
+TABLE_DEFINITIONS: 6
+```
+
+#### TC-03-11-02: 데이터 추출 실행
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | 30개 파일 업로드 (TC-03-02 절차) | 파일 업로드 완료 |
+| 2 | "🚀 LLM 분류 시작" 클릭 | 처리 시작 |
+| 3 | 마크다운 변환 완료 | 30개 성공 표시 |
+| 4 | RAW ID 분류 완료 | 분류 완료 표시 |
+| 5 | 데이터 통합 완료 | 통합 완료 표시 |
+| 6 | PSUR 섹션 생성 완료 | 15개 섹션 생성 |
+
+#### TC-03-11-03: 하드코딩 변수 검증
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | 추출 완료 후 콘솔에서 검증 스크립트 실행 | 아래 스크립트 실행 |
+
+**하드코딩 검증 스크립트**:
+```javascript
+(() => {
+    const extractedData = JSON.parse(localStorage.getItem('extractedData') || '[]');
+
+    // 이전 하드코딩 변수 목록 (명세서와 불일치했던 변수들)
+    const oldHardcodedVariables = [
+        'CS3_적응증', 'CS11_효능효과', 'CS12_용법용량', 'CS13_사용상주의사항',
+        'CS14_제조사', 'CS22_허가국가', 'CS23_허가날짜',
+        'PH1_국내판매량서술문', 'PH2_노출환자수서술문', 'PH3_국외판매량서술문',
+        '표1_허가현황', '표3_노출환자수', '표4_문헌목록', '표8_이상사례통계'
+    ];
+
+    // 명세서 기반 올바른 변수 (extractData.md 기준)
+    const correctVariables = [
+        'CS0_성분명', 'CS15_효능효과', 'CS16_용법용량', 'CS24_제형', 'CS27_사용상주의사항',
+        'PH4_원시자료서술문', 'PH9_문헌에발표된안전성', 'PH10_유효성관련정보',
+        '표2_연도별판매량', '표5_신속보고내역', '표6_정기보고내역', '표9_SOC별건수'
+    ];
+
+    const foundOld = extractedData.filter(d => oldHardcodedVariables.includes(d.variable_id));
+    const foundCorrect = extractedData.filter(d => correctVariables.includes(d.variable_id));
+
+    const byType = { CS: 0, PH: 0, Table: 0 };
+    extractedData.forEach(d => {
+        if (d.data_type === 'CS') byType.CS++;
+        else if (d.data_type === 'PH') byType.PH++;
+        else if (d.data_type === 'Table') byType.Table++;
+    });
+
+    console.log('=== 하드코딩 검증 결과 ===');
+    console.log(`총 추출 항목: ${extractedData.length}개 (CS: ${byType.CS}, PH: ${byType.PH}, Table: ${byType.Table})`);
+    console.log(`이전 하드코딩 변수 발견: ${foundOld.length === 0 ? '✅ 없음 (정상)' : '❌ ' + foundOld.map(d => d.variable_id).join(', ')}`);
+    console.log(`명세서 기반 변수 발견: ${foundCorrect.length}개`);
+    console.log('발견된 명세서 변수:', foundCorrect.map(d => d.variable_id));
+
+    return {
+        pass: foundOld.length === 0,
+        total: extractedData.length,
+        byType,
+        oldFound: foundOld.map(d => d.variable_id),
+        correctFound: foundCorrect.map(d => d.variable_id)
+    };
+})();
+```
+
+**Expected Result**:
+```
+=== 하드코딩 검증 결과 ===
+총 추출 항목: 33개 (CS: 18, PH: 9, Table: 6)
+이전 하드코딩 변수 발견: ✅ 없음 (정상)
+명세서 기반 변수 발견: 15개
+발견된 명세서 변수: ["CS0_성분명", "CS15_효능효과", "CS16_용법용량", ...]
+```
+
+#### TC-03-11-04: PSUR 섹션 생성 확인
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | localStorage에서 섹션 확인 | 아래 스크립트 실행 |
+
+**섹션 검증 스크립트**:
+```javascript
+const sections = JSON.parse(localStorage.getItem('generatedSections') || '{}');
+console.log('생성된 섹션 수:', Object.keys(sections).length);
+Object.entries(sections).forEach(([k, v]) => {
+    console.log(`섹션 ${k}: ${v.sectionName} (${v.content?.length || 0}자)`);
+});
+```
+
+**Expected Result**:
+```
+생성된 섹션 수: 15
+섹션 00: 표지 (163자)
+섹션 01: 목차 (809자)
+... (15개 모두 100자 이상)
+```
+
+#### 검증 합격 기준
+
+| 항목 | 합격 기준 |
+|------|----------|
+| 전역 정의 로드 | CS: 65, PH: 11, Table: 6 |
+| 이전 하드코딩 변수 | **0개** (없어야 함) |
+| 추출된 데이터 | 30개 이상 |
+| 생성된 섹션 | 15개 (모두 100자 이상) |
+
+---
+
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
@@ -918,3 +1269,4 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 | 1.5 | 2026-01-08 | 실제 테스트 데이터 디렉토리 구조 반영 (총 30개 파일): Step1=8개(RAW7×4), Step2=2개, Step3=16개+LineListing 4개. RAW2.3-2.6은 Step3으로 이동, RAW5×6, RAW6×2 파일 추가 |
 | 1.6 | 2026-01-08 | **⚠️ 필수: 파일 업로드 검증 단계** 추가 (TC-03-02 보충). 각 Step별 파일 수 검증, "LLM 분류 시작" 전 최종 검증(30개), 마크다운 변환 결과 확인, 검증 실패 시 조치 절차 명시 |
 | 1.7 | 2026-01-08 | **🚨 AI/Claude 에이전트 필수 준수 사항** 섹션 추가. Step 3에서 18개만 업로드하는 반복 오류 방지: (1) 절대 규칙 박스 추가 - 파일 수 미달 시 진행 금지, UI 제약 시 임의 삭제 금지, 검증 스킵 금지 (2) 필수 검증 체크리스트 테이블 추가 (3) UI 제약 발생 시 대응 플로우 명시 (4) 세션 컨텍스트 요약 시 필수 기록 사항 추가 (5) Step 3 파일 목록을 번호 매긴 테이블로 재구성하여 16+4=20개 명확화 |
+| 1.8 | 2026-01-16 | **데이터 추출 하드코딩 제거 검증** (TC-03-11 신규). P14 buildExtractedData() 함수가 전역 정의(CS_DEFINITIONS, PH_DEFINITIONS, TABLE_DEFINITIONS) 사용하도록 수정. 하드코딩 검증 스크립트 및 합격 기준 추가 |

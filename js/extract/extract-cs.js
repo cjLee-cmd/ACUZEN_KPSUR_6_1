@@ -8,33 +8,107 @@
 (function() {
     'use strict';
 
-    // CS 변수 정의 (CS0-CS24)
+    // CS 변수 정의 - extractData.md 명세서 기반 (75개)
+    // fromRawData: 사용자입력 = UI에서 입력받음, 계산값 = 다른 CS로부터 계산
     const CS_DEFINITIONS = {
-        'CS0_성분명': { rawIds: ['RAW1.1', 'RAW2.1'], description: '의약품 성분명' },
-        'CS1_제품명': { rawIds: ['RAW1.1', 'RAW2.1'], description: '의약품 제품명' },
-        'CS2_약효군': { rawIds: ['RAW1.1'], description: '약효 분류' },
-        'CS3_적응증': { rawIds: ['RAW2.2', 'RAW1.1'], description: '허가된 적응증' },
-        'CS4_제형': { rawIds: ['RAW1.1', 'RAW2.1'], description: '제형 정보' },
-        'CS5_국내허가일자': { rawIds: ['RAW4'], description: '국내 최초 허가일' },
-        'CS6_보고기간시작': { rawIds: ['RAW2.1'], description: 'PSUR 보고기간 시작일' },
-        'CS7_보고기간종료': { rawIds: ['RAW2.1'], description: 'PSUR 보고기간 종료일' },
-        'CS8_IBD': { rawIds: ['RAW4'], description: 'International Birth Date' },
-        'CS9_제조사': { rawIds: ['RAW1.1', 'RAW4'], description: '제조사명' },
-        'CS10_수입사': { rawIds: ['RAW1.1', 'RAW4'], description: '수입사명' },
-        'CS11_효능효과': { rawIds: ['RAW2.2'], description: '효능효과 전문' },
-        'CS12_용법용량': { rawIds: ['RAW2.1'], description: '용법용량 전문' },
-        'CS13_사용상주의사항': { rawIds: ['RAW2.3'], description: '사용상의 주의사항' },
-        'CS14_금기': { rawIds: ['RAW2.3'], description: '금기사항' },
-        'CS15_이상반응': { rawIds: ['RAW2.3'], description: '이상반응 정보' },
-        'CS16_상호작용': { rawIds: ['RAW2.3'], description: '상호작용 정보' },
-        'CS17_저장방법': { rawIds: ['RAW1.1'], description: '저장방법' },
-        'CS18_유효기간': { rawIds: ['RAW1.1'], description: '유효기간' },
-        'CS19_허가번호': { rawIds: ['RAW4'], description: '품목허가번호' },
-        'CS20_표준코드': { rawIds: ['RAW4'], description: '의약품 표준코드' },
-        'CS21_ATC코드': { rawIds: ['RAW1.1', 'RAW4'], description: 'ATC 분류코드' },
-        'CS22_KPIC코드': { rawIds: ['RAW4'], description: 'KPIC 코드' },
-        'CS23_DUR정보': { rawIds: ['RAW1.1'], description: 'DUR 정보' },
-        'CS24_보험코드': { rawIds: ['RAW4'], description: '보험 급여 코드' }
+        // === 기본 정보 (사용자 입력) ===
+        'CS0_성분명': { rawIds: ['USER_INPUT'], description: '의약품 성분명', source: 'user_input' },
+        'CS1_브랜드명': { rawIds: ['USER_INPUT'], description: '의약품 브랜드명', source: 'user_input' },
+        'CS2_회사명': { rawIds: ['USER_INPUT'], description: '품목허가권자 회사명', source: 'user_input' },
+        'CS3_보고시작날짜': { rawIds: ['CALCULATED'], description: 'PSUR 보고기간 시작일 (CS4로부터 5년 전)', source: 'calculated' },
+        'CS4_보고종료날짜': { rawIds: ['USER_INPUT'], description: 'PSUR 보고기간 종료일 (DLP)', source: 'user_input' },
+        'CS5_국내허가일자': { rawIds: ['USER_INPUT'], description: '국내 품목허가일', source: 'user_input' },
+        'CS6_보고서제출일': { rawIds: ['USER_INPUT'], description: '보고서 제출 예정일', source: 'user_input' },
+        'CS7_버전넘버': { rawIds: ['USER_INPUT'], description: '보고서 버전 번호', source: 'user_input' },
+        'CS8_버전날짜': { rawIds: ['CALCULATED'], description: 'CS4_보고종료날짜와 동일', source: 'calculated' },
+
+        // === 목차 관련 (문서 생성 후 자동) ===
+        'CS9_목차': { rawIds: ['GENERATED'], description: '섹션 목차', source: 'generated' },
+        'CS10_표목차': { rawIds: ['GENERATED'], description: '표 목차', source: 'generated' },
+        'CS11_별첨목차': { rawIds: ['GENERATED'], description: '별첨 목차', source: 'generated' },
+        'CS12_약어표': { rawIds: ['GENERATED'], description: '약어 및 정의 목록', source: 'generated' },
+
+        // === 일자 관련 ===
+        'CS13_유효기간': { rawIds: ['USER_INPUT'], description: '의약품 유효기간', source: 'user_input' },
+        'CS14_신청기한': { rawIds: ['CALCULATED'], description: 'CS13_유효기간 6개월 전', source: 'calculated' },
+
+        // === 첨부문서 정보 ===
+        'CS15_효능효과': { rawIds: ['RAW1.1', 'RAW2.2'], description: '최신 효능효과', source: 'raw_data' },
+        'CS16_용법용량': { rawIds: ['RAW1.1', 'RAW2.1'], description: '최신 용법용량', source: 'raw_data' },
+
+        // === 허가 현황 (RAW4) ===
+        'CS17_전세계허가현황표': { rawIds: ['RAW4'], description: '국가별 허가 현황 표', source: 'raw_data' },
+        'CS17_.1_허가국가': { rawIds: ['RAW4'], description: '허가 국가명', source: 'raw_data' },
+        'CS17_.2_허가일': { rawIds: ['RAW4'], description: '허가일자', source: 'raw_data' },
+        'CS17_.3_허가품목명': { rawIds: ['RAW4'], description: '허가 품목명', source: 'raw_data' },
+        'CS17_.4_허가권자': { rawIds: ['RAW4'], description: '허가권자', source: 'raw_data' },
+        'CS17_.5_허가비고': { rawIds: ['RAW4'], description: '허가 비고', source: 'raw_data' },
+        'CS17_.6_허가현황서술문': { rawIds: ['RAW4', 'CS17_전세계허가현황표'], description: '허가현황 서술문', source: 'generated' },
+
+        // === 임상 노출 (RAW8) ===
+        'CS18_임상노출': { rawIds: ['RAW8'], description: '임상시험 노출 데이터', source: 'raw_data' },
+
+        // === 시판후 노출 (RAW3) ===
+        'CS19_시판후노출count시작날짜': { rawIds: ['RAW3'], description: '판매량 집계 시작일', source: 'raw_data' },
+        'CS19_.1_시판후노출count종료날짜': { rawIds: ['RAW3'], description: '판매량 집계 종료일', source: 'raw_data' },
+        'CS19_.2_시판후판매연도': { rawIds: ['RAW3'], description: '연도별 컬럼', source: 'raw_data' },
+        'CS19_.3_시판후판매연도별판매량': { rawIds: ['RAW3'], description: '연도별 판매량', source: 'raw_data' },
+        'CS19_.4_시판후판매량합계': { rawIds: ['RAW3'], description: '판매량 총합계', source: 'calculated' },
+
+        // === 용량/환자 계산 ===
+        'CS20_1일사용량': { rawIds: ['RAW1.1', 'RAW2.1'], description: '1일 사용량', source: 'raw_data' },
+        'CS21_환자1명당사용량': { rawIds: ['RAW1.1', 'RAW2.1'], description: '환자당 사용량', source: 'raw_data' },
+        'CS22_연평균판매량': { rawIds: ['표2_연도별판매량'], description: '연 평균 판매량', source: 'calculated' },
+        'CS23_연평균환자노출': { rawIds: ['CS22_연평균판매량', 'CS21_환자1명당사용량'], description: '연 평균 환자 노출 수', source: 'calculated' },
+        'CS24_MedDRA버전넘버': { rawIds: ['USER_INPUT'], description: 'MedDRA 버전', source: 'user_input' },
+
+        // === 신속보고 관련 (RAW12, RAW13) ===
+        'CS25_.1_신속보고일자': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 보고일자', source: 'raw_data' },
+        'CS25_.2_신속관리번호': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 관리번호', source: 'raw_data' },
+        'CS25_.3_신속이상사례명': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 이상사례명', source: 'raw_data' },
+        'CS25_.4_신속비고': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 비고', source: 'raw_data' },
+
+        // === 원시자료 관련 (RAW14) ===
+        'CS28_원시총환자수': { rawIds: ['RAW14'], description: '원시자료 총 환자수', source: 'raw_data' },
+        'CS29_원시총이상사례수': { rawIds: ['RAW14'], description: '원시자료 총 이상사례 건수', source: 'raw_data' },
+        'CS30_원시중대한사례수': { rawIds: ['RAW14'], description: '원시자료 중대한 이상사례 건수', source: 'raw_data' },
+        'CS31_원시자료신청일': { rawIds: ['USER_INPUT'], description: '원시자료 신청일', source: 'user_input' },
+
+        // === 보고 건수 합계 ===
+        'CS32_신속정기보고총사례수': { rawIds: ['RAW12', 'RAW13', 'RAW15'], description: '신속+정기 총 사례수', source: 'calculated' },
+        'CS33_신속보고총사례수': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 총 사례수', source: 'calculated' },
+        'CS34_정기보고총사례수': { rawIds: ['RAW15'], description: '정기보고 총 사례수', source: 'calculated' },
+        'CS35_신속정기원시총사례수': { rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'], description: '전체 총 사례수', source: 'calculated' },
+        'CS36_중대한총사례수': { rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'], description: '중대한 이상사례 총 건수', source: 'calculated' },
+        'CS37_중대하지않은총사례수': { rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'], description: '중대하지 않은 이상사례 총 건수', source: 'calculated' },
+
+        // === 문헌 DB (사용자 입력) ===
+        'CS53_문헌DB': { rawIds: ['USER_INPUT'], description: '문헌 검색 DB 목록', source: 'user_input' },
+
+        // === 안전성 조치 (RAW5, RAW6) ===
+        'CS55_안전성조치서술문': { rawIds: ['RAW5', 'RAW6'], description: '안전성 조치 서술문', source: 'raw_data' },
+
+        // === 참고정보 변경 (RAW7) ===
+        'CS56_참고정보의변경서술문': { rawIds: ['RAW7'], description: '참고정보 변경 서술문', source: 'raw_data' },
+        'CS56_별첨2참고정보변경표': { rawIds: ['RAW7'], description: '별첨2 변경 대비표', source: 'raw_data' },
+        'CS56_.1_허가사항변경일': { rawIds: ['RAW7'], description: '허가사항 변경일', source: 'raw_data' },
+        'CS56_.2_기존효능효과': { rawIds: ['RAW7', 'RAW1.2', 'RAW2.4'], description: '보고시작시점 효능효과', source: 'raw_data' },
+        'CS56_.3_기존용법용량': { rawIds: ['RAW7', 'RAW1.2', 'RAW2.5'], description: '보고시작시점 용법용량', source: 'raw_data' },
+        'CS56_.4_기존사용상의주의사항': { rawIds: ['RAW7', 'RAW1.2', 'RAW2.6'], description: '보고시작시점 사용상의주의사항', source: 'raw_data' },
+        'CS56_.5_최신효능효과': { rawIds: ['RAW7', 'RAW1.1', 'RAW2.2'], description: '보고종료시점 효능효과', source: 'raw_data' },
+        'CS56_.6_최신용법용량': { rawIds: ['RAW7', 'RAW1.1', 'RAW2.1'], description: '보고종료시점 용법용량', source: 'raw_data' },
+        'CS56_.7_최신사용상의주의사항': { rawIds: ['RAW7', 'RAW1.1', 'RAW2.3'], description: '보고종료시점 사용상의주의사항', source: 'raw_data' },
+
+        // === 참고문헌 (RAW9) ===
+        'CS57_참고문헌리스트': { rawIds: ['RAW9', 'GENERATED'], description: '참고문헌 목록', source: 'generated' },
+
+        // === 별첨1 (RAW1.1, RAW2) ===
+        'CS58_.1_별첨1효능효과': { rawIds: ['RAW1.1', 'RAW2.2'], description: '별첨1 효능효과 전문', source: 'raw_data' },
+        'CS58_.2_별첨1용법용량': { rawIds: ['RAW1.1', 'RAW2.1'], description: '별첨1 용법용량 전문', source: 'raw_data' },
+        'CS58_.3_별첨1사용상의주의사항': { rawIds: ['RAW1.1', 'RAW2.3'], description: '별첨1 사용상의주의사항 전문', source: 'raw_data' },
+
+        // === 별첨3 일람표 (모든 LineListing) ===
+        'CS59_별첨3_일람표': { rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'], description: '별첨3 전체 이상사례 일람표', source: 'raw_data' }
     };
 
     /**
@@ -80,17 +154,61 @@
 
         /**
          * 해당 RAW ID와 관련된 정의만 필터링
+         * 특수 rawId: USER_INPUT, CALCULATED, GENERATED는 파일 추출 대상에서 제외
          */
         getRelevantDefinitions(rawId, definitions) {
             const relevant = {};
+            const specialSources = ['USER_INPUT', 'CALCULATED', 'GENERATED'];
 
             Object.entries(definitions).forEach(([key, def]) => {
-                if (def.rawIds && def.rawIds.includes(rawId)) {
-                    relevant[key] = def;
+                if (def.rawIds) {
+                    // 특수 소스가 아닌 실제 RAW ID와 매칭되는 항목만 필터링
+                    const actualRawIds = def.rawIds.filter(id => !specialSources.includes(id));
+                    if (actualRawIds.includes(rawId)) {
+                        relevant[key] = def;
+                    }
                 }
             });
 
             return relevant;
+        }
+
+        /**
+         * 소스 타입별 CS 정의 가져오기
+         * @param {string} sourceType - 'user_input' | 'calculated' | 'generated' | 'raw_data'
+         */
+        getDefinitionsBySource(sourceType) {
+            const filtered = {};
+            Object.entries(CS_DEFINITIONS).forEach(([key, def]) => {
+                if (def.source === sourceType) {
+                    filtered[key] = def;
+                }
+            });
+            return filtered;
+        }
+
+        /**
+         * 사용자 입력이 필요한 CS 항목 목록
+         */
+        getUserInputFields() {
+            return Object.keys(this.getDefinitionsBySource('user_input'));
+        }
+
+        /**
+         * RAW 데이터에서 추출해야 하는 CS 항목 목록
+         */
+        getRawDataFields() {
+            return Object.keys(this.getDefinitionsBySource('raw_data'));
+        }
+
+        /**
+         * 계산/생성되는 CS 항목 목록
+         */
+        getCalculatedFields() {
+            return [
+                ...Object.keys(this.getDefinitionsBySource('calculated')),
+                ...Object.keys(this.getDefinitionsBySource('generated'))
+            ];
         }
 
         /**

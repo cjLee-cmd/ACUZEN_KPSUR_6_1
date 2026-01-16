@@ -8,23 +8,79 @@
 (function() {
     'use strict';
 
-    // PH 변수 정의 (PH1-PH15)
+    // PH 변수 정의 - extractData.md 명세서 기반 (11개)
+    // PH = Phrase/서술문 데이터 (LLM이 생성하는 서술문)
     const PH_DEFINITIONS = {
-        'PH1_서론문': { rawIds: ['RAW2.1'], description: '서론 섹션 기본 문구' },
-        'PH2_적응증서술문': { rawIds: ['RAW2.2'], description: '적응증 서술 문구' },
-        'PH3_용법용량서술문': { rawIds: ['RAW2.1'], description: '용법용량 서술 문구' },
-        'PH4_원시자료서술문': { rawIds: ['RAW14'], description: '원시자료 LineListing 서술 문구' },
-        'PH5_문헌검토서술문': { rawIds: ['RAW9'], description: '문헌 검토 결과 서술 문구' },
-        'PH6_신속보고서술문': { rawIds: ['RAW12', 'RAW13'], description: '신속보고 결과 서술 문구' },
-        'PH7_정기보고서술문': { rawIds: ['RAW15'], description: '정기보고 결과 서술 문구' },
-        'PH8_임상시험서술문': { rawIds: ['RAW8', 'RAW17'], description: '임상시험 현황 서술 문구' },
-        'PH9_안전성조치서술문': { rawIds: ['RAW5', 'RAW6'], description: '안전성 조치 서술 문구' },
-        'PH10_허가사항변경서술문': { rawIds: ['RAW7'], description: '허가사항 변경 서술 문구' },
-        'PH11_총괄평가문': { rawIds: ['RAW2.1'], description: '종합 안전성 평가 문구' },
-        'PH12_결론문': { rawIds: ['RAW2.1'], description: '결론 섹션 기본 문구' },
-        'PH13_유익성위해성평가문': { rawIds: ['RAW2.1'], description: '유익성-위해성 평가 문구' },
-        'PH14_추가조치권고문': { rawIds: ['RAW5', 'RAW6'], description: '추가 조치 권고 문구' },
-        'PH15_허가현황서술문': { rawIds: ['RAW4'], description: '전세계 허가 현황 서술 문구' }
+        // === 원시자료 관련 서술문 ===
+        'PH4_원시자료서술문': {
+            rawIds: ['RAW14', '표7_원시자료내역'],
+            description: '원시자료(KIDS) 이상사례 요약 서술문',
+            type: 'A',  // type A = 가공 필요
+            example: '본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 [CS28_원시총환자수]명의 환자에서 [CS29_원시총이상사례수]건의 이상사례가 확인되었으며...'
+        },
+        'PH5_원시자료서술문2': {
+            rawIds: ['RAW14', '표7_원시자료내역'],
+            description: '원시자료 서술문 (표7 참조)',
+            type: 'B'
+        },
+
+        // === 개별증례 분석문 ===
+        'PH6_개별증례분석문': {
+            rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],
+            description: '개별 이상사례 증례 분석 서술문',
+            type: 'A'  // 모든 LineListing 합쳐서 분석
+        },
+
+        // === 임상시험/연구 관련 서술문 ===
+        'PH7_새로분석된의뢰의시험': {
+            rawIds: ['RAW8', 'RAW17'],
+            description: '보고기간 중 종료/분석완료된 임상시험(IIT 포함) 서술문',
+            type: 'B',
+            example: '본 보고기간 동안 "[CS1_브랜드명]([CS0_성분명])"과 관련된 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다.'
+        },
+        'PH7_.1_새로분석된비중재시험': {
+            rawIds: ['RAW17'],
+            description: '보고기간 중 종료/분석완료된 NIS(비중재연구) 서술문',
+            type: 'B'
+        },
+        'PH8_시작또는진행중시험': {
+            rawIds: ['RAW8', 'RAW17'],
+            description: '보고기간 중 시작/진행중인 임상시험(IIT 포함) 서술문',
+            type: 'B',
+            example: '본 보고기간 동안 "[CS1_브랜드명]([CS0_성분명])"과 관련된 안전성 문제를 검토하기 위하여 특별히 계획되었거나 실행된 새로운 시험이 없어 해당사항이 없다.'
+        },
+        'PH8_.1_시작또는진행중인비중재시험': {
+            rawIds: ['RAW17'],
+            description: '보고기간 중 시작/진행중인 NIS(비중재연구) 서술문',
+            type: 'B'
+        },
+
+        // === 문헌/유효성 관련 서술문 ===
+        'PH9_문헌에발표된안전성': {
+            rawIds: ['RAW9'],
+            description: '문헌 검토 결과 안전성 서술문',
+            type: 'B'
+        },
+        'PH10_유효성관련정보': {
+            rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16'],
+            description: 'Lack of efficacy (유효성 결여) 분석 서술문',
+            type: 'A',  // SMQ 기반 분석 필요
+            example: '본 보고기간 동안의 데이터에 대해 MedDRA SMQ(lack of efficacy)가 관련 사례를 식별하는 데 적용되었다...'
+        },
+
+        // === 종합평가 및 결론 ===
+        'PH11_총괄평가문': {
+            rawIds: ['GENERATED'],
+            description: '종합적인 안전성 평가 서술문',
+            type: 'A',  // 전체 문서 기반 생성
+            example: '보고기간 동안 수집된 안전성 정보 평가결과는 다음과 같다...'
+        },
+        'PH12_결론': {
+            rawIds: ['GENERATED'],
+            description: '결론 서술문 (유익성-위해성 평가 포함)',
+            type: 'A',  // 전체 문서 기반 생성
+            example: '본 보고기간([CS3_보고시작날짜] ~[CS4_보고종료날짜]) 동안 수집된 "[CS1_브랜드명]([CS0_성분명])"의 안전성 정보를 분석 평가한 결과...'
+        }
     };
 
     /**

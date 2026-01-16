@@ -8,7 +8,7 @@ To: Pharmacovigilance Team <pv_team@company.com>
 
 CC: Medical Affairs, Quality
 
-Subject: [보고] COVID-19 VACCINE ASTRAZENECA 안전성정보 변경현황 (2021.11~2022.02)
+Subject: [보고] COVID-19 VACCINE ASTRAZENECA 안전성정보 변경현황 ([CS3_보고시작날짜]~[CS4_보고종료날짜])
 
 Date: 2022-02-15
 
@@ -16,7 +16,7 @@ ________________________________________________________________________________
 
 안녕하세요 PV팀,
 
-보고 기간(2021년 11월~2022년 2월) 동안 COVID-19 VACCINE ASTRAZENECA와 관련하여 안전성 정보(금기, 경고, 주의, 약물이상반응, 과다투여, 상호작용 등)에 대한 참고 정보의 변경사항을 아래와 같이 보고드립니다.
+보고 기간([CS3_보고시작날짜]~[CS4_보고종료날짜]) 동안 COVID-19 VACCINE ASTRAZENECA와 관련하여 안전성 정보(금기, 경고, 주의, 약물이상반응, 과다투여, 상호작용 등)에 대한 참고 정보의 변경사항을 아래와 같이 보고드립니다.
 
 【변경 사항 요약】
 

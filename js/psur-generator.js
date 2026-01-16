@@ -52,11 +52,11 @@ const PSURGenerator = {
         }
 
         try {
-            // 섹션 배열 형태로 변환
+            // 섹션 배열 형태로 변환 (DB 스키마와 컬럼명 일치)
             const sectionsArray = Object.entries(sections).map(([sectionNumber, data]) => ({
-                number: sectionNumber,
-                name: data.name || '',
-                content: data.content || ''
+                section_number: sectionNumber,
+                section_name: data.name || '',
+                content_markdown: data.content || ''
             }));
 
             console.log(`[PSURGenerator] Saving ${sectionsArray.length} sections to DB...`);

@@ -1,0 +1,11 @@
+'/Users/cjlee/Documents/진행중/ACUZEN/02_KSUR_v6/02_relateDocs/데이터명세서_한국PSUR_master_20260114_singleTab.xlsx' 시트를 아래 지침대로 추출하여 'extractData.md' 화일을 만들어.\
+  \
+  ## 지침 \
+  - 부가 내용없이 데이터 리스트만 만들 것.\
+  - 데이터 헤더: A열데이터중 'CS0'등의 기호/넘버 조합 \
+  - 데이터 이름: A열의 나머지 부분. 데이터 이름.\
+  - fromRawData: 어느 문서나 소스로부터 추출되는지 여부. 'B'열 참조.\
+  - 보조타입: E열 \
+  - 지침: F열 \
+  - 예시: J, K, L, M, N열. 비워져 있으면 패스\
+  - 데이터타입: I열  

@@ -1217,7 +1217,7 @@ ________________________________________________________________________________
 
 ## 안녕하세요 PV팀,
 
-요청하신 reporting period(2021년 11월~2022년 10월) 내 안전성 관련 regulatory action 현황을 아래와 같이 취합했습니다. 각 팀(RA Global, RA EU, RA APAC, Clinical Affairs)에서 제출한 내용을 통합 정리했으며, 일부 추가 설명이 필요한 항목은 별도 표시하였습니다.
+요청하신 reporting period([CS3_보고시작날짜]~[CS4_보고종료날짜]) 내 안전성 관련 regulatory action 현황을 아래와 같이 취합했습니다. 각 팀(RA Global, RA EU, RA APAC, Clinical Affairs)에서 제출한 내용을 통합 정리했으며, 일부 추가 설명이 필요한 항목은 별도 표시하였습니다.
 
 | 규제기관/국가 | 시기 | 주요 조치 내용 | 배경/사유 |
 | --- | --- | --- | --- |
@@ -1297,7 +1297,7 @@ ________________________________________________________________________________
 
 안녕하세요 PV팀,
 
-요청하신 reporting period(2021년 11월~2022년 10월) 내 안전성 관련 주요 regulatory action 취합 결과를 아래 표에 정리하여 제출합니다.
+요청하신 reporting period([CS3_보고시작날짜]~[CS4_보고종료날짜]) 내 안전성 관련 주요 regulatory action 취합 결과를 아래 표에 정리하여 제출합니다.
 
 | 규제기관/국가or지역 | 날짜(or 시기) | 주요 조치 내용 | 배경/사유 |
 | --- | --- | --- | --- |
@@ -1320,7 +1320,7 @@ ________________________________________________________________________________
 
 **특이사항:**
 
-상기 취합본은 reporting period 내 각국 규제당국 지시에 따라 실제로 시행된 안전성 조치만을 포함하고 있습니다. 추가 조회 필요시 언제든 연락 바랍니다.
+상기 취합본은 보고 기간([CS3_보고시작날짜]~[CS4_보고종료날짜]) 내 각국 규제당국 지시에 따라 실제로 시행된 안전성 조치만을 포함하고 있습니다. 추가 조회 필요시 언제든 연락 바랍니다.
 
 감사합니다.
 
@@ -1351,7 +1351,7 @@ To: Pharmacovigilance Team <pv_team@company.com>
 
 CC: Medical Affairs, Quality
 
-Subject: [보고] COVID-19 VACCINE ASTRAZENECA 안전성정보 변경현황 (2021.11~2022.02)
+Subject: [보고] COVID-19 VACCINE ASTRAZENECA 안전성정보 변경현황 ([CS3_보고시작날짜]~[CS4_보고종료날짜])
 
 Date: 2022-02-15
 
@@ -1359,7 +1359,7 @@ ________________________________________________________________________________
 
 안녕하세요 PV팀,
 
-보고 기간(2021년 11월~2022년 2월) 동안 COVID-19 VACCINE ASTRAZENECA와 관련하여 안전성 정보(금기, 경고, 주의, 약물이상반응, 과다투여, 상호작용 등)에 대한 참고 정보의 변경사항을 아래와 같이 보고드립니다.
+보고 기간([CS3_보고시작날짜]~[CS4_보고종료날짜]) 동안 COVID-19 VACCINE ASTRAZENECA와 관련하여 안전성 정보(금기, 경고, 주의, 약물이상반응, 과다투여, 상호작용 등)에 대한 참고 정보의 변경사항을 아래와 같이 보고드립니다.
 
 ## 【변경 사항 요약】
 
@@ -1436,7 +1436,7 @@ From: Clinical Regulatory Affairs <clinical_reg@company.com>
 
 To: PV Department <pv@company.com>
 
-Subject: Safety Information Update Status - COVID-19 VACCINE ASTRAZENECA (2021-11 to 2022-10)
+Subject: Safety Information Update Status - COVID-19 VACCINE ASTRAZENECA ([CS3_보고시작날짜] to [CS4_보고종료날짜])
 
 Date: 2022-11-05
 
@@ -1444,7 +1444,7 @@ ________________________________________________________________________________
 
 Dear PV Team,
 
-This is to inform you that during the current reporting period (November 2021 to October 2022), there were NO changes to the safety reference information concerning COVID-19 VACCINE ASTRAZENECA (including but not limited to: contraindications, warnings, precautions, adverse drug reactions, overdosage, and drug interactions).
+This is to inform you that during the current reporting period ([CS3_보고시작날짜] to [CS4_보고종료날짜]), there were NO changes to the safety reference information concerning COVID-19 VACCINE ASTRAZENECA (including but not limited to: contraindications, warnings, precautions, adverse drug reactions, overdosage, and drug interactions).
 
 The product information documentation remained consistent throughout this interval, and no regulatory-mandated or company-initiated modifications to safety-related sections were implemented.
 

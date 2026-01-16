@@ -1,13 +1,17 @@
 /**
  * Workflow Sidebar Component
  * 모든 페이지에서 공통으로 사용하는 진행 상황 사이드바
+ * 숨기기/보이기 토글 기능 포함
  */
 
 (function() {
     'use strict';
 
+    // localStorage 키
+    const SIDEBAR_COLLAPSED_KEY = 'sidebarCollapsed';
+
     // 사이드바 HTML 템플릿
-    function getSidebarHTML(currentStage = 0) {
+    function getSidebarHTML(currentStage = 0, isCollapsed = false) {
         const stages = [
             { num: 1, name: '로그인', icon: 'lock' },
             { num: 2, name: '보고서 상태', icon: 'clipboard' },
@@ -55,8 +59,17 @@
             `;
         }).join('');
 
+        // Chevron 아이콘 (접기: 오른쪽 화살표, 펼치기: 왼쪽 화살표)
+        const chevronRight = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        const chevronLeft = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+
         return `
-            <aside class="workflow-sidebar">
+            <aside class="workflow-sidebar${isCollapsed ? ' collapsed' : ''}">
+                <!-- 접기 버튼 -->
+                <button class="sidebar-toggle-btn" onclick="WorkflowSidebar.toggle()" title="사이드바 숨기기" aria-label="사이드바 숨기기">
+                    ${chevronRight}
+                </button>
+
                 <div class="workflow-header">
                     <h3>진행 상황</h3>
                     <div class="workflow-progress">
@@ -87,7 +100,40 @@
                     <div class="medical-badge">의료용 AI 소프트웨어</div>
                 </div>
             </aside>
+            <!-- 펼치기 버튼 (사이드바 외부) -->
+            <button class="sidebar-expand-btn" onclick="WorkflowSidebar.toggle()" title="사이드바 보이기" aria-label="사이드바 보이기">
+                ${chevronLeft}
+            </button>
         `;
+    }
+
+    // 토글 버튼 추가 함수 (기존 사이드바에 버튼 추가)
+    function addToggleButtons(sidebar) {
+        // Chevron 아이콘
+        const chevronRight = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        const chevronLeft = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+
+        // 접기 버튼이 없으면 추가
+        if (!sidebar.querySelector('.sidebar-toggle-btn')) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'sidebar-toggle-btn';
+            toggleBtn.setAttribute('onclick', 'WorkflowSidebar.toggle()');
+            toggleBtn.setAttribute('title', '사이드바 숨기기');
+            toggleBtn.setAttribute('aria-label', '사이드바 숨기기');
+            toggleBtn.innerHTML = chevronRight;
+            sidebar.insertBefore(toggleBtn, sidebar.firstChild);
+        }
+
+        // 펼치기 버튼이 없으면 추가 (사이드바 다음에)
+        if (!document.querySelector('.sidebar-expand-btn')) {
+            const expandBtn = document.createElement('button');
+            expandBtn.className = 'sidebar-expand-btn';
+            expandBtn.setAttribute('onclick', 'WorkflowSidebar.toggle()');
+            expandBtn.setAttribute('title', '사이드바 보이기');
+            expandBtn.setAttribute('aria-label', '사이드바 보이기');
+            expandBtn.innerHTML = chevronLeft;
+            sidebar.insertAdjacentElement('afterend', expandBtn);
+        }
     }
 
     // 사이드바 삽입 함수
@@ -100,18 +146,71 @@
             return;
         }
 
-        // 이미 사이드바가 있으면 중복 삽입 방지
-        if (document.querySelector('.workflow-sidebar')) {
+        // 저장된 상태 확인
+        const isCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+
+        // body에 collapsed 클래스 설정 (펼치기 버튼 표시용)
+        if (isCollapsed) {
+            document.body.classList.add('sidebar-collapsed');
+        }
+
+        // 이미 사이드바가 있으면 토글 버튼만 추가
+        const existingSidebar = document.querySelector('.workflow-sidebar');
+        if (existingSidebar) {
+            addToggleButtons(existingSidebar);
+            // 저장된 숨김 상태 적용
+            if (isCollapsed) {
+                existingSidebar.classList.add('collapsed');
+            }
             return;
         }
 
         // main 태그 다음에 사이드바 삽입
         const main = appContent.querySelector('main') || appContent.querySelector('.main-content');
         if (main) {
-            main.insertAdjacentHTML('afterend', getSidebarHTML(currentStage));
+            main.insertAdjacentHTML('afterend', getSidebarHTML(currentStage, isCollapsed));
         } else {
-            appContent.insertAdjacentHTML('beforeend', getSidebarHTML(currentStage));
+            appContent.insertAdjacentHTML('beforeend', getSidebarHTML(currentStage, isCollapsed));
         }
+    }
+
+    // 사이드바 토글 함수
+    function toggle() {
+        const sidebar = document.querySelector('.workflow-sidebar');
+        if (!sidebar) return;
+
+        const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+
+        if (isCurrentlyCollapsed) {
+            expand();
+        } else {
+            collapse();
+        }
+    }
+
+    // 사이드바 접기 함수
+    function collapse() {
+        const sidebar = document.querySelector('.workflow-sidebar');
+        if (!sidebar) return;
+
+        sidebar.classList.add('collapsed');
+        document.body.classList.add('sidebar-collapsed');
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'true');
+    }
+
+    // 사이드바 펼치기 함수
+    function expand() {
+        const sidebar = document.querySelector('.workflow-sidebar');
+        if (!sidebar) return;
+
+        sidebar.classList.remove('collapsed');
+        document.body.classList.remove('sidebar-collapsed');
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, 'false');
+    }
+
+    // 현재 상태 확인
+    function isCollapsed() {
+        return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
     }
 
     // 현재 페이지에 따른 스테이지 번호 자동 감지
@@ -140,7 +239,11 @@
     window.WorkflowSidebar = {
         insert: insertSidebar,
         getCurrentStage: getCurrentStage,
-        getHTML: getSidebarHTML
+        getHTML: getSidebarHTML,
+        toggle: toggle,
+        collapse: collapse,
+        expand: expand,
+        isCollapsed: isCollapsed
     };
 
     // DOM 로드 후 자동 삽입

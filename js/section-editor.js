@@ -437,8 +437,8 @@ class SectionEditor {
             // 1. DB에 저장 (reportId가 있는 경우)
             if (this.reportId) {
                 const result = await _sectionEditorSupabase.upsertSection(this.reportId, sectionId, {
-                    name: section.name,
-                    content: section.content,
+                    section_name: section.name,
+                    content_markdown: section.content,
                     version: (section.version || 0) + 1
                 });
 
@@ -658,10 +658,24 @@ class SectionEditor {
         const total = this.sectionDefinitions.length;
         let generated = 0;
         let edited = 0;
+        let failed = 0;
 
         for (const id of Object.keys(this.sections)) {
             const section = this.sections[id];
-            if (section.generatedAt) generated++;
+
+            // 실패 여부 판단: isSuccessful 플래그 또는 콘텐츠 기반
+            const isFailed = section.isSuccessful === false ||
+                this._isFailedContent(section.content);
+
+            if (isFailed) {
+                failed++;
+                continue;
+            }
+
+            // 성공 여부 판단: isSuccessful이 true이거나, 기존 데이터에서 generatedAt이 있으면 완료
+            const isGenerated = section.isSuccessful === true ||
+                (section.generatedAt && !isFailed);
+            if (isGenerated) generated++;
             if (section.isEdited) edited++;
         }
 
@@ -669,20 +683,39 @@ class SectionEditor {
             total,
             generated,
             edited,
-            pending: total - generated,
+            failed,
+            pending: total - generated - failed,
             isComplete: generated === total
         };
     }
 
     /**
-     * 섹션 상태 (완료/진행중/대기)
+     * 콘텐츠 기반 실패 여부 판단 (기존 데이터 호환성)
+     */
+    _isFailedContent(content) {
+        if (!content) return false;
+        return content.includes('LLM 생성 실패') ||
+               content.includes('[이 섹션은 생성되지 않았습니다]') ||
+               content.includes('필요한 소스 파일이 업로드되지 않았습니다');
+    }
+
+    /**
+     * 섹션 상태 (완료/진행중/대기/실패)
      */
     getSectionStatus(sectionId) {
         const section = this.sections[sectionId];
         if (!section) return 'unknown';
 
         if (section.isEdited) return 'edited';
-        if (section.generatedAt) return 'generated';
+
+        // 실패 여부: isSuccessful 플래그 또는 콘텐츠 기반 판단
+        if (section.isSuccessful === false || this._isFailedContent(section.content)) {
+            return 'failed';
+        }
+
+        // isSuccessful이 true이거나, 기존 데이터에서 generatedAt이 있으면 완료
+        if (section.isSuccessful === true || section.generatedAt) return 'generated';
+
         return 'pending';
     }
 

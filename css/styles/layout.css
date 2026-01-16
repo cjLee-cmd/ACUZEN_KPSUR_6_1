@@ -417,6 +417,117 @@ html, body {
     box-shadow: 0 4px 14px rgba(15, 35, 70, 0.3);
 }
 
+/* Sidebar Toggle - 숨기기/보이기 토글 */
+.workflow-sidebar {
+    position: relative;
+    transition: width 0.3s ease, opacity 0.3s ease;
+}
+
+.sidebar-toggle-btn {
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 56px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+    color: var(--app-text-muted);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-toggle-btn:hover {
+    background: var(--glass-bg-light);
+    color: var(--app-text-normal);
+    transform: translateY(-50%) translateX(-2px);
+}
+
+.sidebar-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 숨김 상태 - 사이드바 접기 */
+.workflow-sidebar.collapsed {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border-left: none;
+    opacity: 0;
+}
+
+.workflow-sidebar.collapsed .sidebar-toggle-btn {
+    display: none;
+}
+
+/* 펼치기 버튼 (사이드바 숨김 시 표시) */
+.sidebar-expand-btn {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 56px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-text-muted);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.sidebar-expand-btn:hover {
+    background: var(--glass-bg-light);
+    color: var(--app-text-normal);
+    width: 32px;
+}
+
+.sidebar-expand-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 사이드바 숨김 시 펼치기 버튼 표시 */
+body.sidebar-collapsed .sidebar-expand-btn {
+    display: flex;
+}
+
+/* 다크 모드 지원 */
+[data-theme="dark"] .sidebar-toggle-btn,
+[data-theme="dark"] .sidebar-expand-btn {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .sidebar-toggle-btn:hover,
+[data-theme="dark"] .sidebar-expand-btn:hover {
+    background: var(--glass-bg-light);
+    color: #f1f5f9;
+}
+
+/* 모바일에서는 토글 버튼 숨기기 (이미 사이드바가 숨겨짐) */
+@media (max-width: 768px) {
+    .sidebar-toggle-btn,
+    .sidebar-expand-btn {
+        display: none !important;
+    }
+}
+
 /* ========================================
    Footer - 글래스 푸터
    ======================================== */

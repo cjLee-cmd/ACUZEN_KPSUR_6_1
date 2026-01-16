@@ -312,6 +312,11 @@
             return { success: true, data };
         }
 
+        // saveExtractedData는 bulkUpsertExtractedData의 alias (P14에서 사용)
+        async saveExtractedData(reportId, items) {
+            return this.bulkUpsertExtractedData(reportId, items);
+        }
+
         // ==========================================
         // LLM Methods
         // ==========================================
