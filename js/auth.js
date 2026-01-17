@@ -99,10 +99,11 @@ class AuthManager {
                 },
                 'main@main.com': {
                     password: '1111',
-                    id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                    id: '01834daa-f07b-4da1-b0eb-5fb8bde625b7',  // Supabase Auth ID (fixed)
                     name: 'Master Admin',
                     role: 'Master',
-                    position: '약물감시 팀장'
+                    position: '약물감시 팀장',
+                    supabaseAuth: true  // Supabase Auth 계정 표시
                 },
                 // Supabase Auth에 등록된 테스트 계정 (DB 저장 가능)
                 'master@kpsur.test': {

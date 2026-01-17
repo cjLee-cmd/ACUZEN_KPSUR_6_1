@@ -730,6 +730,11 @@ SELECT * FROM extracted_data WHERE report_id = '<report_uuid>';
 ### Stage 3 - 섹션 편집 (TC-05)
 - [ ] 15개 섹션 목록 로드
 - [ ] 섹션 상태 배지 (생성됨/데이터 부족)
+- [ ] **CS/PH/Table 데이터 뷰어 확인** (NEW)
+  - [ ] CS 데이터 66개 확인
+  - [ ] PH 데이터 11개 확인
+  - [ ] Table 데이터 6개 확인
+  - [ ] 데이터 소스 표시 (P13_UserInput, RAW{n}, CALCULATED 등)
 - [ ] 섹션 내용 보기/편집
 - [ ] 마크다운 에디터/미리보기
 - [ ] 섹션 08 Line Listing 반영 확인
@@ -758,7 +763,7 @@ localStorage.removeItem('extractedData');
 
 ---
 
-*문서 버전: 1.9*
+*문서 버전: 2.0*
 *최초작성일: 2026-01-05*
 *최종수정일: 2026-01-17*
 *대상 시스템: KPSUR AGENT v1.0*
@@ -1034,7 +1039,28 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 | 2 | 생성된 섹션 확인 | ✅ 체크마크 또는 "생성됨" 배지 |
 | 3 | 데이터 부족 섹션 확인 | ⚠️ "데이터 부족" 배지 표시 |
 
-#### TC-05-03: 섹션 내용 보기/편집
+#### TC-05-03: CS/PH/Table 데이터 뷰어 확인 (NEW)
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | 사이드바의 "📊 CS/PH/Table 데이터 보기" 버튼 확인 | 버튼에 총 데이터 개수 표시 (예: "83") |
+| 2 | 버튼 클릭 | 데이터 뷰어 모달 팝업 |
+| 3 | CS 탭 확인 | CS 데이터 목록 (66개 항목) |
+| 4 | PH 탭 클릭 | PH 데이터 목록 (11개 항목) |
+| 5 | Table 탭 클릭 | Table 데이터 목록 (6개 항목) |
+| 6 | 개별 데이터 항목 클릭 | 우측 패널에 상세 값 표시 |
+| 7 | 모달 닫기 (X 버튼 또는 ESC) | 모달 닫힘 |
+
+**데이터 소스 확인:**
+| 소스 타입 | 의미 | 예시 |
+|----------|------|------|
+| P13_UserInput | Stage 1에서 사용자 입력 | CS0_성분명, CS1_브랜드명 |
+| RAW{n} | RAW 파일에서 추출 | CS17_전세계허가현황표 (RAW4) |
+| CALCULATED | 계산 필요 | CS14_신청기한, CS22_연평균판매량 |
+| GENERATED | PSUR 생성 시 자동 | CS9_목차, CS12_약어표 |
+| USER_INPUT | 추가 사용자 입력 필요 | CS24_MedDRA버전넘버 |
+
+#### TC-05-04: 섹션 내용 보기/편집
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
@@ -1044,7 +1070,7 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 | 4 | 내용 수정 | 에디터에서 텍스트 편집 |
 | 5 | "저장" 버튼 클릭 | 변경사항 저장, 성공 메시지 |
 
-#### TC-05-04: 섹션 08 (개별증례병력) Line Listing 반영 확인
+#### TC-05-05: 섹션 08 (개별증례병력) Line Listing 반영 확인
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
@@ -1052,7 +1078,7 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 | 2 | Line Listing 통계 확인 | 총 건수, 중대/비중대 건수 포함 |
 | 3 | SOC별 분포 확인 | 주요 SOC 언급 |
 
-#### TC-05-05: 섹션 14 (별첨) CS59 테이블 확인
+#### TC-05-06: 섹션 14 (별첨) CS59 테이블 확인
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
@@ -1060,7 +1086,7 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 | 2 | CS59 테이블 확인 | "[별첨 3] 시판 후 정보..." 테이블 포함 |
 | 3 | 테이블 형식 확인 | SOC/PT 행, 6개 카테고리 컬럼 |
 
-#### TC-05-06: 섹션 재생성
+#### TC-05-07: 섹션 재생성
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
@@ -1068,7 +1094,7 @@ console.log('Line Listing Analysis:', JSON.parse(localStorage.getItem('lineListi
 | 2 | "확인" 클릭 | LLM 재생성 시작, 프로그레스 표시 |
 | 3 | 재생성 완료 | 새 내용으로 에디터 업데이트 |
 
-#### TC-05-07: Stage 3 완료
+#### TC-05-08: Stage 3 완료
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
@@ -1498,3 +1524,4 @@ console.log('✅ localStorage 초기화 완료');
 | 1.7 | 2026-01-08 | **🚨 AI/Claude 에이전트 필수 준수 사항** 섹션 추가. Step 3에서 18개만 업로드하는 반복 오류 방지: (1) 절대 규칙 박스 추가 - 파일 수 미달 시 진행 금지, UI 제약 시 임의 삭제 금지, 검증 스킵 금지 (2) 필수 검증 체크리스트 테이블 추가 (3) UI 제약 발생 시 대응 플로우 명시 (4) 세션 컨텍스트 요약 시 필수 기록 사항 추가 (5) Step 3 파일 목록을 번호 매긴 테이블로 재구성하여 16+4=20개 명확화 |
 | 1.8 | 2026-01-16 | **데이터 추출 하드코딩 제거 검증** (TC-03-11 신규). P14 buildExtractedData() 함수가 전역 정의(CS_DEFINITIONS, PH_DEFINITIONS, TABLE_DEFINITIONS) 사용하도록 수정. 하드코딩 검증 스크립트 및 합격 기준 추가 |
 | 1.9 | 2026-01-17 | **E2E 테스트 결과 반영**: (1) 보고서 컨텍스트 불일치 문제 발견 및 원인 분석 (current_report vs generatedSections) (2) 데이터 저장 방식 문서화 - extractedData 비어있어도 정상, 데이터는 섹션에 직접 통합됨 (3) P18 Review/P19 QC 테스트 결과 추가 - QC 16/16 완료, 13 INFO 이슈 (4) TC-03-12 보고서 컨텍스트 일관성 검증 테스트케이스 신규 (5) TC-06 Stage 4 QC 검증 테스트케이스 신규 (6) 테스트 데이터 DB 불일치 안내 추가 |
+| 2.0 | 2026-01-17 | **TC-05 Stage 3 데이터 뷰어 테스트 추가**: (1) TC-05-03 CS/PH/Table 데이터 뷰어 확인 신규 - 66개 CS, 11개 PH, 6개 Table 데이터 확인 (2) 데이터 소스 타입 명세 (P13_UserInput, RAW{n}, CALCULATED, GENERATED, USER_INPUT) (3) TC-05 번호 재정렬 (TC-05-03~08) (4) Stage 3 체크리스트에 데이터 뷰어 항목 추가 |

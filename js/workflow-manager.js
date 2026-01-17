@@ -4,8 +4,8 @@
  * 모든 Stage 간 데이터 흐름 제어
  */
 
-import supabaseClient from './supabase-client.js';
-import authManager from './auth.js';
+// 전역 window 객체 사용 (supabase-client.js, auth.js에서 로드됨)
+// import 문 제거 - GitHub Pages에서 모듈 시스템 미지원
 
 // 워크플로우 상태 정의
 const WORKFLOW_STAGES = {
@@ -84,7 +84,7 @@ class WorkflowManager {
     async saveReportInfo(data, saveToDBOnly = false) {
         try {
             // 현재 로그인 사용자 가져오기
-            const currentUser = authManager.getCurrentUser();
+            const currentUser = window.authManager?.getCurrentUser();
             const userId = currentUser?.id || null;
 
             // user_inputs에 저장할 CS 데이터 구조
@@ -109,7 +109,7 @@ class WorkflowManager {
             // 1. DB에 저장 (새 보고서 생성 또는 기존 보고서 업데이트)
             if (!reportId || reportId.startsWith('REPORT_')) {
                 // 새 보고서 생성 - DB에서 UUID 받기
-                const dbResult = await supabaseClient.createReport({
+                const dbResult = await window.supabaseClient.createReport({
                     report_name: data.reportName || '새 보고서',
                     created_by: userId,
                     status: 'Draft',
@@ -127,7 +127,7 @@ class WorkflowManager {
                 console.log('✅ Report created in DB:', reportId);
             } else {
                 // 기존 보고서 업데이트
-                const updateResult = await supabaseClient.updateReport(reportId, {
+                const updateResult = await window.supabaseClient.updateReport(reportId, {
                     report_name: data.reportName,
                     user_inputs: userInputs,
                     current_stage: this.currentStage
@@ -235,7 +235,7 @@ class WorkflowManager {
             // 3. DB에서 조회 (다른 PC에서 접근 시 또는 ID 불일치 시)
             if (targetId) {
                 console.log('🔍 Fetching report from DB:', targetId);
-                const result = await supabaseClient.getReportById(targetId);
+                const result = await window.supabaseClient.getReportById(targetId);
 
                 if (result.success && result.report) {
                     // DB 데이터를 로컬 포맷으로 변환

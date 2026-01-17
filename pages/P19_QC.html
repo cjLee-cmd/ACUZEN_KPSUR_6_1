@@ -800,12 +800,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 2rem;
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border-top: 1px solid var(--glass-border);
+            padding: 0 2rem;
+            pointer-events: none;
             z-index: 100;
+        }
+
+        .footer-nav .btn-nav {
+            pointer-events: auto;
         }
 
         .btn-nav {
@@ -843,10 +844,6 @@
             box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
         }
 
-        [data-theme="dark"] .footer-nav {
-            background: rgba(30, 41, 59, 0.8);
-            border-color: rgba(71, 85, 105, 0.5);
-        }
 
         @media (max-width: 1024px) {
             .qc-main-grid {
@@ -1147,15 +1144,7 @@
                         <!-- Left Panel - Validation Checklist -->
                         <div class="validation-panel">
                             <div class="validation-header">
-                                <h3 class="validation-title">🔍 QC 검증 체크리스트</h3>
-
-                                <div class="validation-warning">
-                                    <div class="validation-warning-title">⚠️ 집중 검증 모드</div>
-                                    <div class="validation-warning-text">
-                                        AI가 단계별로 신중하게 검증합니다.<br>
-                                        "Think step by step", "Take your time" 프롬프트 적용
-                                    </div>
-                                </div>
+                                <h3 class="validation-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>QC 검증 체크리스트</h3>
 
                                 <div class="validation-progress">
                                     <div class="validation-progress-bar">
@@ -1173,7 +1162,7 @@
                         <!-- Right Panel - Issues -->
                         <div class="issue-panel">
                             <div class="issue-header">
-                                <h3 class="issue-title">📋 발견된 이슈</h3>
+                                <h3 class="issue-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>발견된 이슈</h3>
                                 <div class="issue-stats">
                                     <div class="issue-stat">
                                         <div class="issue-stat-value total" id="totalIssues">0</div>
@@ -1201,16 +1190,16 @@
                                     <option value="gemini-2.0-pro">Gemini 2.0 Pro (정확도 우선)</option>
                                 </select>
                                 <button class="btn btn-primary magic-effect" onclick="startQC()" id="startQCBtn">
-                                    ✨ QC 검증 시작
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>QC 검증 시작
                                 </button>
                                 <button class="btn btn-secondary" onclick="resetQC()" id="resetQCBtn" disabled>
-                                    🔄 초기화
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>초기화
                                 </button>
                             </div>
 
                             <div class="issue-content" id="issueContent">
                                 <div class="issue-empty">
-                                    <div class="issue-empty-icon">🔍</div>
+                                    <div class="issue-empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
                                     <div class="issue-empty-text">
                                         "QC 검증 시작" 버튼을 클릭하여<br>
                                         보고서 품질 검증을 시작하세요
@@ -1314,7 +1303,7 @@
 
                 <!-- Footer Navigation -->
                 <footer class="footer-nav">
-                    <button class="btn-nav btn-nav-prev" onclick="navigateTo('P15_SectionEditor.html')">
+                    <button class="btn-nav btn-nav-prev" onclick="goToPreviousStage()">
                         ← 이전: 섹션 편집
                     </button>
                     <div></div>
@@ -1537,7 +1526,7 @@
                             </div>
                             <div class="issue-card-actions">
                                 <button class="issue-action-btn" onclick="navigateToIssue(${issue.id})">
-                                    📍 해당 위치로 이동
+                                    → 해당 위치로 이동
                                 </button>
                                 <button class="issue-action-btn resolve" onclick="resolveIssue(${issue.id})">
                                     ✓ 해결 완료
@@ -1579,13 +1568,13 @@
             const criticalCount = issues.filter(i => i.severity === 'critical').length;
 
             if (criticalCount > 0) {
-                message.textContent = `⚠️ ${criticalCount}개의 중대한 이슈가 발견되었습니다. 이슈를 해결한 후 다시 검증해주세요.`;
+                message.textContent = `[!] ${criticalCount}개의 중대한 이슈가 발견되었습니다. 이슈를 해결한 후 다시 검증해주세요.`;
                 message.className = 'footer-message error';
             } else if (issues.length > 0) {
-                message.textContent = `⚠️ ${issues.length}개의 경고가 발견되었습니다. 검토 후 승인 여부를 결정해주세요.`;
+                message.textContent = `[!] ${issues.length}개의 경고가 발견되었습니다. 검토 후 승인 여부를 결정해주세요.`;
                 message.className = 'footer-message';
             } else {
-                message.textContent = `✅ 모든 검증 항목을 통과했습니다! 최종 승인을 진행할 수 있습니다.`;
+                message.textContent = `모든 검증 항목을 통과했습니다! 최종 승인을 진행할 수 있습니다.`;
                 message.className = 'footer-message success';
             }
         }
@@ -1613,7 +1602,7 @@
 
             document.getElementById('issueContent').innerHTML = `
                 <div class="issue-empty">
-                    <div class="issue-empty-icon">🔍</div>
+                    <div class="issue-empty-icon" style="font-size: 2.5rem; opacity: 0.6;">?</div>
                     <div class="issue-empty-text">
                         "QC 검증 시작" 버튼을 클릭하여<br>
                         보고서 품질 검증을 시작하세요
@@ -1697,6 +1686,16 @@
         }
 
         // Proceed to output stage
+        // 이전 단계로 이동 (P15 섹션 편집)
+        function goToPreviousStage() {
+            const reportId = new URLSearchParams(window.location.search).get('reportId') || localStorage.getItem('current_report');
+            if (reportId) {
+                navigateTo(`P15_SectionEditor.html?reportId=${reportId}`);
+            } else {
+                navigateTo('P15_SectionEditor.html');
+            }
+        }
+
         async function proceedToOutput() {
             // Save QC results to localStorage
             Storage.set('qcResults', {

@@ -1507,7 +1507,7 @@
             prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
 
             if (currentStep === totalSteps) {
-                nextBtn.textContent = '🚀 LLM 분류 시작';
+                nextBtn.textContent = '▶ LLM 분류 시작';
                 nextBtn.classList.remove('btn-wizard-next');
                 nextBtn.classList.add('btn-wizard-process');
             } else {
@@ -2101,7 +2101,7 @@
                 if (!conversionOk) {
                     showToast('변환 결과 확인 후 다시 시도하세요.', 'warning');
                     document.getElementById('nextBtn').disabled = false;
-                    document.getElementById('nextBtn').textContent = '🚀 LLM 분류 시작';
+                    document.getElementById('nextBtn').textContent = '▶ LLM 분류 시작';
                     document.getElementById('processingStatus').classList.remove('visible');
                     if (window.llmProgressBar) window.llmProgressBar.hide();
                     return;
@@ -2183,7 +2183,7 @@
                 console.error('처리 실패:', error);
                 showToast(`처리 실패: ${error.message}`, 'error');
                 document.getElementById('nextBtn').disabled = false;
-                document.getElementById('nextBtn').textContent = '🚀 LLM 분류 시작';
+                document.getElementById('nextBtn').textContent = '▶ LLM 분류 시작';
                 if (window.llmProgressBar) window.llmProgressBar.error(`처리 실패: ${error.message}`);
             }
         }
@@ -3170,10 +3170,20 @@
                 });
 
                 // 2. 누락된 필수 CS 항목 식별 (CS_DEFINITIONS에서 동적으로 가져옴)
-                // source가 'raw_data'인 모든 CS 변수를 LLM 추출 대상으로 포함
+                // source가 'raw_data' 또는 'calculated'(RAW 의존)인 모든 CS 변수를 LLM 추출 대상으로 포함
+                const specialSources = ['USER_INPUT', 'CALCULATED', 'GENERATED'];
                 const requiredCS = window.CS_DEFINITIONS
                     ? Object.entries(window.CS_DEFINITIONS)
-                        .filter(([key, def]) => def.source === 'raw_data')
+                        .filter(([key, def]) => {
+                            // raw_data는 무조건 포함
+                            if (def.source === 'raw_data') return true;
+                            // calculated 중 RAW 파일에서 계산해야 하는 것들 포함
+                            if (def.source === 'calculated' && def.rawIds) {
+                                const hasRawDependency = def.rawIds.some(id => !specialSources.includes(id));
+                                return hasRawDependency;
+                            }
+                            return false;
+                        })
                         .map(([key]) => key)
                     : [
                         // Fallback: CS_DEFINITIONS 없을 경우 기본 목록
@@ -3203,7 +3213,16 @@
                         // CS58 별첨1 (RAW1.1, RAW2)
                         'CS58_.1_별첨1효능효과', 'CS58_.2_별첨1용법용량', 'CS58_.3_별첨1사용상의주의사항',
                         // CS59 별첨3 일람표 (RAW12-15)
-                        'CS59_별첨3_일람표'
+                        'CS59_별첨3_일람표',
+                        // CALCULATED: RAW 데이터에서 계산 필요한 변수들
+                        'CS19_.4_시판후판매량합계',  // RAW3 판매량 합계
+                        'CS22_연평균판매량',         // 표2 연평균
+                        'CS32_신속정기보고총사례수', // RAW12+13+15 합계
+                        'CS33_신속보고총사례수',     // RAW12+13 합계
+                        'CS34_정기보고총사례수',     // RAW15 합계
+                        'CS35_신속정기원시총사례수', // RAW12-15 전체 합계
+                        'CS36_중대한총사례수',       // RAW12-15 중대한 사례
+                        'CS37_중대하지않은총사례수'  // RAW12-15 비중대 사례
                     ];
 
                 console.log(`[Hybrid] requiredCS 목록: ${requiredCS.length}개 변수`, requiredCS);

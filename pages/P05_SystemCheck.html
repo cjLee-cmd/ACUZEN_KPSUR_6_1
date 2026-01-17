@@ -775,8 +775,8 @@
 
             try {
                 // 세션 확인
-                const session = JSON.parse(localStorage.getItem('session') || '{}');
-                if (!session.user || !session.user.id) {
+                const session = JSON.parse(localStorage.getItem('kpsur_session') || '{}');
+                if (!session.userId) {
                     throw new Error('사용자 세션이 유효하지 않습니다');
                 }
 
@@ -928,9 +928,12 @@
             createParticles();
 
             // 세션 확인
-            const session = JSON.parse(localStorage.getItem('session') || '{}');
-            if (!session.user) {
+            const session = JSON.parse(localStorage.getItem('kpsur_session') || '{}');
+            // auth.js의 sessionData 구조: { userId, email, userName, ... }
+            if (!session.userId) {
                 // 세션이 없으면 로그인 페이지로 리다이렉트
+                // (일시적으로 주석 처리하여 디버깅 가능하게 함, 실제로는 활성화 필요)
+                console.warn('⚠️ No session found in P05, redirecting to login...');
                 window.location.href = 'P01_Login.html';
                 return;
             }
