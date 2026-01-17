@@ -752,6 +752,142 @@
             font-size: 0.75rem;
         }
 
+        /* Line Listing Button */
+        .line-listing-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .line-listing-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .line-listing-btn .listing-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+        }
+
+        /* Line Listing Modal Specific Styles */
+        .line-listing-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+        }
+
+        .summary-card {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+        }
+
+        .summary-card .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .summary-card.serious .value {
+            color: #EF4444;
+        }
+
+        .line-listing-table-container {
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .line-listing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .line-listing-table th,
+        .line-listing-table td {
+            padding: 0.5rem;
+            border: 1px solid var(--glass-border);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .line-listing-table th {
+            background: var(--glass-bg);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .line-listing-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .line-listing-table .serious-yes {
+            color: #EF4444;
+            font-weight: 600;
+        }
+
+        .line-listing-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .line-listing-tabs .tab-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            background: var(--glass-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .line-listing-tabs .tab-btn:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .line-listing-tabs .tab-btn.active {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .line-listing-content {
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
         /* Data List Panel */
         .data-list-panel {
             width: 320px;
@@ -1069,6 +1205,11 @@
                     📊 CS/PH/Table 데이터 보기
                     <span class="data-count" id="extractedDataCount">0</span>
                 </button>
+                <!-- 라인리스팅 보기 버튼 -->
+                <button class="line-listing-btn" onclick="openLineListingModal()">
+                    📋 라인리스팅 보기
+                    <span class="listing-count" id="lineListingCount">0</span>
+                </button>
             </div>
             <div class="section-list" id="sectionList">
                 <!-- 섹션 목록이 여기에 렌더링됩니다 -->
@@ -1210,6 +1351,53 @@
         </div>
     </div>
 
+    <!-- Line Listing Modal -->
+    <div class="modal-overlay" id="lineListingModal" onclick="closeLineListingModal(event)">
+        <div class="modal-content" style="max-width: 1200px; width: 95%;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>📋 라인리스팅 분석</h2>
+                <button class="modal-close" onclick="closeLineListingModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="flex-direction: column;">
+                <!-- 요약 카드 -->
+                <div class="line-listing-summary" id="lineListingSummary">
+                    <div class="summary-card">
+                        <div class="label">신속보고 (RAW12+13)</div>
+                        <div class="value" id="summaryExpedited">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">정기보고 (RAW15)</div>
+                        <div class="value" id="summaryPeriodic">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">원시자료 (RAW14)</div>
+                        <div class="value" id="summaryRaw">0</div>
+                    </div>
+                    <div class="summary-card serious">
+                        <div class="label">중대한 이상사례</div>
+                        <div class="value" id="summarySerious">0</div>
+                    </div>
+                </div>
+
+                <!-- 탭 -->
+                <div class="line-listing-tabs">
+                    <button class="tab-btn active" data-raw="RAW12" onclick="renderLineListingTab('RAW12')">RAW12 국외신속 (<span id="countRAW12">0</span>)</button>
+                    <button class="tab-btn" data-raw="RAW13" onclick="renderLineListingTab('RAW13')">RAW13 국내신속 (<span id="countRAW13">0</span>)</button>
+                    <button class="tab-btn" data-raw="RAW14" onclick="renderLineListingTab('RAW14')">RAW14 원시자료 (<span id="countRAW14">0</span>)</button>
+                    <button class="tab-btn" data-raw="RAW15" onclick="renderLineListingTab('RAW15')">RAW15 정기보고 (<span id="countRAW15">0</span>)</button>
+                </div>
+
+                <!-- 테이블 컨텐츠 -->
+                <div class="line-listing-content" id="lineListingContent">
+                    <div class="data-preview-empty">
+                        <div class="data-preview-empty-icon">📋</div>
+                        <p>라인리스팅 데이터를 로드 중입니다...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
@@ -1248,6 +1436,250 @@
         let currentDataType = 'CS';
         let selectedDataIndex = -1;
 
+        // ========================================
+        // LineListing 설정 (KARES ICH 양식 기반 - P14와 동일)
+        // ========================================
+        const LINELISTING_CONFIG = {
+            caseIdColumns: ['부서접수번호', '부서접수번호(KAERS 안전원관리번호)', 'Unnamed: 1'],
+            seriousnessColumns: {
+                codes: ['E.i.3.2a', 'E.i.3.2b', 'E.i.3.2c', 'E.i.3.2d', 'E.i.3.2e', 'E.i.3.2f'],
+                labels: [
+                    '사망을 초래', '생명을 위협',
+                    '입원 또는 입원기간의 연장', '입원 또는 입원기간의 연장이 필요',
+                    '지속적 또는 중대한 장애', '지속적 또는 중대한 장애나 기능저하 초래',
+                    '선천적 기형', '선천적 기형 또는 이상을 초래',
+                    '기타 의학적으로 중요', '기타 의학적으로 중요한 상황이 발생하여 치료 필요'
+                ]
+            },
+            seriousnessYesValues: ['예', '○', 'Yes', 'Y', 'yes', 'TRUE', 'true', '1'],
+            sections: { basicInfo: '기본정보+환자정보', adverseEvent: '이상사례' },
+            rawIdMapping: { expedited: ['RAW12', 'RAW13'], periodic: ['RAW15'], raw: ['RAW14'] }
+        };
+
+        // LineListing 마크다운 파싱 (P14와 동일)
+        function parseLineListingSection(markdown, sectionName) {
+            if (!markdown || !sectionName) return [];
+            const sectionPattern = new RegExp(`##\\s*${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\n`, 'i');
+            const sectionMatch = markdown.match(sectionPattern);
+            if (!sectionMatch) return [];
+
+            const sectionStart = sectionMatch.index + sectionMatch[0].length;
+            const nextSectionMatch = markdown.slice(sectionStart).match(/\n##\s+/);
+            const sectionEnd = nextSectionMatch ? sectionStart + nextSectionMatch.index : markdown.length;
+            const sectionContent = markdown.slice(sectionStart, sectionEnd);
+
+            const lines = sectionContent.split('\n').filter(line => line.trim().startsWith('|'));
+            if (lines.length < 3) return [];
+
+            const parseCells = (line) => {
+                const parts = line.split('|');
+                if (parts[0].trim() === '') parts.shift();
+                if (parts[parts.length - 1]?.trim() === '') parts.pop();
+                return parts.map(c => c.trim());
+            };
+
+            const headers = parseCells(lines[0]);
+            let dataStartIndex = 2;
+            for (let i = 2; i < lines.length; i++) {
+                const cells = parseCells(lines[i]);
+                if (/^\d/.test(cells[0] || '') || /^\d/.test(cells[1] || '')) {
+                    dataStartIndex = i;
+                    break;
+                }
+            }
+
+            let koreanHeaders = null;
+            if (dataStartIndex > 2) {
+                const prevRow = parseCells(lines[dataStartIndex - 1]);
+                if (prevRow.some(cell => /[가-힣]/.test(cell))) koreanHeaders = prevRow;
+            }
+            const finalHeaders = koreanHeaders || headers;
+
+            const dataRows = [];
+            for (let i = dataStartIndex; i < lines.length; i++) {
+                const cells = parseCells(lines[i]);
+                if (cells.length < 2) continue;
+                const row = {};
+                finalHeaders.forEach((h, idx) => { row[h] = cells[idx] || ''; });
+                headers.forEach((h, idx) => { if (!row[h]) row[h] = cells[idx] || ''; });
+                dataRows.push(row);
+            }
+            return dataRows;
+        }
+
+        // LineListing 통계 계산 (P14와 동일)
+        function calculateLineListingStats(convertedMarkdowns) {
+            const config = LINELISTING_CONFIG;
+            const stats = { cs33: 0, cs34: 0, cs36: 0, details: { raw12Cases: 0, raw13Cases: 0, raw15Cases: 0, seriousCaseIds: new Set() } };
+
+            const findMarkdownByRawId = (targetRawId) => {
+                for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                    const match = fileName.match(/raw(\d+)/i);
+                    if (match && `RAW${match[1]}` === targetRawId) return content;
+                }
+                return null;
+            };
+
+            const extractUniqueCaseIds = (markdown) => {
+                if (!markdown) return new Set();
+                const basicInfoRows = parseLineListingSection(markdown, config.sections.basicInfo);
+                const caseIds = new Set();
+                basicInfoRows.forEach(row => {
+                    for (const col of config.caseIdColumns) {
+                        if (row[col] && row[col].trim() !== '') { caseIds.add(row[col].trim()); break; }
+                    }
+                });
+                return caseIds;
+            };
+
+            const extractSeriousCaseIds = (markdown) => {
+                if (!markdown) return new Set();
+                const adverseRows = parseLineListingSection(markdown, config.sections.adverseEvent);
+                const seriousCaseIds = new Set();
+                adverseRows.forEach(row => {
+                    const allSeriousColumns = [...config.seriousnessColumns.codes, ...config.seriousnessColumns.labels];
+                    let isSerious = false;
+                    for (const col of allSeriousColumns) {
+                        if (row[col] && config.seriousnessYesValues.includes(row[col].trim())) { isSerious = true; break; }
+                    }
+                    if (isSerious) {
+                        for (const col of config.caseIdColumns) {
+                            if (row[col] && row[col].trim() !== '') { seriousCaseIds.add(row[col].trim()); break; }
+                        }
+                        const firstCol = Object.keys(row)[0];
+                        if (firstCol && row[firstCol]) seriousCaseIds.add(row[firstCol].trim());
+                    }
+                });
+                return seriousCaseIds;
+            };
+
+            const raw12Md = findMarkdownByRawId('RAW12');
+            const raw12Cases = extractUniqueCaseIds(raw12Md);
+            stats.details.raw12Cases = raw12Cases.size;
+
+            const raw13Md = findMarkdownByRawId('RAW13');
+            const raw13Cases = extractUniqueCaseIds(raw13Md);
+            stats.details.raw13Cases = raw13Cases.size;
+
+            const raw15Md = findMarkdownByRawId('RAW15');
+            const raw15Cases = extractUniqueCaseIds(raw15Md);
+            stats.details.raw15Cases = raw15Cases.size;
+
+            stats.cs33 = raw12Cases.size + raw13Cases.size;
+            stats.cs34 = raw15Cases.size;
+
+            const allSeriousCaseIds = new Set();
+            [raw12Md, raw13Md, raw15Md].forEach(md => {
+                if (md) extractSeriousCaseIds(md).forEach(id => allSeriousCaseIds.add(id));
+            });
+            stats.cs36 = allSeriousCaseIds.size;
+            stats.details.seriousCaseIds = allSeriousCaseIds;
+
+            console.log(`📊 [P15 LineListing] 자동 계산:`, { CS33: stats.cs33, CS34: stats.cs34, CS36: stats.cs36 });
+            return stats;
+        }
+
+        // "[계산 필요]" 감지 시 자동 재계산
+        async function autoRecalculateLineListingStats() {
+            // CS32-CS37 중 "[계산 필요]" 값이 있는지 확인
+            const needsRecalc = extractedDataItems.some(item =>
+                item.variable_id &&
+                item.variable_id.match(/^CS3[2-7]/) &&
+                item.data_value &&
+                item.data_value.includes('계산 필요')
+            );
+
+            if (!needsRecalc) {
+                console.log('[P15] LineListing 재계산 불필요 - 이미 계산됨');
+                return;
+            }
+
+            console.log('[P15] 🔄 LineListing 자동 재계산 시작...');
+
+            // 마크다운 파일 로드 (localStorage 또는 DB)
+            let convertedMarkdowns = {};
+            try {
+                const storedMarkdowns = localStorage.getItem('convertedMarkdowns');
+                if (storedMarkdowns) {
+                    convertedMarkdowns = JSON.parse(storedMarkdowns);
+                }
+            } catch (e) {
+                console.warn('[P15] localStorage 마크다운 로드 실패:', e);
+            }
+
+            // DB에서 로드 시도 (localStorage 없을 경우)
+            if (Object.keys(convertedMarkdowns).length === 0) {
+                const reportId = getReportId();
+                if (reportId && window.supabaseClient) {
+                    try {
+                        const result = await window.supabaseClient.getMarkdownDocumentsByReport(reportId);
+                        if (result.success && result.data) {
+                            result.data.forEach(doc => {
+                                convertedMarkdowns[doc.file_name] = doc.markdown_content;
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('[P15] DB 마크다운 로드 실패:', e);
+                    }
+                }
+            }
+
+            if (Object.keys(convertedMarkdowns).length === 0) {
+                console.warn('[P15] 마크다운 파일 없음 - 재계산 불가');
+                return;
+            }
+
+            // LineListing 통계 계산
+            const stats = calculateLineListingStats(convertedMarkdowns);
+
+            // 계산된 값으로 업데이트
+            const updates = {
+                'CS33_신속보고총사례수': stats.cs33,
+                'CS34_정기보고총사례수': stats.cs34,
+                'CS36_중대한총사례수': stats.cs36,
+                'CS32_총사례수': stats.cs33 + stats.cs34,
+                'CS35_원시자료총사례수': 0,  // RAW14 없으면 0
+                'CS37_비중대한총사례수': (stats.cs33 + stats.cs34) - stats.cs36
+            };
+
+            // extractedDataItems 업데이트
+            let updatedCount = 0;
+            extractedDataItems.forEach(item => {
+                for (const [varId, value] of Object.entries(updates)) {
+                    if (item.variable_id && item.variable_id.startsWith(varId.split('_')[0])) {
+                        const fullMatch = item.variable_id === varId || item.variable_id.startsWith(varId.split('_')[0] + '_');
+                        if (fullMatch && item.data_value && item.data_value.includes('계산 필요')) {
+                            item.data_value = String(value);
+                            item.source_raw_id = 'LineListing_Auto';
+                            updatedCount++;
+                        }
+                    }
+                }
+            });
+
+            console.log(`[P15] ✅ LineListing 자동 재계산 완료: ${updatedCount}개 항목 업데이트`);
+
+            // DB 업데이트 (선택적)
+            const reportId = getReportId();
+            if (reportId && window.supabaseClient && updatedCount > 0) {
+                try {
+                    for (const [varId, value] of Object.entries(updates)) {
+                        await window.supabaseClient.upsertExtractedData(reportId, {
+                            data_type: 'CS',
+                            variable_id: varId,
+                            data_value: String(value),
+                            source_raw_id: 'LineListing_Auto'
+                        });
+                    }
+                    console.log('[P15] ✅ DB에 재계산 결과 저장 완료');
+                } catch (e) {
+                    console.warn('[P15] DB 저장 실패:', e);
+                }
+            }
+
+            updateDataCount();
+        }
+
         // 보고서 ID 가져오기 함수 (전역)
         function getReportId() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1284,6 +1716,7 @@
             updateSummary();
             await loadMarkdownFiles();
             await loadExtractedData();  // CS/PH/Table 데이터 로드
+            await autoRecalculateLineListingStats();  // LineListing 자동 재계산 (CS32-CS37)
 
             // Stage 업데이트 (5 = 섹션 편집)
             if (reportId) {
@@ -2426,16 +2859,229 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
                 .replace(/'/g, '&#039;');
         }
 
+        // ========================================
+        // 라인리스팅 모달 기능
+        // ========================================
+
+        // 라인리스팅 데이터 저장소
+        let lineListingData = {
+            RAW12: [],
+            RAW13: [],
+            RAW14: [],
+            RAW15: []
+        };
+
+        // 모달 열기
+        async function openLineListingModal() {
+            await loadLineListingData();
+            document.getElementById('lineListingModal').classList.add('show');
+            renderLineListingTab('RAW12');
+        }
+
+        // 모달 닫기
+        function closeLineListingModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('lineListingModal').classList.remove('show');
+        }
+
+        // 라인리스팅 데이터 로드
+        async function loadLineListingData() {
+            try {
+                const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
+
+                // RAW12, 13, 14, 15 마크다운 파싱
+                const rawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+                let totalSerious = 0;
+
+                for (const rawId of rawIds) {
+                    lineListingData[rawId] = [];
+
+                    // 해당 RAW ID의 마크다운 찾기
+                    for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                        const upperFileName = fileName.toUpperCase();
+                        if (upperFileName.includes(rawId) || upperFileName.includes(rawId.toLowerCase())) {
+                            const parsed = parseMarkdownTable(content, rawId);
+                            lineListingData[rawId] = parsed.rows;
+                            totalSerious += parsed.seriousCount;
+                            break;
+                        }
+                    }
+                }
+
+                // 요약 업데이트
+                const expeditedCount = lineListingData.RAW12.length + lineListingData.RAW13.length;
+                const periodicCount = lineListingData.RAW15.length;
+                const rawCount = lineListingData.RAW14.length;
+                const totalCount = expeditedCount + periodicCount + rawCount;
+
+                document.getElementById('summaryExpedited').textContent = expeditedCount;
+                document.getElementById('summaryPeriodic').textContent = periodicCount;
+                document.getElementById('summaryRaw').textContent = rawCount;
+                document.getElementById('summarySerious').textContent = totalSerious;
+
+                // 탭 카운트 업데이트
+                document.getElementById('countRAW12').textContent = lineListingData.RAW12.length;
+                document.getElementById('countRAW13').textContent = lineListingData.RAW13.length;
+                document.getElementById('countRAW14').textContent = lineListingData.RAW14.length;
+                document.getElementById('countRAW15').textContent = lineListingData.RAW15.length;
+
+                // 버튼 카운트 업데이트
+                document.getElementById('lineListingCount').textContent = totalCount;
+
+                console.log('[P15] 라인리스팅 로드 완료:', { expeditedCount, periodicCount, rawCount, totalSerious });
+
+            } catch (error) {
+                console.error('[P15] 라인리스팅 로드 실패:', error);
+            }
+        }
+
+        // 마크다운 테이블 파싱
+        function parseMarkdownTable(markdown, rawId) {
+            const rows = [];
+            let seriousCount = 0;
+            let headers = [];
+
+            const lines = markdown.split('\n');
+            let inTable = false;
+            let headerParsed = false;
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+
+                // 테이블 행 감지
+                if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+                    // 구분자 행 스킵
+                    if (trimmed.includes('---')) {
+                        inTable = true;
+                        continue;
+                    }
+
+                    const cells = trimmed.split('|').filter(c => c.trim() !== '').map(c => c.trim());
+
+                    if (!headerParsed && !inTable) {
+                        // 헤더 행
+                        headers = cells;
+                        headerParsed = true;
+                    } else if (inTable && cells.length > 0) {
+                        // 데이터 행
+                        const row = {};
+                        headers.forEach((h, i) => {
+                            row[h] = cells[i] || '';
+                        });
+
+                        // 중대성 체크
+                        const seriousValue = row['중대성'] || row['Serious'] || row['심각성'] || row['중대함'] || '';
+                        const isSerious = /^(중대함|Yes|Serious|예|Y|중대)$/i.test(seriousValue.trim());
+                        row._isSerious = isSerious;
+                        if (isSerious) seriousCount++;
+
+                        rows.push(row);
+                    }
+                } else if (inTable && trimmed === '') {
+                    // 테이블 종료
+                    break;
+                }
+            }
+
+            return { rows, seriousCount, headers };
+        }
+
+        // 탭 렌더링
+        function renderLineListingTab(rawId) {
+            // 탭 버튼 활성화
+            document.querySelectorAll('#lineListingModal .line-listing-tabs .tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.raw === rawId);
+            });
+
+            const contentDiv = document.getElementById('lineListingContent');
+            const data = lineListingData[rawId];
+
+            if (!data || data.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="data-preview-empty">
+                        <div class="data-preview-empty-icon">📋</div>
+                        <p>${rawId} 라인리스팅 데이터가 없습니다.<br>P14에서 해당 파일을 업로드해주세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 테이블 생성
+            const headers = Object.keys(data[0]).filter(h => !h.startsWith('_'));
+            let tableHtml = `
+                <div class="line-listing-table-container">
+                    <table class="line-listing-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                ${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            data.forEach((row, idx) => {
+                tableHtml += `<tr>`;
+                tableHtml += `<td>${idx + 1}</td>`;
+                headers.forEach(h => {
+                    const value = row[h] || '';
+                    const isSeriousCell = ['중대성', 'Serious', '심각성'].includes(h) && row._isSerious;
+                    tableHtml += `<td class="${isSeriousCell ? 'serious-yes' : ''}">${escapeHtml(value)}</td>`;
+                });
+                tableHtml += `</tr>`;
+            });
+
+            tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            contentDiv.innerHTML = tableHtml;
+        }
+
+        // 페이지 로드 시 라인리스팅 카운트 업데이트
+        async function initLineListingCount() {
+            try {
+                const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
+                let totalCount = 0;
+
+                const rawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+                for (const rawId of rawIds) {
+                    for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                        const upperFileName = fileName.toUpperCase();
+                        if (upperFileName.includes(rawId) || upperFileName.includes(rawId.toLowerCase())) {
+                            const parsed = parseMarkdownTable(content, rawId);
+                            totalCount += parsed.rows.length;
+                            break;
+                        }
+                    }
+                }
+
+                document.getElementById('lineListingCount').textContent = totalCount;
+            } catch (error) {
+                console.error('[P15] 라인리스팅 카운트 초기화 실패:', error);
+            }
+        }
+
+        // 초기화 시 라인리스팅 카운트도 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initLineListingCount, 500);
+        });
+
         // ESC 키로 모달 닫기
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const markdownModal = document.getElementById('markdownFilesModal');
                 const dataModal = document.getElementById('extractedDataModal');
+                const lineListingModal = document.getElementById('lineListingModal');
 
                 if (markdownModal.classList.contains('show')) {
                     closeMarkdownFilesModal();
                 } else if (dataModal.classList.contains('show')) {
                     closeExtractedDataModal();
+                } else if (lineListingModal.classList.contains('show')) {
+                    closeLineListingModal();
                 }
             }
         });

@@ -1099,6 +1099,284 @@
         const step3Files = [];  // { file, name, size, rawId }
 
         // ========================================
+        // LineListing 설정 (KARES ICH 양식 기반 - 설정 파일 기반 컬럼 매핑)
+        // ========================================
+        const LINELISTING_CONFIG = {
+            // 사례 식별 컬럼 (고유 사례 수 계산용)
+            caseIdColumns: [
+                '부서접수번호',
+                '부서접수번호(KAERS 안전원관리번호)',
+                'Unnamed: 1'  // 기본정보+환자정보 테이블의 2번째 컬럼
+            ],
+            // 중대성 판단 컬럼 (E.i.3.2a~f - ICH 국제 표준)
+            seriousnessColumns: {
+                // ICH 코드명
+                codes: ['E.i.3.2a', 'E.i.3.2b', 'E.i.3.2c', 'E.i.3.2d', 'E.i.3.2e', 'E.i.3.2f'],
+                // 한글 컬럼명 (변형 대응)
+                labels: [
+                    '사망을 초래',
+                    '생명을 위협',
+                    '입원 또는 입원기간의 연장',
+                    '입원 또는 입원기간의 연장이 필요',
+                    '지속적 또는 중대한 장애',
+                    '지속적 또는 중대한 장애나 기능저하 초래',
+                    '선천적 기형',
+                    '선천적 기형 또는 이상을 초래',
+                    '기타 의학적으로 중요',
+                    '기타 의학적으로 중요한 상황이 발생하여 치료 필요'
+                ]
+            },
+            // 중대성 "예" 값 매칭
+            seriousnessYesValues: ['예', '○', 'Yes', 'Y', 'yes', 'TRUE', 'true', '1'],
+            // 테이블 섹션명
+            sections: {
+                basicInfo: '기본정보+환자정보',
+                adverseEvent: '이상사례'
+            },
+            // RAW ID 매핑
+            rawIdMapping: {
+                expedited: ['RAW12', 'RAW13'],  // 신속보고 (국외+국내)
+                periodic: ['RAW15'],            // 정기보고
+                raw: ['RAW14']                  // 원시자료
+            }
+        };
+
+        /**
+         * LineListing 마크다운 파싱 - 지정된 섹션의 테이블 추출
+         * KARES ICH 양식 구조:
+         * - lines[0]: 헤더 행 (Unnamed: 0, Unnamed: 1, ... 또는 ICH 코드)
+         * - lines[1]: 구분선 (---)
+         * - lines[2]: ICH 코드 행 또는 한글 컬럼명 (복잡한 구조)
+         * - lines[3]: 한글 컬럼명 행 (부서접수번호, ...)
+         * - lines[4+]: 데이터 행
+         *
+         * @param {string} markdown - 마크다운 텍스트
+         * @param {string} sectionName - 섹션명 (예: '기본정보+환자정보', '이상사례')
+         * @returns {Array<Object>} 테이블 행 배열 (헤더 행 제외)
+         */
+        function parseLineListingSection(markdown, sectionName) {
+            if (!markdown || !sectionName) return [];
+
+            // 섹션 찾기 (## 섹션명)
+            const sectionPattern = new RegExp(`##\\s*${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\n`, 'i');
+            const sectionMatch = markdown.match(sectionPattern);
+            if (!sectionMatch) {
+                console.log(`[LineListing] 섹션 '${sectionName}' 미발견`);
+                return [];
+            }
+
+            const sectionStart = sectionMatch.index + sectionMatch[0].length;
+            const nextSectionMatch = markdown.slice(sectionStart).match(/\n##\s+/);
+            const sectionEnd = nextSectionMatch ? sectionStart + nextSectionMatch.index : markdown.length;
+            const sectionContent = markdown.slice(sectionStart, sectionEnd);
+
+            // 테이블 행 파싱
+            const lines = sectionContent.split('\n').filter(line => line.trim().startsWith('|'));
+            if (lines.length < 3) return []; // 헤더 + 구분선 + 최소 1행 필요
+
+            // 셀 파싱 헬퍼 (빈 문자열 포함하여 정확한 위치 유지)
+            const parseCells = (line) => {
+                // | 로 분리하고 첫 번째/마지막 빈 요소 제거
+                const parts = line.split('|');
+                // 앞뒤 빈 요소 제거 (| 로 시작/끝나므로)
+                if (parts[0].trim() === '') parts.shift();
+                if (parts[parts.length - 1]?.trim() === '') parts.pop();
+                return parts.map(c => c.trim());
+            };
+
+            // 헤더 파싱 (첫 번째 행)
+            const headers = parseCells(lines[0]);
+            const headerCount = headers.length;
+
+            // 구분선 스킵 (lines[1])
+
+            // 데이터 행 시작점 찾기 (숫자로 시작하는 첫 번째 행)
+            let dataStartIndex = 2;
+            for (let i = 2; i < lines.length; i++) {
+                const cells = parseCells(lines[i]);
+                // 첫 번째 또는 두 번째 셀이 숫자로 시작하면 데이터 행
+                const firstCell = cells[0] || '';
+                const secondCell = cells[1] || '';
+                if (/^\d/.test(firstCell) || /^\d/.test(secondCell)) {
+                    dataStartIndex = i;
+                    break;
+                }
+            }
+
+            // 한글 컬럼명 행 찾기 (데이터 시작 직전 행)
+            let koreanHeaders = null;
+            if (dataStartIndex > 2) {
+                const prevRow = parseCells(lines[dataStartIndex - 1]);
+                // 한글이 포함된 행이면 한글 헤더로 사용
+                if (prevRow.some(cell => /[가-힣]/.test(cell))) {
+                    koreanHeaders = prevRow;
+                }
+            }
+
+            // 최종 헤더 결정 (한글 헤더 우선, 없으면 ICH 코드 헤더)
+            const finalHeaders = koreanHeaders || headers;
+
+            // 데이터 행 파싱
+            const dataRows = [];
+            for (let i = dataStartIndex; i < lines.length; i++) {
+                const cells = parseCells(lines[i]);
+
+                // 데이터 행인지 확인 (빈 행이 아니고, 최소 2개 셀)
+                if (cells.length < 2) continue;
+
+                const row = {};
+                finalHeaders.forEach((h, idx) => {
+                    row[h] = cells[idx] || '';
+                });
+
+                // ICH 코드 헤더도 추가 (중대성 체크용)
+                headers.forEach((h, idx) => {
+                    if (!row[h]) {
+                        row[h] = cells[idx] || '';
+                    }
+                });
+
+                dataRows.push(row);
+            }
+
+            console.log(`[LineListing] 섹션 '${sectionName}' 파싱: ${dataRows.length}행 (헤더: ${finalHeaders.length}개)`);
+            return dataRows;
+        }
+
+        /**
+         * LineListing 통계 계산 (CS33, CS34, CS36 자동 계산)
+         * @param {Object} convertedMarkdowns - RAW ID별 마크다운 맵
+         * @returns {Object} { cs33: number, cs34: number, cs36: number, details: Object }
+         */
+        function calculateLineListingStats(convertedMarkdowns) {
+            const config = LINELISTING_CONFIG;
+            const stats = {
+                cs33: 0,  // 신속보고총사례수 (RAW12 + RAW13)
+                cs34: 0,  // 정기보고총사례수 (RAW15)
+                cs36: 0,  // 중대한총사례수 (전체에서 중대한 사례)
+                details: {
+                    raw12Cases: 0,
+                    raw13Cases: 0,
+                    raw15Cases: 0,
+                    seriousCaseIds: new Set()
+                }
+            };
+
+            // RAW ID별 마크다운 찾기
+            const findMarkdownByRawId = (targetRawId) => {
+                for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                    // 파일명에서 RAW ID 추출 (예: Raw12_xxx.md → RAW12)
+                    const match = fileName.match(/raw(\d+)/i);
+                    if (match && `RAW${match[1]}` === targetRawId) {
+                        return content;
+                    }
+                }
+                return null;
+            };
+
+            // 사례 ID 추출 (고유 부서접수번호)
+            const extractUniqueCaseIds = (markdown) => {
+                if (!markdown) return new Set();
+                const basicInfoRows = parseLineListingSection(markdown, config.sections.basicInfo);
+                const caseIds = new Set();
+
+                basicInfoRows.forEach(row => {
+                    for (const col of config.caseIdColumns) {
+                        if (row[col] && row[col].trim() !== '') {
+                            caseIds.add(row[col].trim());
+                            break;
+                        }
+                    }
+                });
+
+                return caseIds;
+            };
+
+            // 중대한 사례 ID 추출 (이상사례 섹션에서)
+            const extractSeriousCaseIds = (markdown) => {
+                if (!markdown) return new Set();
+                const adverseRows = parseLineListingSection(markdown, config.sections.adverseEvent);
+                const seriousCaseIds = new Set();
+
+                adverseRows.forEach(row => {
+                    // 중대성 컬럼 확인 (ICH 코드 또는 한글 라벨)
+                    const allSeriousColumns = [...config.seriousnessColumns.codes, ...config.seriousnessColumns.labels];
+                    let isSerious = false;
+
+                    for (const col of allSeriousColumns) {
+                        const value = row[col];
+                        if (value && config.seriousnessYesValues.includes(value.trim())) {
+                            isSerious = true;
+                            break;
+                        }
+                    }
+
+                    if (isSerious) {
+                        // 사례 ID 찾기 (첫 번째 컬럼 또는 부서접수번호)
+                        for (const col of config.caseIdColumns) {
+                            if (row[col] && row[col].trim() !== '') {
+                                seriousCaseIds.add(row[col].trim());
+                                break;
+                            }
+                        }
+                        // 첫 번째 컬럼 값 (Unnamed: 0)
+                        const firstCol = Object.keys(row)[0];
+                        if (firstCol && row[firstCol]) {
+                            seriousCaseIds.add(row[firstCol].trim());
+                        }
+                    }
+                });
+
+                return seriousCaseIds;
+            };
+
+            // RAW12 (국외 신속보고)
+            const raw12Md = findMarkdownByRawId('RAW12');
+            const raw12Cases = extractUniqueCaseIds(raw12Md);
+            stats.details.raw12Cases = raw12Cases.size;
+
+            // RAW13 (국내 신속보고)
+            const raw13Md = findMarkdownByRawId('RAW13');
+            const raw13Cases = extractUniqueCaseIds(raw13Md);
+            stats.details.raw13Cases = raw13Cases.size;
+
+            // RAW15 (정기보고)
+            const raw15Md = findMarkdownByRawId('RAW15');
+            const raw15Cases = extractUniqueCaseIds(raw15Md);
+            stats.details.raw15Cases = raw15Cases.size;
+
+            // CS33: 신속보고총사례수 = RAW12 + RAW13 고유 사례 수
+            stats.cs33 = raw12Cases.size + raw13Cases.size;
+
+            // CS34: 정기보고총사례수 = RAW15 고유 사례 수
+            stats.cs34 = raw15Cases.size;
+
+            // CS36: 중대한총사례수 (모든 LineListing에서 중대한 사례)
+            const allSeriousCaseIds = new Set();
+            [raw12Md, raw13Md, raw15Md].forEach(md => {
+                if (md) {
+                    const seriousIds = extractSeriousCaseIds(md);
+                    seriousIds.forEach(id => allSeriousCaseIds.add(id));
+                }
+            });
+            stats.cs36 = allSeriousCaseIds.size;
+            stats.details.seriousCaseIds = allSeriousCaseIds;
+
+            console.log(`📊 [LineListing] 자동 계산 완료:`, {
+                CS33_신속보고: stats.cs33,
+                CS34_정기보고: stats.cs34,
+                CS36_중대한: stats.cs36,
+                상세: {
+                    RAW12: stats.details.raw12Cases,
+                    RAW13: stats.details.raw13Cases,
+                    RAW15: stats.details.raw15Cases
+                }
+            });
+
+            return stats;
+        }
+
+        // ========================================
         // RAW ID 모듈 참조 (Single Source of Truth: raw-id-detector.js)
         // ========================================
         // 모듈 로드 확인
@@ -2161,7 +2439,21 @@
 
                 // 다음 페이지로 이동 (Line Listing 파일이 있으면 P16, 없으면 P15)
                 setTimeout(() => {
-                    const reportId = getUrlParam('reportId') || localStorage.getItem('current_report');
+                    // reportId 추출 (URL 우선, localStorage fallback)
+                    let reportId = getUrlParam('reportId');
+                    if (!reportId) {
+                        const storedReport = localStorage.getItem('current_report');
+                        if (storedReport) {
+                            try {
+                                const parsed = JSON.parse(storedReport);
+                                // JSON 객체인 경우 reportId 추출, UUID 문자열인 경우 그대로 사용
+                                reportId = (typeof parsed === 'object' && parsed !== null) ? parsed.reportId : storedReport;
+                            } catch (e) {
+                                // JSON 파싱 실패 시 UUID 문자열로 간주
+                                reportId = storedReport;
+                            }
+                        }
+                    }
 
                     // Line Listing 파일 존재 여부 확인 (RAW12-15)
                     const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
@@ -2385,6 +2677,60 @@
         }
 
         // ========================================
+        // DB 스키마 호환 데이터 정제
+        // ========================================
+        /**
+         * extractedData를 DB 스키마에 맞게 정제
+         * - 유효한 컬럼만 포함 (data_type, variable_id, data_value, source_raw_id, validation_status)
+         * - source_raw_id 길이 제한 (100자, 마이그레이션 전까지 20자)
+         * - validation_status 값 매핑 (DB CHECK 제약 조건 준수)
+         */
+        function sanitizeExtractedDataForDB(extractedData) {
+            // DB 스키마에서 허용하는 validation_status 값
+            const validStatuses = ['Pending', 'Validated', 'Conflict'];
+
+            // 비표준 상태값 → 표준 상태값 매핑
+            const statusMap = {
+                'Validated': 'Validated',
+                'Pending': 'Pending',
+                'Conflict': 'Conflict',
+                'LLM_Corrected': 'Validated',   // LLM 보정 → 검증됨
+                'LLM_Extracted': 'Pending',     // LLM 추출 → 대기 (검토 필요)
+                'Missing': 'Pending'            // 누락 → 대기
+            };
+
+            // DB에 저장할 컬럼만 포함
+            const validColumns = ['data_type', 'variable_id', 'data_value', 'source_raw_id', 'validation_status'];
+
+            return extractedData.map(item => {
+                const cleaned = {};
+
+                validColumns.forEach(col => {
+                    if (item[col] !== undefined) {
+                        if (col === 'source_raw_id') {
+                            // source_raw_id: 100자 제한 (마이그레이션 005 적용 후)
+                            // 마이그레이션 미적용 시 20자로 자동 truncate
+                            const value = String(item[col] || '');
+                            cleaned[col] = value.length > 100 ? value.substring(0, 100) : value;
+                        } else if (col === 'validation_status') {
+                            // validation_status: DB CHECK 제약 조건에 맞게 매핑
+                            const originalStatus = item[col] || 'Pending';
+                            cleaned[col] = statusMap[originalStatus] || 'Pending';
+                        } else {
+                            cleaned[col] = item[col];
+                        }
+                    }
+                });
+
+                // 필수 필드 기본값 설정
+                if (!cleaned.data_type) cleaned.data_type = 'CS';
+                if (!cleaned.validation_status) cleaned.validation_status = 'Pending';
+
+                return cleaned;
+            });
+        }
+
+        // ========================================
         // 결과 저장
         // ========================================
         async function saveProcessingResults(convertedFiles) {
@@ -2540,9 +2886,13 @@
             // DB에 extracted_data 저장 (Primary Storage)
             if (reportId && window.supabaseClient && typeof window.supabaseClient.bulkUpsertExtractedData === 'function') {
                 try {
-                    const dbResult = await window.supabaseClient.bulkUpsertExtractedData(reportId, extractedData);
+                    // DB 스키마에 맞게 데이터 정제
+                    const dbReadyData = sanitizeExtractedDataForDB(extractedData);
+                    console.log('📋 DB 저장용 데이터 정제 완료:', dbReadyData.length, '개 항목');
+
+                    const dbResult = await window.supabaseClient.bulkUpsertExtractedData(reportId, dbReadyData);
                     if (dbResult.success) {
-                        console.log('✅ DB에 extractedData 저장 완료:', dbResult.data?.length || extractedData.length, '개 항목');
+                        console.log('✅ DB에 extractedData 저장 완료:', dbResult.data?.length || dbReadyData.length, '개 항목');
                     } else {
                         console.warn('⚠️ DB extractedData 저장 실패:', dbResult.error);
                     }
@@ -2630,11 +2980,59 @@
                 }
             }
 
-            // 숫자 계산 필드들 (Line Listing 분석 후 계산 - 값이 있을 때만)
-            const cs33 = parseFloat(userInputs?.CS33_신속보고총사례수) || 0;
-            const cs34 = parseFloat(userInputs?.CS34_정기보고총사례수) || 0;
+            // 2. CS_DEFINITIONS 기반 전체 CS 데이터 추출
+            // 업로드된 RAW 파일 목록
+            const uploadedRawIds = convertedFiles.map(f => f.assignedRawId || f.rawId).filter(Boolean);
+
+            // RAW ID별 마크다운 맵 생성 (파일명 기준으로도 저장)
+            const rawIdToMarkdown = {};
+            const fileNameToMarkdown = {};
+            convertedFiles.forEach(file => {
+                const rawId = file.assignedRawId || file.rawId;
+                if (rawId) {
+                    rawIdToMarkdown[rawId] = file.markdown || file.markdownContent || '';
+                }
+                if (file.name) {
+                    fileNameToMarkdown[file.name] = file.markdown || file.markdownContent || '';
+                }
+            });
+
+            // ========================================
+            // LineListing 자동 계산 (설정 파일 기반)
+            // ========================================
+            // LineListing 파일 존재 여부 확인
+            const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+            const hasLineListingFiles = uploadedRawIds.some(id => lineListingRawIds.includes(id));
+
+            let lineListingStats = { cs33: 0, cs34: 0, cs36: 0 };
+            if (hasLineListingFiles) {
+                console.log('📊 [LineListing] 자동 계산 시작...');
+                lineListingStats = calculateLineListingStats(fileNameToMarkdown);
+
+                // CS33_신속보고총사례수 (LineListing 자동 계산)
+                if (lineListingStats.cs33 > 0) {
+                    addIfNotExists('CS33_신속보고총사례수', String(lineListingStats.cs33), 'LineListing_Auto');
+                    console.log(`✅ CS33_신속보고총사례수 자동 계산: ${lineListingStats.cs33}`);
+                }
+
+                // CS34_정기보고총사례수 (LineListing 자동 계산)
+                if (lineListingStats.cs34 > 0) {
+                    addIfNotExists('CS34_정기보고총사례수', String(lineListingStats.cs34), 'LineListing_Auto');
+                    console.log(`✅ CS34_정기보고총사례수 자동 계산: ${lineListingStats.cs34}`);
+                }
+
+                // CS36_중대한총사례수 (LineListing 자동 계산)
+                if (lineListingStats.cs36 > 0) {
+                    addIfNotExists('CS36_중대한총사례수', String(lineListingStats.cs36), 'LineListing_Auto');
+                    console.log(`✅ CS36_중대한총사례수 자동 계산: ${lineListingStats.cs36}`);
+                }
+            }
+
+            // 숫자 계산 필드들 (LineListing 자동 계산 우선, fallback: userInputs)
+            const cs33 = lineListingStats.cs33 || parseFloat(userInputs?.CS33_신속보고총사례수) || 0;
+            const cs34 = lineListingStats.cs34 || parseFloat(userInputs?.CS34_정기보고총사례수) || 0;
             const cs29 = parseFloat(userInputs?.CS29_원시총이상사례수) || 0;
-            const cs36 = parseFloat(userInputs?.CS36_중대한총사례수) || 0;
+            const cs36 = lineListingStats.cs36 || parseFloat(userInputs?.CS36_중대한총사례수) || 0;
 
             // CS32_신속정기보고총사례수 = CS33 + CS34
             if (cs33 > 0 || cs34 > 0) {
@@ -2653,19 +3051,6 @@
                     addIfNotExists('CS37_중대하지않은총사례수', String(cs37Value));
                 }
             }
-
-            // 2. CS_DEFINITIONS 기반 전체 CS 데이터 추출
-            // 업로드된 RAW 파일 목록
-            const uploadedRawIds = convertedFiles.map(f => f.assignedRawId || f.rawId).filter(Boolean);
-
-            // RAW ID별 마크다운 맵 생성
-            const rawIdToMarkdown = {};
-            convertedFiles.forEach(file => {
-                const rawId = file.assignedRawId || file.rawId;
-                if (rawId) {
-                    rawIdToMarkdown[rawId] = file.markdown || file.markdownContent || '';
-                }
-            });
 
             // 정규식 패턴 정의 (하드코딩된 추출 패턴)
             const CS_PATTERNS = {
@@ -3374,22 +3759,32 @@ ${allMarkdowns.substring(0, 60000)}
    - CS17_.4_허가권자: 품목허가권자/담당자 정보
    - CS17_.5_허가비고: 허가 관련 특이사항 (조건부허가, 심사중 등)
 6. **CS18 임상노출** (RAW8에서): 임상시험 노출 환자수, 기간 등
-7. **CS19 시판후노출** (RAW3에서):
+7. **CS20, CS21 용량 정보** (RAW1.1 또는 RAW2.1 첨부문서에서 반드시 추출):
+   - CS20_1일사용량: **⚠️ 용법용량 섹션에서 1일 권장 사용량 숫자만 추출!** (예: "20", "10" 등 숫자만, 단위 제외)
+   - CS21_환자1명당사용량: **⚠️ 1일 사용량 × 30일 = 1개월분으로 계산!** (예: CS20이 20이면 → "600")
+8. **CS19 시판후노출** (RAW3에서):
    - CS19_시판후노출count시작날짜: 판매량 집계 시작일
    - CS19_.1_시판후노출count종료날짜: 판매량 집계 종료일
    - CS19_.2_시판후판매연도: 판매 데이터가 있는 연도 목록 (예: "2020, 2021, 2022, 2023, 2024")
    - CS19_.3_시판후판매연도별판매량: 연도별 판매량 (예: "2020: 1000, 2021: 1500, 2022: 2000")
    - CS19_.4_시판후판매량합계: **⚠️ 반드시 연도별 판매량을 모두 합산하여 계산!** (예: 1000+1500+2000=4500 → "4500")
-8. **CS22, CS23 환자노출 계산** (표2_연도별판매량, CS20, CS21 기반):
-   - CS22_연평균판매량: **⚠️ 표2_연도별판매량의 모든 연도 판매량 평균을 계산!** (예: (1000+1500+2000)/3=1500 → "1500")
-   - CS23_연평균환자노출: **⚠️ CS22_연평균판매량 ÷ CS21_환자1명당사용량으로 계산!** (예: 1500÷30=50 → "50")
-9. **CS33, CS34 이상사례 보고 건수** (RAW12, RAW13, RAW15에서 행 수 카운트):
-   - CS33_신속보고총사례수: **⚠️ RAW12(국외신속보고) + RAW13(국내신속보고)의 총 행 수를 계산!** (헤더 제외, 데이터 행만 카운트)
-   - CS34_정기보고총사례수: **⚠️ RAW15(정기보고LineListing)의 총 행 수를 계산!** (헤더 제외)
-10. **CS36 중대한 이상사례 건수** (RAW12, RAW13, RAW14, RAW15에서):
-   - CS36_중대한총사례수: **⚠️ 모든 LineListing에서 "중대성" 또는 "Serious" 컬럼이 "중대함/Yes/Serious"인 행 수를 계산!**
-11. **CS55 안전성조치** (RAW5, RAW6에서): 허가팀 메일 기반 안전성 조치 서술문
-12. **CS56 참고정보변경** (RAW7에서): 안전성 정보 변경 내역
+9. **CS22, CS23 환자노출 계산**:
+   - CS22_연평균판매량: **⚠️ CS19_.4_시판후판매량합계 ÷ 연도 수로 계산!** (예: 4500÷3=1500 → "1500")
+   - CS23_연평균환자노출: **⚠️ CS22_연평균판매량 ÷ CS21_환자1명당사용량으로 계산!** (예: 1500÷600=2.5 → "2.5", 또는 CS21이 없으면 CS22÷30으로 계산)
+10. **CS33, CS34 이상사례 보고 건수** (LineListing 마크다운 표에서 행 수 카운트):
+   - CS33_신속보고총사례수: **⚠️ 아래 순서로 계산:**
+     1. RAW12 (국외신속보고LineListing) 마크다운 표에서 데이터 행 수를 센다 (헤더 "|---|" 다음 행부터)
+     2. RAW13 (국내신속보고LineListing) 마크다운 표에서 데이터 행 수를 센다
+     3. 두 값을 합산하여 숫자만 출력 (예: 15+10=25 → "25")
+   - CS34_정기보고총사례수: **⚠️ RAW15 (정기보고LineListing) 마크다운 표에서 데이터 행 수를 센다!** (헤더 제외, 숫자만 출력)
+11. **CS36 중대한 이상사례 건수**:
+   - CS36_중대한총사례수: **⚠️ 모든 LineListing(RAW12,13,14,15)에서 "중대성/Serious/심각성" 컬럼이 "중대함/Yes/Serious/예"인 행 수를 모두 합산!** (숫자만 출력)
+12. **CS32, CS35, CS37 추가 계산**:
+   - CS32_신속정기보고총사례수: **⚠️ CS33 + CS34로 계산!**
+   - CS35_신속정기원시총사례수: **⚠️ CS33 + CS34 + RAW14(원시자료) 행 수로 계산!**
+   - CS37_중대하지않은총사례수: **⚠️ CS35 - CS36으로 계산!**
+13. **CS55 안전성조치** (RAW5, RAW6에서): 허가팀 메일 기반 안전성 조치 서술문
+14. **CS56 참고정보변경** (RAW7에서): 안전성 정보 변경 내역
 
 ## 출력 형식
 반드시 아래 JSON 형식으로만 응답하세요:
@@ -3405,6 +3800,16 @@ ${allMarkdowns.substring(0, 60000)}
     "CS17_.4_허가권자": "Kim J., Park M., Lee S., Choi Y.",
     "CS17_.5_허가비고": "EU: 조건부허가에서 정규허가로 전환 완료, 일본: 알츠하이머 적응증 CRL 응답 준비중",
     "CS17_.6_허가현황서술문": "본 의약품은 2023년 10월 5일 일본에서 최초 허가되었으며, 이후 한국(2024-01-15), 미국(2024-05-15), EU(2024-06-15) 등에서 순차적으로 허가되었다.",
+    "CS20_1일사용량": "20",
+    "CS21_환자1명당사용량": "600",
+    "CS22_연평균판매량": "4824121",
+    "CS23_연평균환자노출": "8040",
+    "CS33_신속보고총사례수": "25",
+    "CS34_정기보고총사례수": "15",
+    "CS36_중대한총사례수": "8",
+    "CS32_신속정기보고총사례수": "40",
+    "CS35_신속정기원시총사례수": "60",
+    "CS37_중대하지않은총사례수": "52",
     "CS57_참고문헌리스트": "1. 참고문헌1\\n2. 참고문헌2",
     "PH4_원시자료서술문": "생성된 서술문..."
   },
@@ -3416,6 +3821,11 @@ ${allMarkdowns.substring(0, 60000)}
     "CS12_약어표": 0.85,
     "CS17_전세계허가현황표": 0.9,
     "CS17_.1_허가국가": 0.95,
+    "CS20_1일사용량": 0.9,
+    "CS21_환자1명당사용량": 0.9,
+    "CS33_신속보고총사례수": 0.95,
+    "CS34_정기보고총사례수": 0.95,
+    "CS36_중대한총사례수": 0.9,
     "PH4_원시자료서술문": 0.8
   }
 }
