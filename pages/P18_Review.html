@@ -1250,7 +1250,7 @@
             <div class="header-left">
                 <div class="logo">
                     <span class="logo-text">KPSUR AGENT</span>
-                    <span class="logo-subtitle">ACUZEN AI | v.0.1.2.</span>
+                    <span class="logo-subtitle">ACUZEN AI | v.0.8.13.</span>
                 </div>
                 <span class="deployment-badge test">테스트</span>
             </div>
@@ -2409,9 +2409,18 @@
         async function updateCurrentStage(targetReportId, stage) {
             if (!targetReportId) return;
 
-            // localStorage 캐시 업데이트
+            // localStorage 캐시 업데이트 (JSON 객체 또는 UUID 문자열 모두 안전하게 처리)
             try {
-                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+                let currentReport = {};
+                const storedReport = localStorage.getItem('current_report');
+                if (storedReport) {
+                    try {
+                        const parsed = JSON.parse(storedReport);
+                        currentReport = (typeof parsed === 'object' && parsed !== null) ? parsed : { reportId: storedReport };
+                    } catch (parseError) {
+                        currentReport = { reportId: storedReport };
+                    }
+                }
                 currentReport.current_stage = stage;
                 currentReport.updated_at = new Date().toISOString();
                 localStorage.setItem('current_report', JSON.stringify(currentReport));

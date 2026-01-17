@@ -609,63 +609,74 @@
         }
 
         /* ========================================
-           Footer Navigation - Glass
+           Footer Navigation - Floating Buttons (양쪽 배치)
            ======================================== */
         .footer-nav {
             position: fixed;
-            bottom: 40px;
+            bottom: 60px;
             left: 0;
             right: 0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 1rem 2rem;
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border-top: 1px solid var(--glass-border);
+            padding: 0 40px;
+            pointer-events: none;
+            background: none;
+            border: none;
             z-index: 100;
         }
 
+        .footer-nav>* {
+            pointer-events: auto;
+        }
+
         .btn-nav {
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius-md);
+            padding: 12px 24px;
+            border-radius: 50px;
             cursor: pointer;
-            font-weight: 500;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         .btn-nav-prev {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            color: var(--text-primary);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--app-text-strong);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .btn-nav-prev:hover {
-            border-color: var(--color-primary);
-            color: var(--color-primary);
-            transform: translateX(-2px);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
 
         .btn-nav-next {
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white;
             border: none;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
         }
 
         .btn-nav-next:hover:not(:disabled) {
-            transform: translateY(-2px) translateX(2px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(16, 185, 129, 0.5);
         }
 
-        [data-theme="dark"] .footer-nav {
-            background: rgba(30, 41, 59, 0.8);
-            border-color: rgba(71, 85, 105, 0.5);
+        [data-theme="dark"] .btn-nav-prev {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e4e4e7;
         }
+
+        [data-theme="dark"] .btn-nav-prev:hover {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -712,7 +723,7 @@
             <div class="header-left">
                 <div class="logo">
                     <span class="logo-text">KPSUR AGENT</span>
-                    <span class="logo-subtitle">ACUZEN AI | v.0.1.2.</span>
+                    <span class="logo-subtitle">ACUZEN AI | v.0.8.13.</span>
                 </div>
                 <span class="deployment-badge test">테스트</span>
             </div>
@@ -727,12 +738,31 @@
             </div>
 
             <div class="header-right">
-                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드"
+                    aria-label="대시보드로 이동">
+                    <svg class="mono-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
                 </button>
-                <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환" aria-label="다크모드 전환">
+                    <svg class="mono-icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="mono-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -898,6 +928,36 @@
                                         <input type="text" class="form-input" id="submitter" placeholder="예: 36개월"
                                             required>
                                         <div class="form-help">의약품 유효기간</div>
+                                    </div>
+                                </div>
+
+                                <!-- 추가 필드 Row -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            MedDRA 버전 (CS24)
+                                        </label>
+                                        <input type="text" class="form-input" id="meddra_version" placeholder="예: 27.1">
+                                        <div class="form-help">사용할 MedDRA 버전 번호</div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            원시자료 신청일 (CS31)
+                                        </label>
+                                        <input type="date" class="form-input" id="raw_data_request_date">
+                                        <div class="form-help">원시자료 신청 날짜</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row full">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            문헌검색 DB (CS53)
+                                        </label>
+                                        <input type="text" class="form-input" id="literature_db"
+                                            placeholder="예: PubMed, Embase, MEDLINE, Cochrane Library">
+                                        <div class="form-help">문헌 검색에 사용한 데이터베이스 (쉼표로 구분)</div>
                                     </div>
                                 </div>
                             </div>
@@ -1344,7 +1404,11 @@
                     author_position: document.getElementById('author_position').value,
                     report_period: document.getElementById('report_period').value,
                     submitter: document.getElementById('submitter').value,
-                    description: document.getElementById('report_description').value
+                    description: document.getElementById('report_description').value,
+                    // 추가 필드
+                    meddra_version: document.getElementById('meddra_version')?.value || '',
+                    raw_data_request_date: document.getElementById('raw_data_request_date')?.value || '',
+                    literature_db: document.getElementById('literature_db')?.value || ''
                 };
 
                 showLLMLoading('새 보고서를 생성하고 있습니다...');
@@ -1388,9 +1452,13 @@
                     CS4_보고종료날짜: cs4Value,
                     CS5_국내허가일자: selectedDrug.approval_date,
                     CS6_보고서제출일: formData.first_approval_date,
-                    CS7_최초허가국: formData.first_approval_country,
-                    CS13_제출자: formData.submitter,
+                    CS7_버전넘버: formData.first_approval_country,
+                    CS13_유효기간: formData.submitter,
                     CS24_보고주기: formData.report_period,
+                    // 추가 필드 (MedDRA버전, 원시자료신청일, 문헌DB)
+                    CS24_MedDRA버전넘버: formData.meddra_version || '',
+                    CS31_원시자료신청일: formData.raw_data_request_date || '',
+                    CS53_문헌DB: formData.literature_db || '',
                     CS15_효능효과: selectedDrug.efficacy,
                     CS16_용법용량: selectedDrug.dosage,
                     // 메타 정보

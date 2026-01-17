@@ -930,8 +930,18 @@
             }));
         });
 
-        // current_report 업데이트
-        const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+        // current_report 업데이트 (JSON 객체 또는 UUID 문자열 모두 안전하게 처리)
+        let currentReport = {};
+        const storedReport = localStorage.getItem('current_report');
+        if (storedReport) {
+            try {
+                const parsed = JSON.parse(storedReport);
+                currentReport = (typeof parsed === 'object' && parsed !== null) ? parsed : { reportId: storedReport };
+            } catch (parseError) {
+                console.log('[saveLocalData] current_report가 UUID 문자열, 객체로 변환:', storedReport);
+                currentReport = { reportId: storedReport };
+            }
+        }
         currentReport.user_inputs = currentReport.user_inputs || {};
         currentReport.user_inputs.uploadedFiles = uploadedFilesData;
         currentReport.user_inputs.convertedMarkdowns = convertedMarkdowns;

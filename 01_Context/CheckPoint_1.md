@@ -1,0 +1,1 @@
+- '/Users/cjlee/Documents/진행중/ACUZEN/02_KSUR_v6/01_Context/DataExtractFromExcel.txt'에서 정의한 데이터가 모두 추출 되었는가?

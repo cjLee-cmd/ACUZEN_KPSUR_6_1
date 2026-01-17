@@ -22,8 +22,17 @@ const PAGE_STAGE_MAP = {
  */
 async function saveReportProgress(stage) {
     try {
-        // 현재 보고서 정보 가져오기
-        const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+        // 현재 보고서 정보 가져오기 (JSON 객체 또는 UUID 문자열 모두 안전하게 처리)
+        let currentReport = {};
+        const storedReport = localStorage.getItem('current_report');
+        if (storedReport) {
+            try {
+                const parsed = JSON.parse(storedReport);
+                currentReport = (typeof parsed === 'object' && parsed !== null) ? parsed : { reportId: storedReport };
+            } catch (parseError) {
+                currentReport = { reportId: storedReport };
+            }
+        }
         const reportId = currentReport.reportId || getUrlParam('reportId');
 
         if (!reportId || reportId.startsWith('local_')) {

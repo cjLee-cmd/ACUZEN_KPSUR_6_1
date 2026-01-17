@@ -31,6 +31,10 @@
             this.ph = window.extractPH;
             this.tables = window.extractTables;
 
+            // 신규 모듈 참조
+            this.exampleLoader = window.exampleLoader;
+            this.formatValidator = window.formatValidator;
+
             // 서브모듈에 base 주입
             if (this.cs && this.base) this.cs.base = this.base;
             if (this.ph && this.base) this.ph.base = this.base;
@@ -109,6 +113,116 @@
 
             console.log('[DataExtractor] Full extraction complete');
             return this.getExtractedData();
+        }
+
+        // ==========================================
+        // Example-Enhanced Extraction Methods
+        // ==========================================
+
+        /**
+         * 예시를 참고하여 데이터 추출 (권장)
+         * @param {string} markdownContent - 마크다운 콘텐츠
+         * @param {string} rawId - 원본 문서 ID
+         * @param {object} dataDefinitions - 추출할 데이터 정의
+         * @param {string[]} variableIds - 예시를 로드할 변수 ID 목록
+         */
+        async extractWithExamples(markdownContent, rawId, dataDefinitions, variableIds = []) {
+            if (this.base && this.base.extractFromMarkdownWithExamples) {
+                return await this.base.extractFromMarkdownWithExamples(
+                    markdownContent,
+                    rawId,
+                    dataDefinitions,
+                    variableIds
+                );
+            }
+            // Fallback: 예시 없이 추출
+            console.warn('[DataExtractor] extractFromMarkdownWithExamples not available, falling back');
+            return await this.extractFromMarkdown(markdownContent, rawId, dataDefinitions);
+        }
+
+        /**
+         * 예시 로더 초기화
+         */
+        async initializeExampleLoader() {
+            if (this.exampleLoader) {
+                return await this.exampleLoader.initialize();
+            }
+            console.warn('[DataExtractor] ExampleLoader not available');
+            return false;
+        }
+
+        /**
+         * 특정 변수의 예시 로드
+         */
+        async loadExamples(variableId) {
+            if (this.exampleLoader) {
+                return await this.exampleLoader.loadExamples(variableId);
+            }
+            return [];
+        }
+
+        /**
+         * 예시 형식화 (프롬프트용)
+         */
+        async formatExamplesForPrompt(variableId, maxExamples = 2) {
+            if (this.exampleLoader) {
+                return await this.exampleLoader.formatExamplesForPrompt(variableId, maxExamples);
+            }
+            return '';
+        }
+
+        /**
+         * 변수 ID에 예시가 있는지 확인
+         */
+        async hasExamples(variableId) {
+            if (this.exampleLoader) {
+                return await this.exampleLoader.hasExamples(variableId);
+            }
+            return false;
+        }
+
+        /**
+         * 사용 가능한 예시 변수 ID 목록
+         */
+        async getAvailableExampleVariables() {
+            if (this.exampleLoader) {
+                return await this.exampleLoader.getAvailableVariableIds();
+            }
+            return [];
+        }
+
+        // ==========================================
+        // Format Validation Methods
+        // ==========================================
+
+        /**
+         * 테이블 형식 검증
+         */
+        validateTableFormat(content, options = {}) {
+            if (this.formatValidator) {
+                return this.formatValidator.validateTableFormat(content, options);
+            }
+            return { valid: true, errors: [], warnings: [] };
+        }
+
+        /**
+         * PH (서술문) 형식 검증
+         */
+        validatePHFormat(content, options = {}) {
+            if (this.formatValidator) {
+                return this.formatValidator.validatePHFormat(content, options);
+            }
+            return { valid: true, errors: [], warnings: [] };
+        }
+
+        /**
+         * 예시와 비교 검증
+         */
+        async compareWithExample(content, variableId) {
+            if (this.formatValidator) {
+                return await this.formatValidator.compareWithExample(content, variableId);
+            }
+            return { match: true, similarity: 100, differences: [] };
         }
 
         // ==========================================
@@ -346,10 +460,23 @@
             base: window.extractBase,
             cs: window.extractCS,
             ph: window.extractPH,
-            tables: window.extractTables
+            tables: window.extractTables,
+            // 신규 모듈
+            exampleLoader: window.exampleLoader,
+            formatValidator: window.formatValidator
         };
 
+        // 신규 모듈 로드 상태 확인
+        const newModules = ['exampleLoader', 'formatValidator'];
+        const loadedNewModules = newModules.filter(mod => window[mod]);
+        if (loadedNewModules.length < newModules.length) {
+            const missing = newModules.filter(mod => !window[mod]);
+            console.warn('⚠️ Some new modules not loaded:', missing.join(', '));
+        }
+
         console.log('✅ Extract modules loaded and integrated');
+        console.log(`   - Base modules: extractBase, extractCS, extractPH, extractTables`);
+        console.log(`   - New modules: ${loadedNewModules.join(', ') || 'none'}`);
     }
 
 })();

@@ -454,6 +454,112 @@ const PSURGenerator = {
     },
 
     /**
+     * ExampleLoader를 사용하여 출력 예시 로드 (신규)
+     * 01_OutputExample_toMD_ 폴더의 예시를 동적으로 로드
+     * @param {string[]} variableIds - 로드할 변수 ID 목록 (선택)
+     * @returns {Promise<string>} 형식화된 예시 문자열
+     */
+    async loadOutputExamples(variableIds = null) {
+        const exampleLoader = window.exampleLoader;
+        if (!exampleLoader) {
+            console.warn('[PSURGenerator] ExampleLoader not available');
+            return '';
+        }
+
+        try {
+            // ExampleLoader 초기화
+            await exampleLoader.initialize();
+
+            // 변수 ID가 지정되지 않은 경우 사용 가능한 모든 변수 ID 사용
+            const targetIds = variableIds || await exampleLoader.getAvailableVariableIds();
+
+            if (targetIds.length === 0) {
+                console.log('[PSURGenerator] No output examples available');
+                return '';
+            }
+
+            console.log(`[PSURGenerator] Loading ${targetIds.length} output examples...`);
+
+            let combined = `\n## 출력 형식 예시 (01_OutputExample_toMD_)\n\n`;
+            combined += `아래는 각 데이터 유형의 올바른 출력 형식입니다. 이 형식을 정확히 따라주세요.\n\n`;
+
+            // 최대 10개까지만 로드 (토큰 효율성)
+            const limitedIds = targetIds.slice(0, 10);
+
+            for (const varId of limitedIds) {
+                const formatted = await exampleLoader.formatExamplesForPrompt(varId, 1);
+                if (formatted) {
+                    combined += formatted + '\n';
+                }
+            }
+
+            console.log(`[PSURGenerator] Output examples loaded: ${combined.length} chars`);
+            return combined;
+
+        } catch (error) {
+            console.error('[PSURGenerator] Failed to load output examples:', error);
+            return '';
+        }
+    },
+
+    /**
+     * 특정 섹션에 관련된 출력 예시 로드
+     * @param {string} sectionId - 섹션 ID (00-14)
+     * @returns {Promise<string>} 해당 섹션 관련 예시
+     */
+    async loadSectionOutputExamples(sectionId) {
+        const exampleLoader = window.exampleLoader;
+        if (!exampleLoader) {
+            return '';
+        }
+
+        // 섹션별 관련 변수 ID 매핑
+        const SECTION_VARIABLE_MAP = {
+            '02': ['CS12_약어표'],
+            '04': ['CS17_전세계허가현황표'],
+            '06': ['CS56_별첨2참고정보변경표'],
+            '07': ['표2_연도별판매량', '표3_연평균환자노출', 'CS18_임상노출'],
+            '08': ['PH6_개별증례분석문', '표5_신속보고내역', '표6_정기보고내역', '표7_원시자료내역', '표9_SOC별건수'],
+            '09': ['PH10_유효성관련정보'],
+            '10': ['PH9_문헌에발표된안전성'],
+            '11': ['표8_모든이상사례건수'],
+            '13': ['CS57_참고문헌리스트'],
+            '14': ['CS58_별첨1허가사항', 'CS59_별첨3일람표']
+        };
+
+        const relatedVarIds = SECTION_VARIABLE_MAP[sectionId];
+        if (!relatedVarIds || relatedVarIds.length === 0) {
+            return '';
+        }
+
+        try {
+            await exampleLoader.initialize();
+
+            let combined = '';
+            for (const varId of relatedVarIds) {
+                // 부분 매칭 시도 (변수 ID 패턴으로 검색)
+                const availableIds = await exampleLoader.getAvailableVariableIds();
+                const matchingIds = availableIds.filter(id =>
+                    id.startsWith(varId) || id.includes(varId)
+                );
+
+                for (const matchId of matchingIds.slice(0, 2)) {
+                    const formatted = await exampleLoader.formatExamplesForPrompt(matchId, 1);
+                    if (formatted) {
+                        combined += formatted + '\n';
+                    }
+                }
+            }
+
+            return combined;
+
+        } catch (error) {
+            console.error(`[PSURGenerator] Failed to load examples for section ${sectionId}:`, error);
+            return '';
+        }
+    },
+
+    /**
      * 모든 템플릿을 하나의 문자열로 결합
      */
     combineTemplates() {

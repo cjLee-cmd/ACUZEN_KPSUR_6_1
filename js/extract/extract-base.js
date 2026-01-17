@@ -155,6 +155,143 @@ JSON 형식으로 추출된 데이터를 반환하세요. 데이터가 없는 �
         }
 
         /**
+         * 예시를 포함한 추출 프롬프트 빌드
+         * @param {string} markdownContent - 원본 마크다운 콘텐츠
+         * @param {object} dataDefinitions - 추출할 데이터 정의
+         * @param {string} rawId - 원본 문서 ID
+         * @param {string} exampleContent - 예시 콘텐츠 (formatExamplesForPrompt 결과)
+         */
+        buildExtractionPromptWithExamples(markdownContent, dataDefinitions, rawId, exampleContent = '') {
+            let prompt = `마크다운 문서에서 지정된 데이터를 추출하세요.
+
+## 원본 문서 (${rawId})
+${markdownContent.substring(0, 25000)}
+
+## 추출할 데이터 정의
+${JSON.stringify(dataDefinitions, null, 2)}
+`;
+
+            // 예시가 있으면 추가
+            if (exampleContent && exampleContent.trim()) {
+                prompt += `
+${exampleContent}
+
+## 중요: 출력 형식 지침
+- 위의 예시 형식을 **정확히** 따르세요.
+- 표인 경우: 마크다운 테이블 형식을 유지하고, 헤더와 열 구조를 예시와 동일하게 작성하세요.
+- 서술문인 경우: 예시의 문체, 불릿 포인트, 번호 목록 구조를 따르세요.
+`;
+            }
+
+            prompt += `
+## 출력 형식
+JSON 형식으로 추출된 데이터를 반환하세요. 데이터가 없는 경우 "DATA_NOT_FOUND"를 사용하세요.
+
+\`\`\`json
+{
+  "변수명1": "추출된 값",
+  "변수명2": "추출된 값"
+}
+\`\`\``;
+
+            return prompt;
+        }
+
+        /**
+         * 예시를 참고하여 마크다운에서 데이터 추출
+         * @param {string} markdownContent - 원본 마크다운 콘텐츠
+         * @param {string} rawId - 원본 문서 ID
+         * @param {object} dataDefinitions - 추출할 데이터 정의
+         * @param {string[]} variableIds - 예시를 로드할 변수 ID 목록 (선택)
+         */
+        async extractFromMarkdownWithExamples(markdownContent, rawId, dataDefinitions, variableIds = []) {
+            console.log(`[ExtractBase] Extracting data with examples from RAW ID: ${rawId}`);
+
+            const llmClient = window.llmClient || window.multiLLMClient;
+            if (!llmClient) {
+                console.warn('[ExtractBase] LLM client not available');
+                return { success: false, error: 'LLM client not available' };
+            }
+
+            try {
+                // 예시 콘텐츠 로드
+                let exampleContent = '';
+                const exampleLoader = window.exampleLoader;
+
+                if (exampleLoader && variableIds.length > 0) {
+                    // 변수 ID별로 예시 로드
+                    const exampleParts = [];
+                    for (const varId of variableIds.slice(0, 3)) { // 최대 3개 변수
+                        const formatted = await exampleLoader.formatExamplesForPrompt(varId, 1);
+                        if (formatted) {
+                            exampleParts.push(formatted);
+                        }
+                    }
+                    exampleContent = exampleParts.join('\n');
+                }
+
+                // 프롬프트 생성
+                const prompt = this.buildExtractionPromptWithExamples(
+                    markdownContent,
+                    dataDefinitions,
+                    rawId,
+                    exampleContent
+                );
+
+                // LLM 호출
+                let result;
+                if (llmClient.generate) {
+                    result = await llmClient.generate(prompt, { provider: 'google' });
+                } else {
+                    throw new Error('No suitable LLM method available');
+                }
+
+                if (result.success) {
+                    const extractedData = this.parseJSONFromResponse(result.text);
+
+                    if (!extractedData) {
+                        throw new Error('JSON 형식을 찾을 수 없습니다.');
+                    }
+
+                    // 추출 이력 저장
+                    this.extractionHistory.push({
+                        rawId: rawId,
+                        extractedAt: DateHelper.formatISO(),
+                        duration: result.duration,
+                        model: result.model,
+                        data: extractedData,
+                        success: true,
+                        withExamples: variableIds.length > 0
+                    });
+
+                    console.log(`[ExtractBase] Data extracted with examples from ${rawId} (${result.duration}s)`);
+
+                    return {
+                        success: true,
+                        data: extractedData
+                    };
+                }
+
+                throw new Error(result.error || '추출 실패');
+
+            } catch (error) {
+                console.error(`[ExtractBase] Extraction with examples failed (${rawId}):`, error.message);
+
+                this.extractionHistory.push({
+                    rawId: rawId,
+                    extractedAt: DateHelper.formatISO(),
+                    error: error.message,
+                    success: false
+                });
+
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        /**
          * 추출된 데이터 병합
          */
         mergeExtractedData(newData, dataType = 'CS') {

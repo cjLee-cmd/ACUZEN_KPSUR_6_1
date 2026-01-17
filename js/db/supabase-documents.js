@@ -232,11 +232,8 @@
             try {
                 const { data, error } = await this.core.client
                     .from('markdown_documents')
-                    .select(`
-                        *,
-                        source_documents!inner(report_id, file_name, raw_id)
-                    `)
-                    .eq('source_documents.report_id', reportId);
+                    .select('*')
+                    .eq('report_id', reportId);
 
                 if (error) throw error;
 
@@ -245,6 +242,51 @@
 
             } catch (error) {
                 console.error('❌ Get markdown documents by report failed:', error.message);
+                return { success: false, error: error.message };
+            }
+        }
+
+        /**
+         * 마크다운 문서 일괄 저장 (P14용)
+         * @param {string} reportId - 보고서 UUID
+         * @param {Array} markdowns - [{fileName, rawId, content, convertedBy}]
+         */
+        async bulkSaveMarkdownDocuments(reportId, markdowns) {
+            await this.core.init();
+
+            try {
+                // 기존 마크다운 삭제 (덮어쓰기)
+                await this.core.client
+                    .from('markdown_documents')
+                    .delete()
+                    .eq('report_id', reportId);
+
+                if (!markdowns || markdowns.length === 0) {
+                    console.log('⚠️ No markdowns to save');
+                    return { success: true, count: 0 };
+                }
+
+                const mdDocs = markdowns.map(md => ({
+                    report_id: reportId,
+                    source_document_id: md.sourceDocId || null,
+                    raw_id: md.rawId || 'unknown',
+                    markdown_content: md.content,
+                    file_path: md.fileName || null,
+                    converted_by: md.convertedBy || 'gemini-flash'
+                }));
+
+                const { data, error } = await this.core.client
+                    .from('markdown_documents')
+                    .insert(mdDocs)
+                    .select();
+
+                if (error) throw error;
+
+                console.log(`✅ Bulk saved ${data.length} markdown documents for report ${reportId}`);
+                return { success: true, count: data.length, documents: data };
+
+            } catch (error) {
+                console.error('❌ Bulk save markdown documents failed:', error.message);
                 return { success: false, error: error.message };
             }
         }

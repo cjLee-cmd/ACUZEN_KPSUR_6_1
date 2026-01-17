@@ -1011,7 +1011,7 @@
             <div class="header-left">
                 <div class="logo">
                     <span class="logo-text">KPSUR AGENT</span>
-                    <span class="logo-subtitle">ACUZEN AI | v.0.1.2.</span>
+                    <span class="logo-subtitle">ACUZEN AI | v.0.8.13.</span>
                 </div>
                 <span class="deployment-badge test">테스트</span>
             </div>
@@ -1264,13 +1264,18 @@
 
         // 초기화
         document.addEventListener('DOMContentLoaded', async function() {
-            // reportId 유효성 검사 - 없거나 local_로 시작하면 P13으로 리다이렉트
+            // reportId 유효성 검사 - 없으면 P13으로 리다이렉트 (local_도 허용)
             const reportId = getReportId();
-            if (!reportId || reportId.startsWith('local_')) {
+            if (!reportId) {
                 console.warn('[P15] 유효한 reportId 없음 - P13으로 이동');
                 alert('보고서를 먼저 생성해주세요.\n(P13 새 보고서 생성 페이지로 이동합니다)');
                 window.location.href = 'P13_NewReport.html';
                 return;
+            }
+
+            // local_ ID 감지 시 경고 (허용하지만 로그 기록)
+            if (reportId.startsWith('local_')) {
+                console.warn('[P15] local_ reportId 사용 중 - DB 저장 안됨:', reportId);
             }
 
             initDarkMode();
@@ -1841,9 +1846,18 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
         async function updateCurrentStage(targetReportId, stage) {
             if (!targetReportId) return;
 
-            // localStorage 캐시 업데이트
+            // localStorage 캐시 업데이트 (JSON 객체 또는 UUID 문자열 모두 안전하게 처리)
             try {
-                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+                let currentReport = {};
+                const storedReport = localStorage.getItem('current_report');
+                if (storedReport) {
+                    try {
+                        const parsed = JSON.parse(storedReport);
+                        currentReport = (typeof parsed === 'object' && parsed !== null) ? parsed : { reportId: storedReport };
+                    } catch (parseError) {
+                        currentReport = { reportId: storedReport };
+                    }
+                }
                 currentReport.current_stage = stage;
                 currentReport.updated_at = new Date().toISOString();
                 localStorage.setItem('current_report', JSON.stringify(currentReport));
@@ -1874,7 +1888,7 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
         // 마크다운 파일 모달 관련 함수
         // ========================================
 
-        // 마크다운 파일 로드 (DB Only)
+        // 마크다운 파일 로드 (DB Primary, localStorage Fallback)
         async function loadMarkdownFiles() {
             const reportId = getReportId();
 
@@ -1884,16 +1898,23 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             }
 
             // DB에서 로드 (Primary)
-            if (window.supabaseClient) {
+            if (window.supabaseClient || window.supabaseDocuments) {
                 try {
                     console.log('[P15] DB에서 마크다운 파일 로드 중...', reportId);
-                    const result = await window.supabaseClient.getMarkdownDocumentsByReport(reportId);
 
-                    if (result.success && result.documents && result.documents.length > 0) {
+                    // supabaseDocuments 우선, supabaseClient fallback
+                    let result;
+                    if (window.supabaseDocuments && typeof window.supabaseDocuments.getMarkdownDocumentsByReport === 'function') {
+                        result = await window.supabaseDocuments.getMarkdownDocumentsByReport(reportId);
+                    } else if (window.supabaseClient && typeof window.supabaseClient.getMarkdownDocumentsByReport === 'function') {
+                        result = await window.supabaseClient.getMarkdownDocumentsByReport(reportId);
+                    }
+
+                    if (result && result.success && result.documents && result.documents.length > 0) {
                         convertedFiles = result.documents.map(doc => ({
-                            fileName: doc.source_documents?.file_name || doc.file_name || 'unknown',
+                            fileName: doc.file_path || doc.source_documents?.file_name || doc.file_name || 'unknown',
                             content: doc.markdown_content || doc.content || '',
-                            rawId: doc.source_documents?.raw_id || doc.raw_id || 'N/A',
+                            rawId: doc.raw_id || doc.source_documents?.raw_id || 'N/A',
                             sourceDocId: doc.source_document_id,
                             fromDB: true
                         }));
@@ -1902,16 +1923,41 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
                         console.log(`✅ [P15] DB에서 마크다운 파일 ${convertedFiles.length}개 로드됨`);
                         return;
                     } else {
-                        console.warn('[P15] DB에 마크다운 파일 없음 - P14에서 처리가 완료되었는지 확인하세요');
+                        console.warn('[P15] DB에 마크다운 파일 없음 - localStorage fallback 시도');
                     }
                 } catch (error) {
                     console.error('[P15] DB 로드 실패:', error);
                 }
             }
 
-            // DB 로드 실패 시 빈 배열
+            // localStorage Fallback (기존 세션 호환)
+            try {
+                const storedMarkdowns = localStorage.getItem('convertedMarkdowns');
+                if (storedMarkdowns) {
+                    const markdownObj = JSON.parse(storedMarkdowns);
+                    const fileNames = Object.keys(markdownObj);
+
+                    if (fileNames.length > 0) {
+                        convertedFiles = fileNames.map(fileName => ({
+                            fileName: fileName,
+                            content: markdownObj[fileName] || '',
+                            rawId: extractRawId(fileName),
+                            fromLocalStorage: true
+                        }));
+
+                        document.getElementById('convertedFileCount').textContent = convertedFiles.length;
+                        console.log(`✅ [P15] localStorage에서 마크다운 파일 ${convertedFiles.length}개 로드됨`);
+                        return;
+                    }
+                }
+            } catch (lsError) {
+                console.error('[P15] localStorage 로드 실패:', lsError);
+            }
+
+            // 모든 로드 실패 시 빈 배열
             convertedFiles = [];
             document.getElementById('convertedFileCount').textContent = 0;
+            console.warn('[P15] 마크다운 파일 없음 - P14에서 처리를 완료해주세요');
         }
 
         // RAW ID 추출 (파일명에서)
@@ -2072,7 +2118,7 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             document.getElementById('extractedDataModal').classList.add('show');
         }
 
-        // DB에서 데이터 로드 (Primary Source)
+        // DB에서 데이터 로드 (Primary Source, localStorage Fallback)
         async function loadExtractedData() {
             const reportId = getReportId();
 
@@ -2094,7 +2140,7 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
                         updateDataCount();
                         return;
                     } else {
-                        console.warn('[P15] DB에 데이터 없음 - P14에서 처리가 완료되었는지 확인하세요');
+                        console.warn('[P15] DB에 데이터 없음 - localStorage fallback 시도');
                     }
                 } catch (error) {
                     console.error('[P15] DB 로드 실패:', error);
@@ -2103,9 +2149,26 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
                 console.warn('[P15] supabaseClient 없음');
             }
 
-            // DB 로드 실패 시 - 빈 배열 (localStorage 폴백 제거)
+            // localStorage Fallback (기존 세션 호환)
+            try {
+                const storedData = localStorage.getItem('extractedData');
+                if (storedData) {
+                    const parsedData = JSON.parse(storedData);
+                    extractedDataItems = convertLocalStorageToArray(parsedData);
+                    if (extractedDataItems.length > 0) {
+                        console.log('[P15] ✅ localStorage에서 로드 완료:', extractedDataItems.length, '개 항목');
+                        updateDataCount();
+                        return;
+                    }
+                }
+            } catch (lsError) {
+                console.error('[P15] localStorage 로드 실패:', lsError);
+            }
+
+            // 모든 로드 실패 시 빈 배열
             extractedDataItems = [];
             updateDataCount();
+            console.warn('[P15] CS/PH/Table 데이터 없음 - P14에서 처리를 완료해주세요');
         }
 
         // localStorage 형식을 배열로 변환

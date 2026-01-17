@@ -392,8 +392,17 @@
             if (result.success) {
                 console.log(`[P15] Stage ${stage}로 업데이트됨`);
 
-                // localStorage의 current_report도 업데이트
-                const currentReport = JSON.parse(localStorage.getItem('current_report') || '{}');
+                // localStorage의 current_report도 업데이트 (JSON 객체 또는 UUID 문자열 모두 안전하게 처리)
+                let currentReport = {};
+                const storedReport = localStorage.getItem('current_report');
+                if (storedReport) {
+                    try {
+                        const parsed = JSON.parse(storedReport);
+                        currentReport = (typeof parsed === 'object' && parsed !== null) ? parsed : { reportId: storedReport };
+                    } catch (parseError) {
+                        currentReport = { reportId: storedReport };
+                    }
+                }
                 currentReport.current_stage = stage;
                 localStorage.setItem('current_report', JSON.stringify(currentReport));
             } else {
