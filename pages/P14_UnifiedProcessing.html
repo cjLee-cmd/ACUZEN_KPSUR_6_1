@@ -2414,41 +2414,37 @@
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 const modalBg = isDark ? '#1e1e1e' : 'white';
                 const modalBorder = isDark ? '#333' : '#e0e0e0';
-                const warnBg = isDark ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0';
                 const errorBg = isDark ? 'rgba(244, 67, 54, 0.15)' : '#ffebee';
                 const textMuted = isDark ? '#aaa' : '#666';
 
                 const html = `
                     <div class="modal-overlay" id="fileCountWarningModal" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999;">
                         <div class="modal-content" style="background: ${modalBg}; padding: 30px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid ${modalBorder};">
-                            <h2 style="color: #ff9800; margin-bottom: 20px;">⚠️ 파일 수 부족 경고</h2>
-                            <div style="background: ${warnBg}; padding: 15px; border-left: 4px solid #ff9800; margin-bottom: 15px; border-radius: 4px;">
+                            <h2 style="color: #f44336; margin-bottom: 20px;">⛔ 필수 파일 부족</h2>
+                            <div style="background: ${errorBg}; padding: 15px; border-left: 4px solid #f44336; margin-bottom: 15px; border-radius: 4px;">
                                 <p style="margin: 0 0 10px 0;">
-                                    <strong>일부 Step의 파일 수가 필수 요구사항에 미달합니다.</strong>
+                                    <strong>필수 파일이 모두 업로드되지 않았습니다.</strong>
                                 </p>
                                 <p style="margin: 0; color: ${textMuted}; font-size: 14px;">
-                                    필수 파일이 누락되면 데이터 추출이 불완전할 수 있습니다.<br>
-                                    가능하면 필요한 파일을 모두 업로드 후 진행하세요.
+                                    모든 필수 파일을 업로드해야 진행할 수 있습니다.<br>
+                                    아래 누락된 파일을 확인하고 추가로 업로드해 주세요.
                                 </p>
                             </div>
                             <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
                                 <strong style="color: #ef5350;">현재 상태:</strong>
-                                <p style="margin: 10px 0; font-size: 18px; font-weight: bold;">
+                                <p style="margin: 10px 0; font-size: 18px; font-weight: bold; color: #f44336;">
                                     총 ${totalUploaded}개 / 필수 ${requiredTotal}개
                                 </p>
                             </div>
-                            <div style="background: ${warnBg}; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                                <strong style="color: #e65100;">Step별 미달 현황:</strong>
+                            <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                                <strong style="color: #ef5350;">Step별 미달 현황:</strong>
                                 <ul style="margin: 10px 0 0 0; padding-left: 20px;">
                                     ${issueList}
                                 </ul>
                             </div>
-                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                <button id="fileCountProceedBtn" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                    그래도 진행
-                                </button>
-                                <button id="fileCountCancelBtn" style="padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                                    파일 추가 후 진행
+                            <div style="display: flex; justify-content: center;">
+                                <button id="fileCountCancelBtn" style="padding: 12px 30px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;">
+                                    확인 (파일 추가 업로드)
                                 </button>
                             </div>
                         </div>
@@ -2457,16 +2453,10 @@
 
                 document.body.insertAdjacentHTML('beforeend', html);
 
-                document.getElementById('fileCountProceedBtn').onclick = () => {
-                    document.getElementById('fileCountWarningModal').remove();
-                    console.log('⚠️ 파일 수 미달 상태로 진행 선택');
-                    resolve(true);
-                };
-
                 document.getElementById('fileCountCancelBtn').onclick = () => {
                     document.getElementById('fileCountWarningModal').remove();
-                    console.log('📁 파일 추가 업로드를 위해 취소');
-                    resolve(false);
+                    console.log('⛔ 필수 파일 부족 - 파일 추가 업로드 필요');
+                    resolve(false);  // 항상 false 반환 - 진행 불가
                 };
             });
         }
