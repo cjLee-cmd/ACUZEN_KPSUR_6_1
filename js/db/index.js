@@ -36,18 +36,17 @@
 
             // 초기화 상태
             this.initialized = false;
-            this.client = null;
         }
 
         /**
          * 초기화 (Core에 위임)
          */
         async init() {
-            if (this.initialized) return this.client;
+            if (this.initialized) return this.core.getClient();
 
-            this.client = await this.core.init();
+            await this.core.init();
             this.initialized = true;
-            return this.client;
+            return this.core.getClient();
         }
 
         // ==========================================

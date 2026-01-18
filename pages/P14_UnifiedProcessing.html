@@ -1089,7 +1089,13 @@
     <script src="../js/utils/raw-id-detector.js"></script>
     <script src="../js/config.js"></script>
     <script src="../js/file-storage.js"></script>
-    <script src="../js/supabase-client.js"></script>
+    <!-- Supabase DB 모듈 (순서 중요) -->
+    <script src="../js/db/supabase-core.js"></script>
+    <script src="../js/db/supabase-auth.js"></script>
+    <script src="../js/db/supabase-reports.js"></script>
+    <script src="../js/db/supabase-documents.js"></script>
+    <script src="../js/db/supabase-llm.js"></script>
+    <script src="../js/db/index.js"></script>
     <script src="../js/auth.js"></script>
     <!-- Core Module (SEALED - DO NOT MODIFY without authorization) -->
     <script src="../js/core/markdown-transform-core.js"></script>
@@ -1109,6 +1115,8 @@
     <script src="../js/extract/format-validator.js"></script>
     <script src="../js/extract/index.js"></script>
     <!-- RAW ID 감지 모듈은 985행에서 이미 로드됨 (중복 제거) -->
+    <!-- PSUR Generator (섹션 DB 저장용) -->
+    <script src="../js/psur-generator.js"></script>
 
     <script>
         // ========================================
@@ -2606,7 +2614,11 @@
             const step2Files = allFiles.filter(f =>
                 f.zoneId === 'sponsored' || f.zoneId === 'iitnis'
             );
-            const step3FilesCount = step3Files.length;
+            // Line Listing 파일 수 계산 (Step 3에 포함)
+            const lineListingCount = Object.keys(uploadedFiles)
+                .filter(zone => zone.startsWith('lineListing_'))
+                .reduce((sum, zone) => sum + uploadedFiles[zone].length, 0);
+            const step3FilesCount = step3Files.length + lineListingCount;
 
             const REQUIRED_FILES = {
                 step1: 8,
@@ -3224,46 +3236,53 @@
                 }));
             });
 
-            // current_report 업데이트 (JSON 객체 또는 UUID 문자열 모두 안전하게 처리)
-            let currentReport = {};
-            const storedReport = localStorage.getItem('current_report');
-            if (storedReport) {
-                try {
-                    const parsed = JSON.parse(storedReport);
-                    // JSON 객체인 경우 사용, UUID 문자열인 경우 reportId만 설정
-                    currentReport = (typeof parsed === 'object' && parsed !== null) ? parsed : { reportId: storedReport };
-                } catch (e) {
-                    // JSON 파싱 실패 시 UUID 문자열로 간주
-                    console.log('[saveLocalData] current_report가 UUID 문자열, 객체로 변환:', storedReport);
-                    currentReport = { reportId: storedReport };
-                }
-            }
-            currentReport.user_inputs = currentReport.user_inputs || {};
-            currentReport.user_inputs.uploadedFiles = uploadedFilesData;
-            currentReport.user_inputs.convertedMarkdowns = convertedMarkdowns;
-            currentReport.user_inputs.stage2 = stage2Data;  // Stage 2 전체 상태 저장
-            localStorage.setItem('current_report', JSON.stringify(currentReport));
-
-            // DB에 저장 (reports.user_inputs 업데이트)
-            // reportId를 URL 또는 localStorage에서 가져오기 (일관성 확보)
+            // reportId 추출 (URL 우선, 없으면 localStorage)
+            // ⚠️ IMPORTANT: current_report는 UUID만 저장, user_inputs는 p14_state에 별도 저장
             let reportId = getUrlParam('reportId');
             if (!reportId) {
                 const storedReport = localStorage.getItem('current_report');
                 if (storedReport) {
-                    try {
-                        const parsed = JSON.parse(storedReport);
-                        reportId = (typeof parsed === 'object' && parsed !== null) ? parsed.reportId : storedReport;
-                    } catch (e) {
-                        // JSON 파싱 실패 시 UUID 문자열로 간주
+                    // UUID 패턴 체크 (36자, 하이픈 포함)
+                    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    if (uuidPattern.test(storedReport)) {
                         reportId = storedReport;
+                    } else {
+                        // JSON 객체인 경우 reportId 추출
+                        try {
+                            const parsed = JSON.parse(storedReport);
+                            reportId = parsed.reportId || null;
+                            console.log('[saveLocalData] JSON에서 reportId 추출:', reportId);
+                        } catch (e) {
+                            console.warn('[saveLocalData] current_report 파싱 실패:', e);
+                        }
                     }
                 }
             }
+            console.log('[saveLocalData] 최종 reportId:', reportId);
+
+            // p14_state에 user_inputs 저장 (current_report 오염 방지)
+            const p14State = {
+                reportId: reportId,
+                user_inputs: {
+                    uploadedFiles: uploadedFilesData,
+                    convertedMarkdowns: convertedMarkdowns,
+                    stage2: stage2Data
+                }
+            };
+            localStorage.setItem('p14_state', JSON.stringify(p14State));
+
+            // current_report는 UUID만 저장 (다른 페이지 호환용)
+            if (reportId) {
+                localStorage.setItem('current_report', reportId);
+                console.log('✅ current_report에 UUID만 저장:', reportId);
+            }
+
+            // DB에 저장 (reports.user_inputs 업데이트)
             console.log('[saveProcessingResults] reportId:', reportId);
             if (reportId && window.supabaseClient && typeof window.supabaseClient.updateReport === 'function') {
                 try {
                     await window.supabaseClient.updateReport(reportId, {
-                        user_inputs: currentReport.user_inputs,
+                        user_inputs: p14State.user_inputs,
                         current_stage: 2
                     });
                     console.log('✅ DB에 Stage 2 상태 저장 완료');

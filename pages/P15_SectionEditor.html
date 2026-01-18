@@ -1450,7 +1450,13 @@
     <script src="../utils/sidebar.js"></script>
     <script src="../utils/user-menu.js"></script>
     <script src="../js/config.js"></script>
-    <script src="../js/supabase-client.js"></script>
+    <!-- Supabase DB 모듈 (순서 중요) -->
+    <script src="../js/db/supabase-core.js"></script>
+    <script src="../js/db/supabase-auth.js"></script>
+    <script src="../js/db/supabase-reports.js"></script>
+    <script src="../js/db/supabase-documents.js"></script>
+    <script src="../js/db/supabase-llm.js"></script>
+    <script src="../js/db/index.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/permissions.js"></script>
     <script src="../js/page-guard.js"></script>
@@ -1754,7 +1760,7 @@
             }
 
             initDarkMode();
-            initEditor();
+            await initEditor();
             renderSectionList();
             updateSummary();
             await loadMarkdownFiles();
@@ -1808,7 +1814,7 @@
         }
 
         // Editor 초기화
-        function initEditor() {
+        async function initEditor() {
             editor = new window.SectionEditor();
 
             // reportId 가져와서 설정 (DB 저장용)
@@ -1818,7 +1824,7 @@
                 console.log('[P15] SectionEditor reportId 설정:', reportId);
             }
 
-            const loaded = editor.loadSections();
+            const loaded = await editor.loadSections();
 
             if (!loaded) {
                 showToast('생성된 섹션이 없습니다. 통합 처리를 먼저 실행하세요.', 'warning');
