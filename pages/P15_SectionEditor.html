@@ -148,6 +148,49 @@
         }
 
         /* ========================================
+           Tag Badge & File Type Badge
+           ======================================== */
+        .tag-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(31, 78, 140, 0.15);
+            color: var(--color-primary);
+            margin-right: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .file-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .file-type-badge.pdf {
+            background: rgba(239, 68, 68, 0.15);
+            color: #DC2626;
+        }
+
+        .file-type-badge.doc {
+            background: rgba(59, 130, 246, 0.15);
+            color: #2563EB;
+        }
+
+        .file-type-badge.xls {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+
+        /* ========================================
            Editor Area - Glass
            ======================================== */
         .editor-area {
@@ -292,12 +335,16 @@
         .editable-content h3 { font-size: 1.1rem; margin: 0.5rem 0; }
         .editable-content p { margin: 0.5rem 0; }
 
+        .editable-content .table-wrapper {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
         .editable-content table {
             border-collapse: collapse;
             width: 100%;
-            margin: 1rem 0;
+            min-width: 500px;
             border-radius: var(--radius-md);
-            overflow: hidden;
         }
 
         .editable-content th, .editable-content td {
@@ -1161,11 +1208,11 @@
 
             <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                    <span class="icon-sun">○</span>
+                    <span class="icon-moon">●</span>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -1174,7 +1221,7 @@
                         <div class="user-role">Author</div>
                         <div class="user-position"></div>
                     </div>
-                    <button class="user-menu-toggle" onclick="navigateTo('P10_Dashboard.html')">🏠</button>
+                    <button class="user-menu-toggle" onclick="navigateTo('P10_Dashboard.html')"><svg class="mono-icon icon-home" aria-hidden="true" focusable="false" style="width:14px;height:14px;"><use href="#icon-home"></use></svg></button>
                 </div>
             </div>
         </header>
@@ -1187,7 +1234,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>📑 섹션 목록</span>
+                    <span>섹션 목록</span>
                     <div class="summary-badge" id="summaryBadge">
                         <span class="badge badge-success">0 완료</span>
                         <span class="badge badge-warning">0 수정</span>
@@ -1197,17 +1244,17 @@
             <!-- 마크다운 파일 보기 버튼 -->
             <div style="padding: 0.75rem;">
                 <button class="converted-files-btn" onclick="openMarkdownFilesModal()">
-                    📄 마크다운화일 보기
+                    <span class="tag-badge">[MD]</span> 마크다운 파일
                     <span class="file-count" id="convertedFileCount">0</span>
                 </button>
                 <!-- CS/PH/Table 데이터 보기 버튼 -->
                 <button class="extracted-data-btn" onclick="openExtractedDataModal()">
-                    📊 CS/PH/Table 데이터 보기
+                    <span class="tag-badge">[DATA]</span> CS/PH/Table
                     <span class="data-count" id="extractedDataCount">0</span>
                 </button>
                 <!-- 라인리스팅 보기 버튼 -->
                 <button class="line-listing-btn" onclick="openLineListingModal()">
-                    📋 라인리스팅 보기
+                    <span class="tag-badge">[LL]</span> 라인리스팅
                     <span class="listing-count" id="lineListingCount">0</span>
                 </button>
             </div>
@@ -1221,16 +1268,15 @@
             <div class="editor-toolbar">
                 <div class="editor-title" id="editorTitle">섹션을 선택하세요</div>
                 <div class="editor-actions">
-                    <button class="btn btn-outline" onclick="resetSection()">↺ 초기화</button>
-                    <button class="btn btn-warning" id="regenerateBtn" onclick="regenerateSection()" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); display: none;">🔄 재생성</button>
-                    <button class="btn btn-primary" onclick="saveSection()">💾 저장</button>
+                    <button class="btn btn-outline" onclick="resetSection()">초기화</button>
+                    <button class="btn btn-warning" id="regenerateBtn" onclick="regenerateSection()" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); display: none;">재생성</button>
+                    <button class="btn btn-primary" onclick="saveSection()">저장</button>
                 </div>
             </div>
 
             <div class="split-view" id="splitView">
                 <!-- Empty State -->
                 <div class="empty-state" id="emptyState">
-                    <div class="empty-state-icon">📝</div>
                     <h3>섹션을 선택하세요</h3>
                     <p>왼쪽 목록에서 편집할 섹션을 선택합니다</p>
                 </div>
@@ -1238,7 +1284,7 @@
                 <!-- Split Panels (hidden initially) -->
                 <div class="split-panel" id="sourcePanel" style="display: none;">
                     <div class="panel-header">
-                        <span>📄 마크다운 소스</span>
+                        <span>SOURCE</span>
                         <button class="btn btn-outline" onclick="copySource()" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">복사</button>
                     </div>
                     <div class="panel-content">
@@ -1248,7 +1294,7 @@
 
                 <div class="split-panel" id="editorPanel" style="display: none;">
                     <div class="panel-header">
-                        <span>✏️ 편집 가능</span>
+                        <span>EDIT</span>
                         <span id="editStatus" style="font-size: 0.75rem; color: #64748B;">저장됨</span>
                     </div>
                     <div class="panel-content">
@@ -1286,7 +1332,7 @@
     <div class="modal-overlay" id="markdownFilesModal" onclick="closeMarkdownFilesModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h2>📄 마크다운 파일 목록</h2>
+                <h2>마크다운 파일 목록</h2>
                 <button class="modal-close" onclick="closeMarkdownFilesModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -1300,13 +1346,12 @@
                     <div class="file-preview-header">
                         <span class="file-preview-title" id="previewTitle">파일을 선택하세요</span>
                         <div class="file-preview-actions">
-                            <button class="btn btn-outline" onclick="copyFileContent()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">📋 복사</button>
-                            <button class="btn btn-outline" onclick="downloadFileContent()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">💾 다운로드</button>
+                            <button class="btn btn-outline" onclick="copyFileContent()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">복사</button>
+                            <button class="btn btn-outline" onclick="downloadFileContent()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">다운로드</button>
                         </div>
                     </div>
                     <div class="file-preview-content" id="filePreviewContent">
                         <div class="file-preview-empty">
-                            <div class="file-preview-empty-icon">📑</div>
                             <p>왼쪽 목록에서 파일을 선택하면<br>변환된 마크다운 내용을 확인할 수 있습니다</p>
                         </div>
                     </div>
@@ -1319,7 +1364,7 @@
     <div class="modal-overlay" id="extractedDataModal" onclick="closeExtractedDataModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h2>📊 추출된 데이터 (CS/PH/Table)</h2>
+                <h2>추출된 데이터 (CS/PH/Table)</h2>
                 <button class="modal-close" onclick="closeExtractedDataModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -1342,7 +1387,6 @@
                     </div>
                     <div class="data-preview-content" id="dataPreviewContent">
                         <div class="data-preview-empty">
-                            <div class="data-preview-empty-icon">📊</div>
                             <p>왼쪽 목록에서 데이터를 선택하면<br>추출된 값을 확인할 수 있습니다</p>
                         </div>
                     </div>
@@ -1355,7 +1399,7 @@
     <div class="modal-overlay" id="lineListingModal" onclick="closeLineListingModal(event)">
         <div class="modal-content" style="max-width: 1200px; width: 95%;" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h2>📋 라인리스팅 분석</h2>
+                <h2>라인리스팅 분석</h2>
                 <button class="modal-close" onclick="closeLineListingModal()">&times;</button>
             </div>
             <div class="modal-body" style="flex-direction: column;">
@@ -1390,7 +1434,6 @@
                 <!-- 테이블 컨텐츠 -->
                 <div class="line-listing-content" id="lineListingContent">
                     <div class="data-preview-empty">
-                        <div class="data-preview-empty-icon">📋</div>
                         <p>라인리스팅 데이터를 로드 중입니다...</p>
                     </div>
                 </div>
@@ -1790,15 +1833,15 @@
             sectionList.innerHTML = definitions.map(def => {
                 const section = editor.getSection(def.id);
                 const status = editor.getSectionStatus(def.id);
-                const statusIcon = status === 'edited' ? '✏️' :
+                const statusIcon = status === 'edited' ? 'E' :
                                    status === 'generated' ? '✓' :
-                                   status === 'failed' ? '✗' : '○';
+                                   status === 'failed' ? '✗' : '–';
 
                 // Check if section is incomplete (missing required data)
                 const isIncomplete = section?.content?.includes('필요한 소스 파일이 업로드되지 않았습니다') ||
                                      section?.content?.includes('[이 섹션은 생성되지 않았습니다]') ||
                                      section?.content?.includes('LLM 생성 실패');
-                const badge = isIncomplete ? '<span class="badge badge-warning" style="margin-left: 8px; font-size: 0.7rem;">⚠️ 데이터 부족</span>' : '';
+                const badge = isIncomplete ? '<span class="badge badge-warning" style="margin-left: 8px; font-size: 0.7rem;">(!) 데이터 부족</span>' : '';
 
                 return `
                     <div class="section-item ${currentSectionId === def.id ? 'active' : ''} ${isIncomplete ? 'incomplete' : ''}"
@@ -2045,7 +2088,7 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             const apiKey = localStorage.getItem('GOOGLE_API_KEY');
             if (!apiKey) {
                 const goToSettings = confirm(
-                    '⚠️ Google API 키가 설정되지 않았습니다.\n\n' +
+                    '[!] Google API 키가 설정되지 않았습니다.\n\n' +
                     '섹션 재생성을 위해 API 키가 필요합니다.\n' +
                     '설정 페이지로 이동하시겠습니까?'
                 );
@@ -2072,17 +2115,17 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             const regenerateBtn = document.getElementById('regenerateBtn');
             const originalText = regenerateBtn.textContent;
             regenerateBtn.disabled = true;
-            regenerateBtn.textContent = '⏳ 재생성 중...';
+            regenerateBtn.textContent = '재생성 중...';
 
             // 프로그레스 바 초기화 및 표시
             if (window.llmProgressBar) {
                 window.llmProgressBar.init({
                     title: `${sectionName} 재생성 중...`,
                     steps: [
-                        { id: 'session', name: '세션 연결', icon: '🔗' },
-                        { id: 'prompt', name: '프롬프트 로드', icon: '📄' },
-                        { id: 'llm', name: 'LLM 호출', icon: '🤖' },
-                        { id: 'save', name: '저장', icon: '💾' }
+                        { id: 'session', name: '세션 연결', icon: '1' },
+                        { id: 'prompt', name: '프롬프트 로드', icon: '2' },
+                        { id: 'llm', name: 'LLM 호출', icon: '3' },
+                        { id: 'save', name: '저장', icon: '4' }
                     ],
                     onCancel: () => {
                         showToast('재생성이 취소되었습니다', 'warning');
@@ -2193,17 +2236,17 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
 
                 if (window.llmProgressBar) {
                     window.llmProgressBar.completeStep('save');
-                    window.llmProgressBar.complete(`✅ ${sectionName} 재생성 완료!`);
+                    window.llmProgressBar.complete(`[완료] ${sectionName} 재생성 완료!`);
                 }
 
-                showToast(`✅ ${sectionName} 섹션이 재생성되었습니다!`, 'success');
+                showToast(`[완료] ${sectionName} 섹션이 재생성되었습니다!`, 'success');
 
             } catch (error) {
                 console.error('섹션 재생성 실패:', error);
                 if (window.llmProgressBar) {
-                    window.llmProgressBar.error(`❌ 재생성 실패: ${error.message}`);
+                    window.llmProgressBar.error(`[실패] 재생성 실패: ${error.message}`);
                 }
-                showToast(`❌ 재생성 실패: ${error.message}`, 'error');
+                showToast(`[실패] 재생성 실패: ${error.message}`, 'error');
             } finally {
                 regenerateBtn.disabled = false;
                 regenerateBtn.textContent = originalText;
@@ -2403,12 +2446,12 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
         function getFileIcon(fileName) {
             const ext = fileName.split('.').pop().toLowerCase();
             switch (ext) {
-                case 'pdf': return '📕';
+                case 'pdf': return '<span class="file-type-badge pdf">PDF</span>';
                 case 'docx':
-                case 'doc': return '📘';
+                case 'doc': return '<span class="file-type-badge doc">DOC</span>';
                 case 'xlsx':
-                case 'xls': return '📗';
-                default: return '📄';
+                case 'xls': return '<span class="file-type-badge xls">XLS</span>';
+                default: return '<span class="file-type-badge">FILE</span>';
             }
         }
 
@@ -2484,7 +2527,6 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             } else {
                 previewContent.innerHTML = `
                     <div class="file-preview-empty">
-                        <div class="file-preview-empty-icon">⚠️</div>
                         <p>파일 내용이 비어 있습니다</p>
                     </div>
                 `;
@@ -2652,14 +2694,20 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
 
             const filtered = extractedDataItems.filter(item =>
                 (item.data_type || item.type) === dataType
-            );
+            ).sort((a, b) => {
+                const aId = a.variable_id || a.key || '';
+                const bId = b.variable_id || b.key || '';
+                // 숫자 부분 추출 (CS0, PH1, 표2 등에서 숫자 추출)
+                const aNum = parseInt(aId.match(/\d+/)?.[0] || '0', 10);
+                const bNum = parseInt(bId.match(/\d+/)?.[0] || '0', 10);
+                return aNum - bNum;
+            });
 
             const listEl = document.getElementById('extractedDataList');
 
             if (filtered.length === 0) {
                 listEl.innerHTML = `
                     <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div>
                         <p>${dataType} 타입 데이터가 없습니다</p>
                     </div>
                 `;
@@ -2690,7 +2738,13 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             selectedDataIndex = index;
             const filtered = extractedDataItems.filter(item =>
                 (item.data_type || item.type) === dataType
-            );
+            ).sort((a, b) => {
+                const aId = a.variable_id || a.key || '';
+                const bId = b.variable_id || b.key || '';
+                const aNum = parseInt(aId.match(/\d+/)?.[0] || '0', 10);
+                const bNum = parseInt(bId.match(/\d+/)?.[0] || '0', 10);
+                return aNum - bNum;
+            });
             const item = filtered[index];
 
             if (!item) return;
@@ -2735,7 +2789,6 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             document.getElementById('dataSourceRawId').textContent = '';
             document.getElementById('dataPreviewContent').innerHTML = `
                 <div class="data-preview-empty">
-                    <div class="data-preview-empty-icon">📊</div>
                     <p>왼쪽 목록에서 데이터를 선택하면<br>추출된 값을 확인할 수 있습니다</p>
                 </div>
             `;
@@ -2999,7 +3052,6 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             if (!data || data.length === 0) {
                 contentDiv.innerHTML = `
                     <div class="data-preview-empty">
-                        <div class="data-preview-empty-icon">📋</div>
                         <p>${rawId} 라인리스팅 데이터가 없습니다.<br>P14에서 해당 파일을 업로드해주세요.</p>
                     </div>
                 `;

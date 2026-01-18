@@ -782,7 +782,7 @@ class SectionEditor {
             const separatorIndex = lines.findIndex(line => /^\|[\s\-:|]+\|$/.test(line.trim()) && line.includes('---'));
             if (separatorIndex === -1) return match;
 
-            let tableHtml = '<table class="md-table">';
+            let tableHtml = '<div class="table-wrapper"><table class="md-table">';
 
             // 헤더 행
             if (separatorIndex > 0) {
@@ -806,7 +806,7 @@ class SectionEditor {
                     tableHtml += '</tr>';
                 }
             }
-            tableHtml += '</tbody></table>';
+            tableHtml += '</tbody></table></div>';
 
             return '\n' + tableHtml + '\n';
         });

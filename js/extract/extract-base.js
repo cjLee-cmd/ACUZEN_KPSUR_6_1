@@ -47,19 +47,33 @@
             try {
                 // LLM을 사용한 데이터 추출
                 let result;
+                const startTime = Date.now();
+
                 if (llmClient.extractData) {
                     result = await llmClient.extractData(markdownContent, dataDefinitions, rawId);
                 } else if (llmClient.generate) {
                     // Fallback: generate 메서드 사용
                     const prompt = this.buildExtractionPrompt(markdownContent, dataDefinitions, rawId);
-                    result = await llmClient.generate(prompt, { provider: 'google' });
+                    result = await llmClient.generate(prompt, {
+                        provider: 'google',
+                        model: 'gemini-2.0-flash',
+                        temperature: 0.2,
+                        maxTokens: 8192
+                    });
                 } else {
                     throw new Error('No suitable LLM method available');
                 }
 
-                if (result.success) {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                // multiLLMClient.generate()는 { text: string } 형식 반환
+                // result.success가 없으면 result.text 존재 여부로 성공 판단
+                const isSuccess = result.success !== undefined ? result.success : !!result?.text;
+                const responseText = result.text || result;
+
+                if (isSuccess && responseText) {
                     // JSON 파싱
-                    const extractedData = this.parseJSONFromResponse(result.text);
+                    const extractedData = this.parseJSONFromResponse(responseText);
 
                     if (!extractedData) {
                         throw new Error('JSON 형식을 찾을 수 없습니다.');
@@ -69,13 +83,13 @@
                     this.extractionHistory.push({
                         rawId: rawId,
                         extractedAt: DateHelper.formatISO(),
-                        duration: result.duration,
-                        model: result.model,
+                        duration: duration,
+                        model: result.model || 'gemini-2.0-flash',
                         data: extractedData,
                         success: true
                     });
 
-                    console.log(`[ExtractBase] Data extracted from ${rawId} (${result.duration}s)`);
+                    console.log(`[ExtractBase] Data extracted from ${rawId} (${duration}s)`);
 
                     return {
                         success: true,
@@ -103,32 +117,53 @@
         }
 
         /**
-         * LLM 응답에서 JSON 파싱
+         * LLM 응답에서 JSON 파싱 (다양한 형식 지원)
          */
         parseJSONFromResponse(text) {
             if (!text) return null;
 
-            // JSON 코드블록 찾기
-            const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+            let jsonContent = null;
+
+            // 패턴 1: ```json ... ```
+            const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
             if (jsonMatch) {
-                try {
-                    return JSON.parse(jsonMatch[1]);
-                } catch (e) {
-                    console.warn('[ExtractBase] JSON parse error from code block');
+                jsonContent = jsonMatch[1];
+            }
+
+            // 패턴 2: ``` ... ``` (언어 지정 없음)
+            if (!jsonContent) {
+                const codeMatch = text.match(/```\s*([\s\S]*?)\s*```/);
+                if (codeMatch && codeMatch[1].trim().startsWith('{')) {
+                    jsonContent = codeMatch[1];
                 }
             }
 
-            // 직접 JSON 파싱 시도
+            // 패턴 3: 순수 JSON 객체 찾기
+            if (!jsonContent) {
+                const pureJsonMatch = text.match(/(\{[\s\S]*\})/);
+                if (pureJsonMatch) {
+                    jsonContent = pureJsonMatch[1];
+                }
+            }
+
+            if (!jsonContent) {
+                console.warn('[ExtractBase] JSON content not found in response');
+                return null;
+            }
+
+            // JSON 정제
+            jsonContent = jsonContent
+                .trim()
+                .replace(/^\uFEFF/, '')  // BOM 제거
+                .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');  // 제어 문자 제거
+
             try {
-                const cleanText = text.trim();
-                if (cleanText.startsWith('{')) {
-                    return JSON.parse(cleanText);
-                }
+                return JSON.parse(jsonContent);
             } catch (e) {
-                console.warn('[ExtractBase] Direct JSON parse failed');
+                console.warn('[ExtractBase] JSON parse error:', e.message);
+                console.log('[ExtractBase] Failed JSON (first 200 chars):', jsonContent.substring(0, 200));
+                return null;
             }
-
-            return null;
         }
 
         /**

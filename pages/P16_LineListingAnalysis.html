@@ -818,8 +818,8 @@
                         </select>
                     </div>
                     <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                        <span class="icon-sun">☀️</span>
-                        <span class="icon-moon">🌙</span>
+                        <span class="icon-sun">○</span>
+                        <span class="icon-moon">●</span>
                     </button>
                 </div>
             </div>
@@ -827,7 +827,7 @@
             <!-- 1. File Selection Section -->
             <div class="section-card">
                 <div class="section-header">
-                    <span class="section-icon">📁</span>
+                    <span class="section-icon">[1]</span>
                     <h2 class="section-title">1. 파일 선택</h2>
                 </div>
 
@@ -847,7 +847,7 @@
                         또는 새 파일 업로드:
                     </p>
                     <div class="upload-zone" id="uploadZone">
-                        <div class="upload-icon">📤</div>
+                        <div class="upload-icon">[+]</div>
                         <div class="upload-text">클릭하거나 파일을 드래그하세요</div>
                         <div class="upload-hint">지원 형식: .xlsx, .xls (Excel)</div>
                     </div>
@@ -865,16 +865,16 @@
             <!-- 2. Processing Section -->
             <div class="section-card">
                 <div class="section-header">
-                    <span class="section-icon">⚙️</span>
+                    <span class="section-icon">[2]</span>
                     <h2 class="section-title">2. 분석 실행</h2>
                 </div>
 
                 <div class="processing-controls">
                     <button class="btn-primary" id="startAnalysisBtn" disabled>
-                        <span>🚀</span> 분석 시작
+                        분석 시작
                     </button>
                     <button class="btn-secondary" id="stopAnalysisBtn" disabled>
-                        <span>⏹</span> 중지
+                        중지
                     </button>
                 </div>
 
@@ -920,7 +920,7 @@
             <!-- 3. Results Section -->
             <div class="section-card" id="resultsSection" style="display: none;">
                 <div class="section-header">
-                    <span class="section-icon">📊</span>
+                    <span class="section-icon">[3]</span>
                     <h2 class="section-title">3. 분석 결과</h2>
                 </div>
 
@@ -935,7 +935,7 @@
                     <div class="tab-content active" id="tableTab">
                         <div class="results-container" id="resultsTable">
                             <div class="empty-state">
-                                <div class="empty-state-icon">📋</div>
+                                <div class="empty-state-icon">[결과]</div>
                                 <div class="empty-state-text">분석 결과가 여기에 표시됩니다</div>
                             </div>
                         </div>
@@ -953,13 +953,13 @@
                 <!-- Download -->
                 <div class="download-section">
                     <button class="btn-primary" id="downloadExcelBtn" disabled>
-                        <span>📥</span> Excel 다운로드
+                        Excel 다운로드
                     </button>
                     <button class="btn-secondary" id="downloadMarkdownBtn" disabled>
-                        <span>📄</span> Markdown 다운로드
+                        Markdown 다운로드
                     </button>
                     <button class="btn-secondary" id="saveToReportBtn" disabled>
-                        <span>💾</span> 보고서에 저장
+                        보고서에 저장
                     </button>
                 </div>
             </div>

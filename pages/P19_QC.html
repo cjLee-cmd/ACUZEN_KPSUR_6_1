@@ -880,11 +880,11 @@
 
             <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                    <span class="icon-sun">○</span>
+                    <span class="icon-moon">●</span>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -934,7 +934,7 @@
     <!-- Approval Modal -->
     <div id="approvalModal" class="approval-modal">
         <div class="approval-modal-content">
-            <h3 class="approval-modal-title">✅ 최종 승인</h3>
+            <h3 class="approval-modal-title">최종 승인</h3>
             <p class="approval-modal-message">
                 모든 QC 검증이 통과되었습니다. 다음 항목을 확인하고 최종 승인해주세요:
             </p>
@@ -1210,14 +1210,14 @@
                             <!-- 수동 체크리스트 섹션 -->
                             <div class="manual-checklist-section" id="manualChecklistSection">
                                 <div class="manual-checklist-header">
-                                    <h4 class="manual-checklist-title">📋 수동 검증 체크리스트</h4>
+                                    <h4 class="manual-checklist-title">[QC] 수동 검증 체크리스트</h4>
                                     <div class="manual-checklist-progress">
                                         <span id="manualCheckProgress">0</span> / <span id="manualCheckTotal">12</span> 완료
                                     </div>
                                 </div>
                                 <div class="manual-checklist-items">
                                     <div class="checklist-group">
-                                        <div class="checklist-group-title">📊 데이터 정확성</div>
+                                        <div class="checklist-group-title">[1] 데이터 정확성</div>
                                         <label class="checklist-item">
                                             <input type="checkbox" class="manual-check" data-category="data">
                                             <span class="check-text">모든 CS 데이터가 원본 문서와 일치함</span>
@@ -1232,7 +1232,7 @@
                                         </label>
                                     </div>
                                     <div class="checklist-group">
-                                        <div class="checklist-group-title">📄 문서 구조</div>
+                                        <div class="checklist-group-title">[2] 문서 구조</div>
                                         <label class="checklist-item">
                                             <input type="checkbox" class="manual-check" data-category="structure">
                                             <span class="check-text">표 번호가 순차적으로 정렬됨</span>
@@ -1247,7 +1247,7 @@
                                         </label>
                                     </div>
                                     <div class="checklist-group">
-                                        <div class="checklist-group-title">✍️ 내용 검토</div>
+                                        <div class="checklist-group-title">[3] 내용 검토</div>
                                         <label class="checklist-item">
                                             <input type="checkbox" class="manual-check" data-category="content">
                                             <span class="check-text">서술문이 RAW 문서 내용과 일치함</span>
@@ -1262,7 +1262,7 @@
                                         </label>
                                     </div>
                                     <div class="checklist-group">
-                                        <div class="checklist-group-title">⚖️ 규정 준수</div>
+                                        <div class="checklist-group-title">[4] 규정 준수</div>
                                         <label class="checklist-item">
                                             <input type="checkbox" class="manual-check" data-category="regulatory">
                                             <span class="check-text">MFDS 가이드라인 요구사항 충족</span>
@@ -1285,10 +1285,10 @@
                                 </div>
                                 <div class="footer-actions">
                                     <button class="btn btn-secondary" onclick="exportIssueReport()" id="exportIssuesBtn" style="display: none;">
-                                        📄 이슈 리포트 내보내기
+                                        이슈 리포트 내보내기
                                     </button>
                                     <button class="btn btn-success" onclick="showApprovalModal()" id="approveBtn" style="display: none;">
-                                        ✅ 최종 승인
+                                        최종 승인
                                     </button>
                                     <button class="btn btn-success" onclick="proceedToOutput()">
                                         최종 출력 단계로 →
@@ -1488,7 +1488,7 @@
             if (issues.length === 0) {
                 document.getElementById('issueContent').innerHTML = `
                     <div class="issue-empty">
-                        <div class="issue-empty-icon">✅</div>
+                        <div class="issue-empty-icon" style="color: #10B981;"><svg class="mono-icon icon-check" aria-hidden="true" focusable="false" style="width:48px;height:48px;"><use href="#icon-check"></use></svg></div>
                         <div class="issue-empty-text">
                             모든 검증 항목을 통과했습니다!<br>
                             최종 승인을 진행할 수 있습니다.
@@ -1506,7 +1506,7 @@
                             <div class="issue-card-header">
                                 <div class="issue-card-title">${issue.title}</div>
                                 <div class="issue-card-severity ${issue.severity}">
-                                    ${issue.severity === 'critical' ? '🔴 중대' : issue.severity === 'warning' ? '🟡 경고' : '🔵 정보'}
+                                    ${issue.severity === 'critical' ? '[중대]' : issue.severity === 'warning' ? '[경고]' : '[정보]'}
                                 </div>
                             </div>
                             <div class="issue-card-description">${issue.description}</div>
@@ -1680,7 +1680,7 @@
                 showToast('최종 승인이 완료되었습니다. Draft 상태가 제거되었습니다.', 'success');
 
                 // Update footer message
-                document.getElementById('footerMessage').textContent = '✅ 최종 승인 완료! 최종 출력 단계로 진행할 수 있습니다.';
+                document.getElementById('footerMessage').textContent = '[완료] 최종 승인 완료! 최종 출력 단계로 진행할 수 있습니다.';
                 document.getElementById('footerMessage').className = 'footer-message success';
             }, 2000);
         }

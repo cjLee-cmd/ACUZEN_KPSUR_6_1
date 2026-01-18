@@ -188,13 +188,17 @@
             margin-bottom: 14px;
         }
 
+        .document-preview .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
         .document-preview table {
             width: 100%;
+            min-width: 600px;
             border-collapse: collapse;
-            margin: 20px 0;
             font-size: 13px;
             border-radius: var(--radius-lg);
-            overflow: hidden;
         }
 
         .document-preview th {
@@ -692,11 +696,11 @@
 
             <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                    <span class="icon-sun">○</span>
+                    <span class="icon-moon">●</span>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -893,7 +897,7 @@
             // 표 변환 (줄바꿈 변환 전에 먼저 처리)
             content = content.replace(/(\|[^\n]+\|\n)+/g, (tableMatch) => {
                 const rows = tableMatch.trim().split('\n');
-                let tableHtml = '<table>';
+                let tableHtml = '<div class="table-wrapper"><table>';
                 rows.forEach((row, idx) => {
                     const cells = row.split('|').filter(c => c.trim() !== '');
                     // 구분선 (|---|---|) 건너뛰기
@@ -905,7 +909,7 @@
                     const cellsHtml = cells.map(c => '<' + tag + '>' + c.trim() + '</' + tag + '>').join('');
                     tableHtml += '<tr>' + cellsHtml + '</tr>';
                 });
-                tableHtml += '</table>';
+                tableHtml += '</table></div>';
                 return tableHtml;
             });
 
@@ -966,7 +970,7 @@
             return `
                 <h1>의약품 재심사 안전성 정기보고서</h1>
                 <div style="text-align: center; padding: 40px; color: #64748b;">
-                    <p style="font-size: 16px;">📝 생성된 보고서 내용이 없습니다.</p>
+                    <p style="font-size: 16px;">생성된 보고서 내용이 없습니다.</p>
                     <p style="font-size: 14px;">템플릿 작성 단계에서 보고서를 생성해 주세요.</p>
                 </div>
             `;
@@ -995,11 +999,11 @@
                     <!-- Left Panel - Document Preview -->
                     <div class="preview-panel">
                         <div class="preview-header">
-                            <h2 class="preview-title">📄 최종 문서 미리보기</h2>
+                            <h2 class="preview-title">최종 문서 미리보기</h2>
 
                             <div class="preview-info">
                                 <div class="preview-info-text">
-                                    <strong>✅ QC 검증 완료!</strong> 최종 보고서를 미리 확인하고 원하는 형식으로 내보내세요.
+                                    <strong>[완료] QC 검증 완료!</strong> 최종 보고서를 미리 확인하고 원하는 형식으로 내보내세요.
                                 </div>
                             </div>
 
@@ -1010,10 +1014,10 @@
                                     <button class="zoom-btn" onclick="zoomIn()">+</button>
                                 </div>
                                 <button class="btn btn-secondary" onclick="printPreview()">
-                                    🖨️ 인쇄 미리보기
+                                    인쇄 미리보기
                                 </button>
                                 <button class="btn btn-secondary" onclick="fullscreen()">
-                                    🖥️ 전체화면
+                                    전체화면
                                 </button>
                             </div>
                         </div>
@@ -1028,7 +1032,7 @@
                     <!-- Right Panel - Export Options -->
                     <div class="export-panel">
                         <div class="export-section">
-                            <h3 class="export-section-title">📤 내보내기 형식</h3>
+                            <h3 class="export-section-title">내보내기 형식</h3>
 
                             <div class="export-option-group">
                                 <label class="export-option">
@@ -1037,7 +1041,7 @@
                                         Word 문서
                                         <span class="format-badge">.docx</span>
                                     </span>
-                                    <span class="export-option-icon">📝</span>
+                                    <span class="export-option-icon"><svg class="mono-icon icon-document" aria-hidden="true" focusable="false"><use href="#icon-document"></use></svg></span>
                                 </label>
 
                                 <label class="export-option">
@@ -1046,7 +1050,7 @@
                                         PDF 문서
                                         <span class="format-badge">.pdf</span>
                                     </span>
-                                    <span class="export-option-icon">📄</span>
+                                    <span class="export-option-icon"><svg class="mono-icon icon-document" aria-hidden="true" focusable="false"><use href="#icon-document"></use></svg></span>
                                 </label>
 
                                 <label class="export-option">
@@ -1055,37 +1059,37 @@
                                         Word + PDF
                                         <span class="format-badge">둘 다</span>
                                     </span>
-                                    <span class="export-option-icon">📦</span>
+                                    <span class="export-option-icon"><svg class="mono-icon icon-download" aria-hidden="true" focusable="false"><use href="#icon-download"></use></svg></span>
                                 </label>
                             </div>
                         </div>
 
                         <div class="export-section">
-                            <h3 class="export-section-title">📋 추가 옵션</h3>
+                            <h3 class="export-section-title">추가 옵션</h3>
 
                             <div class="export-option-group">
                                 <label class="export-option">
                                     <input type="checkbox" id="includeTableData" checked>
                                     <span class="export-option-label">표 데이터 Excel 파일 포함</span>
-                                    <span class="export-option-icon">📊</span>
+                                    <span class="export-option-icon"><svg class="mono-icon icon-clipboard" aria-hidden="true" focusable="false"><use href="#icon-clipboard"></use></svg></span>
                                 </label>
 
                                 <label class="export-option">
                                     <input type="checkbox" id="includeSourceDocs">
                                     <span class="export-option-label">소스 문서 포함</span>
-                                    <span class="export-option-icon">📁</span>
+                                    <span class="export-option-icon"><svg class="mono-icon icon-download" aria-hidden="true" focusable="false"><use href="#icon-download"></use></svg></span>
                                 </label>
 
                                 <label class="export-option">
                                     <input type="checkbox" id="includeChangeLogs">
                                     <span class="export-option-label">변경 이력 포함</span>
-                                    <span class="export-option-icon">📝</span>
+                                    <span class="export-option-icon"><svg class="mono-icon icon-document" aria-hidden="true" focusable="false"><use href="#icon-document"></use></svg></span>
                                 </label>
                             </div>
                         </div>
 
                         <div class="export-section">
-                            <h3 class="export-section-title">📝 파일명</h3>
+                            <h3 class="export-section-title">파일명</h3>
 
                             <input type="text" class="file-name-input" id="fileName" value="testPill_1_v1.1" placeholder="파일명 입력">
                             <div class="file-name-preview">
@@ -1094,7 +1098,7 @@
                         </div>
 
                         <div class="export-section">
-                            <h3 class="export-section-title">📊 버전 정보</h3>
+                            <h3 class="export-section-title">버전 정보</h3>
 
                             <div class="version-info">
                                 <div class="version-info-row">
@@ -1111,7 +1115,7 @@
                                 </div>
                                 <div class="version-info-row">
                                     <span class="version-info-label">상태:</span>
-                                    <span class="version-info-value">✅ QC 승인됨</span>
+                                    <span class="version-info-value">[완료] QC 승인됨</span>
                                 </div>
                             </div>
                         </div>
@@ -1119,10 +1123,10 @@
                         <div class="export-section">
                             <div class="export-button-group">
                                 <button class="export-btn primary magic-effect" onclick="exportDocument()">
-                                    📤 최종 문서 내보내기
+                                    최종 문서 내보내기
                                 </button>
                                 <button class="export-btn secondary" onclick="saveAsDraft()">
-                                    💾 임시 저장
+                                    임시 저장
                                 </button>
                             </div>
                         </div>
@@ -1418,10 +1422,10 @@
                     </div>
                     <div class="export-history-actions">
                         <button class="history-action-btn" onclick="downloadExport(${item.id})">
-                            📥 다운로드
+                            다운로드
                         </button>
                         <button class="history-action-btn" onclick="deleteExport(${item.id})">
-                            🗑️ 삭제
+                            삭제
                         </button>
                     </div>
                 </div>

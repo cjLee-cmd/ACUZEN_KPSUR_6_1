@@ -1110,6 +1110,19 @@
                 justify-content: center;
             }
         }
+
+        /* Tag Badge */
+        .tag-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(31, 78, 140, 0.15);
+            color: var(--color-primary);
+            margin-right: 4px;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -1150,11 +1163,11 @@
 
         <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
             <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                <span class="icon-sun">☀️</span>
-                <span class="icon-moon">🌙</span>
+                <span class="icon-sun">○</span>
+                <span class="icon-moon">●</span>
             </button>
             <div class="user-menu">
                 <div class="user-avatar">사</div>
@@ -1176,13 +1189,13 @@
         </a>
 
         <div class="settings-header">
-            <div class="settings-title">⚙️ 시스템 설정</div>
+            <div class="settings-title">시스템 설정</div>
             <div class="settings-subtitle">KPSUR AGENT 시스템 구성 관리</div>
         </div>
 
         <!-- First Setup Banner (shown only when redirected from initial setup) -->
         <div id="firstSetupBanner" style="display: none; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 2px solid #3B82F6; border-radius: 12px; padding: 24px; margin-bottom: 24px; text-align: center;">
-            <div style="font-size: 24px; margin-bottom: 12px;">👋 환영합니다!</div>
+            <div style="font-size: 24px; margin-bottom: 12px;">환영합니다!</div>
             <div style="font-size: 16px; font-weight: 600; color: #1E40AF; margin-bottom: 8px;">
                 KPSUR AGENT를 사용하기 위해 먼저 API 키를 설정해주세요
             </div>
@@ -1195,24 +1208,24 @@
         <!-- Section 1: Multi-LLM API Key Management -->
         <div class="settings-card">
             <div class="section-title">
-                <span>🔑</span>
+                <span class="tag-badge">KEY</span>
                 <span>Multi-LLM API 키 관리</span>
             </div>
 
             <!-- Provider Tabs -->
             <div class="provider-tabs">
                 <button class="provider-tab active" data-provider="anthropic" onclick="switchProvider('anthropic')">
-                    <span class="provider-icon">🟣</span>
+                    <span class="provider-icon" style="color: #9333EA;">●</span>
                     <span>Anthropic (Claude)</span>
                     <span class="provider-status" id="status-anthropic">○</span>
                 </button>
                 <button class="provider-tab" data-provider="openai" onclick="switchProvider('openai')">
-                    <span class="provider-icon">🟢</span>
+                    <span class="provider-icon" style="color: #22C55E;">●</span>
                     <span>OpenAI (GPT)</span>
                     <span class="provider-status" id="status-openai">○</span>
                 </button>
                 <button class="provider-tab" data-provider="google" onclick="switchProvider('google')">
-                    <span class="provider-icon">🔵</span>
+                    <span class="provider-icon" style="color: #3B82F6;">●</span>
                     <span>Google (Gemini)</span>
                     <span class="provider-status" id="status-google">○</span>
                 </button>
@@ -1223,7 +1236,7 @@
                 <div class="status-row">
                     <div>
                         <div class="status-label">현재 상태</div>
-                        <span class="badge" id="badge-anthropic">❌ 미설정</span>
+                        <span class="badge" id="badge-anthropic">[미설정]</span>
                     </div>
                     <div>
                         <div class="status-label">저장된 키</div>
@@ -1234,7 +1247,7 @@
                     <label class="input-label">Anthropic API 키</label>
                     <div class="input-with-button">
                         <input type="password" id="input-anthropic" class="api-key-input" placeholder="sk-ant-api03-로 시작하는 키">
-                        <button class="toggle-visibility-btn" onclick="toggleVisibility('anthropic')">👁️</button>
+                        <button class="toggle-visibility-btn" onclick="toggleVisibility('anthropic')">[보기]</button>
                     </div>
                 </div>
                 <div class="provider-models">
@@ -1246,9 +1259,9 @@
                     </div>
                 </div>
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="saveApiKey('anthropic')">💾 저장</button>
-                    <button class="btn btn-secondary" onclick="testApiKey('anthropic')">🔌 연결 테스트</button>
-                    <button class="btn btn-danger" onclick="clearApiKey('anthropic')">🗑️ 삭제</button>
+                    <button class="btn btn-primary" onclick="saveApiKey('anthropic')">저장</button>
+                    <button class="btn btn-secondary" onclick="testApiKey('anthropic')">연결 테스트</button>
+                    <button class="btn btn-danger" onclick="clearApiKey('anthropic')">삭제</button>
                 </div>
             </div>
 
@@ -1257,7 +1270,7 @@
                 <div class="status-row">
                     <div>
                         <div class="status-label">현재 상태</div>
-                        <span class="badge" id="badge-openai">❌ 미설정</span>
+                        <span class="badge" id="badge-openai">[미설정]</span>
                     </div>
                     <div>
                         <div class="status-label">저장된 키</div>
@@ -1268,7 +1281,7 @@
                     <label class="input-label">OpenAI API 키</label>
                     <div class="input-with-button">
                         <input type="password" id="input-openai" class="api-key-input" placeholder="sk-로 시작하는 키">
-                        <button class="toggle-visibility-btn" onclick="toggleVisibility('openai')">👁️</button>
+                        <button class="toggle-visibility-btn" onclick="toggleVisibility('openai')">[보기]</button>
                     </div>
                 </div>
                 <div class="provider-models">
@@ -1279,9 +1292,9 @@
                     </div>
                 </div>
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="saveApiKey('openai')">💾 저장</button>
-                    <button class="btn btn-secondary" onclick="testApiKey('openai')">🔌 연결 테스트</button>
-                    <button class="btn btn-danger" onclick="clearApiKey('openai')">🗑️ 삭제</button>
+                    <button class="btn btn-primary" onclick="saveApiKey('openai')">저장</button>
+                    <button class="btn btn-secondary" onclick="testApiKey('openai')">연결 테스트</button>
+                    <button class="btn btn-danger" onclick="clearApiKey('openai')">삭제</button>
                 </div>
             </div>
 
@@ -1290,7 +1303,7 @@
                 <div class="status-row">
                     <div>
                         <div class="status-label">현재 상태</div>
-                        <span class="badge" id="badge-google">❌ 미설정</span>
+                        <span class="badge" id="badge-google">[미설정]</span>
                     </div>
                     <div>
                         <div class="status-label">저장된 키</div>
@@ -1301,7 +1314,7 @@
                     <label class="input-label">Google Gemini API 키</label>
                     <div class="input-with-button">
                         <input type="password" id="input-google" class="api-key-input" placeholder="AIza로 시작하는 키">
-                        <button class="toggle-visibility-btn" onclick="toggleVisibility('google')">👁️</button>
+                        <button class="toggle-visibility-btn" onclick="toggleVisibility('google')">[보기]</button>
                     </div>
                 </div>
                 <div class="provider-models">
@@ -1312,28 +1325,28 @@
                     </div>
                 </div>
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="saveApiKey('google')">💾 저장</button>
-                    <button class="btn btn-secondary" onclick="testApiKey('google')">🔌 연결 테스트</button>
-                    <button class="btn btn-danger" onclick="clearApiKey('google')">🗑️ 삭제</button>
+                    <button class="btn btn-primary" onclick="saveApiKey('google')">저장</button>
+                    <button class="btn btn-secondary" onclick="testApiKey('google')">연결 테스트</button>
+                    <button class="btn btn-danger" onclick="clearApiKey('google')">삭제</button>
                 </div>
             </div>
 
             <!-- API Key Summary -->
             <div class="api-summary">
-                <div class="summary-title">🔐 API 키 설정 현황</div>
+                <div class="summary-title">API 키 설정 현황</div>
                 <div class="summary-grid">
                     <div class="summary-item" id="summary-anthropic">
-                        <span class="summary-icon">🟣</span>
+                        <span class="summary-icon" style="color: #9333EA;">●</span>
                         <span class="summary-name">Anthropic</span>
                         <span class="summary-status">미설정</span>
                     </div>
                     <div class="summary-item" id="summary-openai">
-                        <span class="summary-icon">🟢</span>
+                        <span class="summary-icon" style="color: #22C55E;">●</span>
                         <span class="summary-name">OpenAI</span>
                         <span class="summary-status">미설정</span>
                     </div>
                     <div class="summary-item" id="summary-google">
-                        <span class="summary-icon">🔵</span>
+                        <span class="summary-icon" style="color: #3B82F6;">●</span>
                         <span class="summary-name">Google</span>
                         <span class="summary-status">미설정</span>
                     </div>
@@ -1344,7 +1357,7 @@
         <!-- Section 2: API Key Issuance Guide -->
         <div class="settings-card">
             <div class="section-title">
-                <span>📋</span>
+                <span class="tag-badge">INFO</span>
                 <span>API 키 발급 가이드</span>
             </div>
 
@@ -1370,14 +1383,14 @@
             </ol>
 
             <div style="margin-top: 16px; padding: 12px; background: #EFF6FF; border-radius: 8px; font-size: 13px; color: #1E40AF;">
-                💡 <strong>무료 할당량:</strong> 분당 15회, 일일 1,500회 요청 가능
+                [TIP] <strong>무료 할당량:</strong> 분당 15회, 일일 1,500회 요청 가능
             </div>
         </div>
 
         <!-- Section 3: Security Notice -->
         <div class="settings-card security-notice">
             <div class="security-notice-title">
-                <span>⚠️</span>
+                <span>[!]</span>
                 <span>보안 주의사항</span>
             </div>
             <ul>
@@ -1392,7 +1405,7 @@
         <!-- Section 4: Cost Tracking -->
         <div class="settings-card">
             <div class="section-title">
-                <span>💰</span>
+                <span class="tag-badge">COST</span>
                 <span>LLM 사용 비용 추적</span>
             </div>
 
@@ -1401,9 +1414,9 @@
 
             <div style="margin-top: 16px; padding: 16px; background: var(--section-bg); border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">📊 상세 비용 기록</span>
+                    <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">상세 비용 기록</span>
                     <button class="btn btn-secondary" onclick="exportCostHistory()" style="font-size: 12px; padding: 6px 12px;">
-                        📥 내보내기
+                        내보내기
                     </button>
                 </div>
                 <div id="recentCostsList" style="max-height: 200px; overflow-y: auto;">
@@ -1412,14 +1425,14 @@
             </div>
 
             <div class="button-group" style="margin-top: 16px;">
-                <button class="btn btn-danger" onclick="clearCostHistory()">🗑️ 기록 초기화</button>
+                <button class="btn btn-danger" onclick="clearCostHistory()">기록 초기화</button>
             </div>
         </div>
 
         <!-- Section 5: System Info -->
         <div class="settings-card">
             <div class="section-title">
-                <span>ℹ️</span>
+                <span class="tag-badge">SYS</span>
                 <span>시스템 정보</span>
             </div>
 
@@ -1565,7 +1578,7 @@
             // Update badge
             const badge = document.getElementById(`badge-${provider}`);
             if (badge) {
-                badge.textContent = configured ? '✅ 설정됨' : '❌ 미설정';
+                badge.textContent = configured ? '[설정됨]' : '[미설정]';
                 badge.className = `badge ${configured ? 'badge-success' : 'badge-error'}`;
             }
 
@@ -1615,7 +1628,7 @@
             hideLoading();
 
             if (!testResult.success) {
-                showToast('❌ ' + (testResult.message || '연결 실패'), 'error');
+                showToast(testResult.message || '연결 실패', 'error');
                 return;
             }
 
@@ -1623,7 +1636,7 @@
             setApiKeyStorage(provider, input);
             updateProviderStatus(provider);
             document.getElementById(`input-${provider}`).value = '';
-            showToast('✅ API 키가 저장되었습니다', 'success');
+            showToast('API 키가 저장되었습니다', 'success');
 
             // If this was first setup, redirect to dashboard
             const urlParams = new URLSearchParams(window.location.search);
@@ -1650,9 +1663,9 @@
             hideLoading();
 
             if (result.success) {
-                showToast('✅ 연결 성공!', 'success');
+                showToast('연결 성공!', 'success');
             } else {
-                showToast('❌ ' + (result.message || '연결 실패'), 'error');
+                showToast(result.message || '연결 실패', 'error');
             }
         }
 
@@ -1713,7 +1726,7 @@
             removeApiKey(provider);
             updateProviderStatus(provider);
             document.getElementById(`input-${provider}`).value = '';
-            showToast('✅ API 키가 삭제되었습니다', 'success');
+            showToast('[완료] API 키가 삭제되었습니다', 'success');
         }
 
         // Toggle password visibility for provider
@@ -1726,7 +1739,13 @@
         // Show toast notification
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
-            toast.textContent = message;
+            const iconMap = {
+                success: '<svg class="mono-icon icon-check" aria-hidden="true" focusable="false" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><use href="#icon-check"></use></svg>',
+                error: '<svg class="mono-icon icon-x" aria-hidden="true" focusable="false" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><use href="#icon-x"></use></svg>',
+                warning: '<svg class="mono-icon icon-info" aria-hidden="true" focusable="false" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><use href="#icon-info"></use></svg>',
+                info: '<svg class="mono-icon icon-info" aria-hidden="true" focusable="false" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><use href="#icon-info"></use></svg>'
+            };
+            toast.innerHTML = (iconMap[type] || '') + message;
             toast.className = `toast toast-${type}`;
             toast.style.display = 'block';
 

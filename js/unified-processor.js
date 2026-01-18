@@ -20,9 +20,10 @@ class UnifiedProcessor {
 
         // 처리 상태
         this.currentStep = 0;
-        this.totalSteps = 5;
+        this.totalSteps = 6;  // Step 6: Line Listing 분석 추가
         this.isProcessing = false;
         this.errors = [];
+        this.lineListingCSValues = {};  // Line Listing에서 추출한 CS 값
 
         // 지원 파일 형식
         this.supportedFormats = ['.pdf', '.xlsx', '.xls', '.docx', '.txt', '.md'];
@@ -98,6 +99,7 @@ class UnifiedProcessor {
         this.generatedReport = null;
         this.generatedSections = {};
         this.errors = [];
+        this.lineListingCSValues = {};
     }
 
     /**
@@ -344,6 +346,204 @@ class UnifiedProcessor {
     }
 
     /**
+     * Step 6: Line Listing 자동 분석
+     * RAW12-15 파일에서 Seriousness/Causality/SOC 분석 후 CS 값 추출
+     */
+    async step6_analyzeLineListings(onProgress) {
+        if (onProgress) onProgress({ step: 6, message: 'Line Listing 분석 확인 중...', progress: 0 });
+
+        const extractor = window.extractLineListings;
+        if (!extractor) {
+            console.warn('[UnifiedProcessor] Line Listing 모듈 미로드, 스킵');
+            return { success: true, skipped: true, message: 'Line Listing 모듈 없음' };
+        }
+
+        // Line Listing 파일 확인
+        const lineListingFiles = extractor.getLineListingFilesFromStorage();
+        if (!lineListingFiles || lineListingFiles.length === 0) {
+            if (onProgress) onProgress({ step: 6, message: 'Line Listing 파일 없음 (스킵)', progress: 100 });
+            return { success: true, skipped: true, message: 'Line Listing 파일 없음' };
+        }
+
+        console.log(`[UnifiedProcessor] Line Listing 파일 ${lineListingFiles.length}개 감지`);
+        if (onProgress) onProgress({ step: 6, message: `${lineListingFiles.length}개 Line Listing 파일 분석 시작...`, progress: 10 });
+
+        const fileResults = [];
+        let processedCount = 0;
+
+        for (const file of lineListingFiles) {
+            try {
+                if (!file.markdownContent) {
+                    console.warn(`[UnifiedProcessor] ${file.name}: 마크다운 없음, 스킵`);
+                    continue;
+                }
+
+                // 마크다운 테이블 파싱
+                const { aeData, causData } = extractor.parseMarkdownTable(file.markdownContent);
+                if (!aeData || aeData.length === 0) {
+                    console.warn(`[UnifiedProcessor] ${file.name}: 이상사례 데이터 없음`);
+                    continue;
+                }
+
+                if (onProgress) {
+                    onProgress({
+                        step: 6,
+                        message: `분석 중: ${file.name} (${aeData.length}건)`,
+                        progress: 10 + Math.round((processedCount / lineListingFiles.length) * 60)
+                    });
+                }
+
+                // LLM 분석 실행 (Seriousness, Causality, SOC)
+                const apiKey = localStorage.getItem('GOOGLE_API_KEY');
+                if (apiKey) {
+                    const analysisResult = await extractor.analyzeWithLLM(aeData, causData, {
+                        apiKey: apiKey,
+                        batchSize: 30,
+                        provider: 'gemini'
+                    });
+
+                    if (analysisResult && analysisResult.processedData) {
+                        fileResults.push({
+                            rawId: file.rawId,
+                            fileName: file.name,
+                            processedData: analysisResult.processedData,
+                            statistics: extractor.statistics
+                        });
+
+                        console.log(`[UnifiedProcessor] ${file.rawId} 분석 완료: ${analysisResult.processedData.length}건`);
+                    }
+                } else {
+                    // API 키 없으면 기본 파싱만 수행
+                    extractor.processedData = aeData;
+                    extractor.updateStatistics();
+
+                    fileResults.push({
+                        rawId: file.rawId,
+                        fileName: file.name,
+                        processedData: aeData,
+                        statistics: extractor.statistics
+                    });
+
+                    console.log(`[UnifiedProcessor] ${file.rawId} 기본 분석: ${aeData.length}건 (LLM 미사용)`);
+                }
+
+                processedCount++;
+
+            } catch (error) {
+                console.error(`[UnifiedProcessor] ${file.name} 분석 오류:`, error);
+                this.errors.push({ file: file.name, step: 6, error: error.message });
+            }
+
+            // API 레이트 리밋 방지
+            await this.delay(200);
+        }
+
+        // CS 값 추출
+        if (onProgress) onProgress({ step: 6, message: 'CS 값 추출 중...', progress: 80 });
+
+        this.lineListingCSValues = extractor.extractAllCSValues(fileResults);
+
+        // extractedData에 저장 (Supabase + localStorage)
+        await this.mergeLineListingCSToExtractedData();
+
+        // localStorage에 분석 결과 저장
+        const reportId = localStorage.getItem('current_report');
+        extractor.saveToStorage(reportId);
+
+        if (onProgress) onProgress({ step: 6, message: `Line Listing 분석 완료 (${processedCount}개 파일)`, progress: 100 });
+
+        return {
+            success: true,
+            analyzed: processedCount,
+            csValues: this.lineListingCSValues,
+            fileResults: fileResults
+        };
+    }
+
+    /**
+     * Line Listing에서 추출한 CS 값을 extractedData에 병합 (localStorage + Supabase)
+     */
+    async mergeLineListingCSToExtractedData() {
+        if (!this.lineListingCSValues || Object.keys(this.lineListingCSValues).length === 0) {
+            return;
+        }
+
+        const reportId = localStorage.getItem('current_report');
+
+        // localStorage에서 기존 extractedData 로드
+        let extractedData = {};
+        try {
+            const stored = localStorage.getItem('extractedData');
+            if (stored) {
+                extractedData = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.warn('[UnifiedProcessor] extractedData 로드 실패:', e);
+        }
+
+        // CS 섹션 초기화
+        if (!extractedData.CS) {
+            extractedData.CS = {};
+        }
+
+        // Supabase 저장용 배열
+        const supabaseItems = [];
+
+        // Line Listing CS 값 병합
+        for (const [key, value] of Object.entries(this.lineListingCSValues)) {
+            // 배열인 경우 쉼표로 조인 (줄바꿈은 DB에서 문제가 될 수 있음)
+            const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+
+            // RAW ID 추출 (CS25는 RAW12/13, CS28-30은 RAW14)
+            let sourceRawId = 'LINE_LISTING';
+            if (key.includes('CS25')) {
+                sourceRawId = 'RAW12';
+            } else if (key.includes('CS28') || key.includes('CS29') || key.includes('CS30')) {
+                sourceRawId = 'RAW14';
+            } else if (key.includes('CS34')) {
+                sourceRawId = 'RAW15';
+            }
+
+            extractedData.CS[key] = {
+                value: formattedValue,
+                source: sourceRawId,
+                extractedAt: new Date().toISOString()
+            };
+
+            // Supabase 저장용 데이터 준비
+            supabaseItems.push({
+                variable_id: key,
+                data_value: formattedValue,
+                source_raw_id: sourceRawId
+            });
+
+            console.log(`[UnifiedProcessor] CS 병합: ${key} = ${formattedValue.substring(0, 50)}...`);
+        }
+
+        // localStorage에 저장
+        try {
+            localStorage.setItem('extractedData', JSON.stringify(extractedData));
+            console.log('[UnifiedProcessor] extractedData localStorage 저장 완료');
+        } catch (e) {
+            console.error('[UnifiedProcessor] extractedData localStorage 저장 실패:', e);
+        }
+
+        // Supabase에 저장
+        if (reportId && window.supabaseClient && supabaseItems.length > 0) {
+            try {
+                const result = await window.supabaseClient.saveExtractedData(reportId, supabaseItems);
+                if (result.error) {
+                    console.error('[UnifiedProcessor] Supabase 저장 실패:', result.error);
+                } else {
+                    console.log(`[UnifiedProcessor] Supabase 저장 완료: ${supabaseItems.length}개 CS 변수`);
+                }
+            } catch (e) {
+                console.error('[UnifiedProcessor] Supabase 저장 예외:', e);
+            }
+        }
+    }
+
+    /**
      * 섹션 파싱 (기본 구현)
      */
     parseSections(content) {
@@ -383,7 +583,8 @@ class UnifiedProcessor {
             { name: 'convertToMarkdown', fn: this.step2_convertToMarkdown.bind(this) },
             { name: 'classifyRawIds', fn: this.step3_classifyRawIds.bind(this) },
             { name: 'combineMarkdowns', fn: this.step4_combineMarkdowns.bind(this) },
-            { name: 'generatePSUR', fn: this.step5_generatePSUR.bind(this) }
+            { name: 'generatePSUR', fn: this.step5_generatePSUR.bind(this) },
+            { name: 'analyzeLineListings', fn: this.step6_analyzeLineListings.bind(this) }
         ];
 
         try {
@@ -429,7 +630,8 @@ class UnifiedProcessor {
                 markdowns: this.markdowns,
                 combinedMD: this.combinedMD,
                 report: this.generatedReport,
-                sections: this.generatedSections
+                sections: this.generatedSections,
+                lineListingCSValues: this.lineListingCSValues
             };
 
         } catch (error) {
@@ -448,6 +650,7 @@ class UnifiedProcessor {
             combinedMD: this.combinedMD,
             report: this.generatedReport,
             sections: this.generatedSections,
+            lineListingCSValues: this.lineListingCSValues,
             errors: this.errors
         };
     }

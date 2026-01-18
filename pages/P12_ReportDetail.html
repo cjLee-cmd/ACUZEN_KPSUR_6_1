@@ -659,6 +659,23 @@
                 display: none;
             }
         }
+
+        /* File Type Badge */
+        .file-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            min-width: 32px;
+            text-align: center;
+        }
+        .file-type-badge.pdf { background: rgba(239, 68, 68, 0.15); color: #DC2626; }
+        .file-type-badge.doc { background: rgba(59, 130, 246, 0.15); color: #2563EB; }
+        .file-type-badge.xls { background: rgba(16, 185, 129, 0.15); color: #059669; }
     </style>
 </head>
 <body>
@@ -686,11 +703,11 @@
 
             <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                    <span class="icon-sun">○</span>
+                    <span class="icon-moon">●</span>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -722,15 +739,12 @@
 
                             <div class="header-actions">
                                 <button class="btn-action btn-primary" onclick="continueReport()">
-                                    <span>▶️</span>
                                     <span>계속 진행</span>
                                 </button>
                                 <button class="btn-action btn-secondary" onclick="exportReport()">
-                                    <span>📥</span>
                                     <span>내보내기</span>
                                 </button>
                                 <button class="btn-action btn-danger" onclick="deleteReport()">
-                                    <span>🗑️</span>
                                     <span>삭제</span>
                                 </button>
                             </div>
@@ -863,7 +877,7 @@
                         <div id="tab-files" class="tab-content">
                             <div class="file-list">
                                 <div class="file-item">
-                                    <div class="file-icon">📄</div>
+                                    <div class="file-icon"><span class="file-type-badge pdf">PDF</span></div>
                                     <div class="file-info">
                                         <div class="file-name">RAW1_최신첨부문서.pdf</div>
                                         <div class="file-meta">PDF · 2.4 MB · 2024-12-15 업로드</div>
@@ -875,7 +889,7 @@
                                 </div>
 
                                 <div class="file-item">
-                                    <div class="file-icon">📊</div>
+                                    <div class="file-icon"><span class="file-type-badge xls">XLS</span></div>
                                     <div class="file-info">
                                         <div class="file-name">RAW3_시판후sales데이터.xlsx</div>
                                         <div class="file-meta">Excel · 456 KB · 2024-12-15 업로드</div>
@@ -887,7 +901,7 @@
                                 </div>
 
                                 <div class="file-item">
-                                    <div class="file-icon">📝</div>
+                                    <div class="file-icon"><span class="file-type-badge doc">DOC</span></div>
                                     <div class="file-info">
                                         <div class="file-name">RAW4_허가현황.docx</div>
                                         <div class="file-meta">Word · 128 KB · 2024-12-15 업로드</div>
@@ -899,7 +913,7 @@
                                 </div>
 
                                 <div class="file-item">
-                                    <div class="file-icon">📄</div>
+                                    <div class="file-icon"><span class="file-type-badge pdf">PDF</span></div>
                                     <div class="file-info">
                                         <div class="file-name">RAW12_신속보고LineListing.xlsx</div>
                                         <div class="file-meta">Excel · 1.2 MB · 2024-12-15 업로드</div>
@@ -1076,7 +1090,7 @@
 
                 <div class="workflow-stages">
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">🔐</div>
+                        <div class="stage-icon">1</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 1</div>
                             <div class="stage-label">로그인</div>
@@ -1085,7 +1099,7 @@
                     </div>
 
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">📋</div>
+                        <div class="stage-icon">2</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 2</div>
                             <div class="stage-label">보고서 상태</div>
@@ -1094,7 +1108,7 @@
                     </div>
 
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">📤</div>
+                        <div class="stage-icon">3</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 3</div>
                             <div class="stage-label">파일 업로드</div>
@@ -1103,7 +1117,7 @@
                     </div>
 
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">🔄</div>
+                        <div class="stage-icon">4</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 4</div>
                             <div class="stage-label">MD 변환</div>
@@ -1112,7 +1126,7 @@
                     </div>
 
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">⚙️</div>
+                        <div class="stage-icon">5</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 5</div>
                             <div class="stage-label">데이터 추출</div>
@@ -1121,7 +1135,7 @@
                     </div>
 
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">📄</div>
+                        <div class="stage-icon">6</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 6</div>
                             <div class="stage-label">템플릿 작성</div>
@@ -1130,7 +1144,7 @@
                     </div>
 
                     <div class="workflow-stage current">
-                        <div class="stage-icon">✏️</div>
+                        <div class="stage-icon">7</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 7</div>
                             <div class="stage-label">리뷰</div>
@@ -1139,7 +1153,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">✅</div>
+                        <div class="stage-icon">8</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 8</div>
                             <div class="stage-label">QC 검증</div>
@@ -1148,7 +1162,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📤</div>
+                        <div class="stage-icon">9</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 9</div>
                             <div class="stage-label">최종 출력</div>

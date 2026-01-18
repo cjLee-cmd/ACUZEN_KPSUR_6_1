@@ -184,7 +184,7 @@
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-xl);
             box-shadow: var(--glass-shadow);
-            overflow: hidden;
+            overflow-x: auto;
         }
 
         .table-header {
@@ -535,11 +535,11 @@
 
             <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                    <span class="icon-sun">○</span>
+                    <span class="icon-moon">●</span>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -567,7 +567,7 @@
 
                         <div class="header-actions">
                             <button class="btn-primary" onclick="navigateTo('P13_NewReport.html')">
-                                <span>➕</span>
+                                <span>[+]</span>
                                 <span>새 보고서 생성</span>
                             </button>
                         </div>
@@ -729,7 +729,7 @@
 
                 <div class="workflow-stages">
                     <div class="workflow-stage completed">
-                        <div class="stage-icon">🔐</div>
+                        <div class="stage-icon">1</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 1</div>
                             <div class="stage-label">로그인</div>
@@ -738,7 +738,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📋</div>
+                        <div class="stage-icon">2</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 2</div>
                             <div class="stage-label">보고서 상태</div>
@@ -747,7 +747,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📤</div>
+                        <div class="stage-icon">3</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 3</div>
                             <div class="stage-label">파일 업로드</div>
@@ -756,7 +756,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">🔄</div>
+                        <div class="stage-icon">4</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 4</div>
                             <div class="stage-label">MD 변환</div>
@@ -765,7 +765,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">⚙️</div>
+                        <div class="stage-icon">5</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 5</div>
                             <div class="stage-label">데이터 추출</div>
@@ -774,7 +774,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📄</div>
+                        <div class="stage-icon">6</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 6</div>
                             <div class="stage-label">템플릿 작성</div>
@@ -783,7 +783,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">✏️</div>
+                        <div class="stage-icon">7</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 7</div>
                             <div class="stage-label">리뷰</div>
@@ -792,7 +792,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">✅</div>
+                        <div class="stage-icon">8</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 8</div>
                             <div class="stage-label">QC 검증</div>
@@ -801,7 +801,7 @@
                     </div>
 
                     <div class="workflow-stage pending">
-                        <div class="stage-icon">📤</div>
+                        <div class="stage-icon">9</div>
                         <div class="stage-info">
                             <div class="stage-name">Stage 9</div>
                             <div class="stage-label">최종 출력</div>
@@ -981,7 +981,7 @@
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        <div>🔄 보고서 목록을 불러오는 중...</div>
+                        <div>보고서 목록을 불러오는 중...</div>
                     </td>
                 </tr>
             `;
@@ -1013,9 +1013,9 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                            <div style="margin-bottom: 12px;">📭 보고서가 없습니다.</div>
+                            <div style="margin-bottom: 12px;">보고서가 없습니다.</div>
                             <button class="btn-primary" onclick="window.navigateTo('P13_NewReport.html')">
-                                ➕ 새 보고서 생성
+                                [+] 새 보고서 생성
                             </button>
                         </td>
                     </tr>
@@ -1041,11 +1041,11 @@
                     <td>
                         <div class="action-buttons">
                             ${report.status === 'draft' || report.status === 'in-progress'
-                                ? `<button class="action-btn" onclick="window.resumeReport('${report.id}')" title="계속 작성" style="background: var(--primary-color); color: white;">▶️</button>`
+                                ? `<button class="action-btn" onclick="window.resumeReport('${report.id}')" title="계속 작성" style="background: var(--primary-color); color: white;"><svg class="mono-icon icon-refresh" aria-hidden="true" focusable="false" style="width:12px;height:12px;"><use href="#icon-refresh"></use></svg></button>`
                                 : ''}
-                            <button class="action-btn" onclick="window.viewReport('${report.id}')" title="보기">👁️</button>
-                            <button class="action-btn" onclick="window.editReport('${report.id}')" title="편집">✏️</button>
-                            <button class="action-btn" onclick="window.deleteReport('${report.id}')" title="삭제">🗑️</button>
+                            <button class="action-btn" onclick="window.viewReport('${report.id}')" title="보기"><svg class="mono-icon icon-eye" aria-hidden="true" focusable="false" style="width:12px;height:12px;"><use href="#icon-eye"></use></svg></button>
+                            <button class="action-btn" onclick="window.editReport('${report.id}')" title="편집"><svg class="mono-icon icon-pencil" aria-hidden="true" focusable="false" style="width:12px;height:12px;"><use href="#icon-pencil"></use></svg></button>
+                            <button class="action-btn" onclick="window.deleteReport('${report.id}')" title="삭제"><svg class="mono-icon icon-trash" aria-hidden="true" focusable="false" style="width:12px;height:12px;"><use href="#icon-trash"></use></svg></button>
                         </div>
                     </td>
                 `;

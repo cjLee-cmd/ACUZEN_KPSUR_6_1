@@ -1,4 +1,31 @@
-# UserPrompt-3: PSUR 보고서 작성 컨텍스트
+# UserPrompt-3: PSUR 보고서 작성 컨텍스트 (Single-Turn)
+
+---
+
+## 🔧 LLM 실행 모드: 싱글턴 (Single-Turn)
+
+> **이 프롬프트는 단일 요청/응답(Single-Turn) 패턴으로 설계되었다.**
+>
+> - **입력**: UserPrompt + 마크다운 변환된 모든 RAW 데이터
+> - **출력**: 모든 CS/PH/Table 데이터 + 15개 섹션 + 전체 보고서 (JSON)
+> - **다중 턴 금지**: 추가 질문이나 확인 요청 없이 한 번에 완전한 결과 반환
+
+### Gemini 모델 설정 (필수)
+
+```json
+{
+  "model": "gemini-2.5-pro-preview",
+  "generationConfig": {
+    "temperature": 0.2,
+    "maxOutputTokens": 65536,
+    "responseMimeType": "application/json"
+  },
+  "systemInstruction": "PSUR 보고서 생성 전문가. JSON 형식으로만 응답."
+}
+```
+
+> **컨텍스트 용량**: Gemini 2.5 Pro는 1M 토큰 입력 컨텍스트 지원. 모든 RAW 데이터를 한 번에 제공.
+> **출력 제한**: maxOutputTokens=65536으로 설정하여 전체 보고서 + 모든 데이터 추출 결과 반환.
 
 ---
 
@@ -37,9 +64,12 @@
 
 ## LLM 설정(기본설정)
 
-- 모델: gemini-3-preview
+- 모델: gemini-2.5-pro-preview (1M 컨텍스트)
 - Temperature: 0.2
+- maxOutputTokens: 65536
+- responseMimeType: application/json
 - **필수**: 모든 답변은 '~이다'체로 작성. '~습니다/~입니다' 사용 금지.
+- **필수**: 추가 질문 없이 한 번에 완전한 JSON 응답 반환.
 
 ---
 
@@ -1270,66 +1300,114 @@ Table 데이터는 보고서에 포함되는 표 형식의 구조화된 데이�
 
 ---
 
-## Part 3: 응답 JSON 구조
+## Part 3: 응답 JSON 구조 (Complete Structured Output)
 
-응답은 반드시 아래 Structured JSON 형식으로 반환하세요:
+> **⚠️ 중요**: 이 스키마는 **싱글턴 패턴**을 위해 설계되었다. 모든 CS(75개), PH(9개), Table(9개), 섹션(15개)을 한 번의 응답에 반환해야 한다.
+
+응답은 반드시 아래 **완전한 Structured JSON** 형식으로 반환하세요:
 
 ```json
 {
   "extractedData": {
     "CS": {
-      "CS0_성분명": "string",
-      "CS1_브랜드명": "string",
-      "CS2_회사명": "string",
-      "CS3_보고시작날짜": "YYYY-MM-DD",
+      "_comment": "=== 기본 정보 (사용자 입력, 13개) ===",
+      "CS0_성분명": "string | DATA_NOT_FOUND",
+      "CS1_브랜드명": "string | DATA_NOT_FOUND",
+      "CS2_회사명": "string | DATA_NOT_FOUND",
+      "CS3_보고시작날짜": "YYYY-MM-DD (계산값: CS4-5년)",
       "CS4_보고종료날짜": "YYYY-MM-DD",
       "CS5_국내허가일자": "YYYY-MM-DD",
-      "CS6_보고서제출일": "YYYY-MM-DD",
-      "CS7_버전넘버": "string",
-      "CS8_버전날짜": "YYYY-MM-DD",
+      "CS6_보고서제출일": "YYYY-MM-DD | YYYY.MM.DD",
+      "CS7_버전넘버": "string (예: 1.0)",
+      "CS8_버전날짜": "YYYY-MM-DD (계산값: CS4와 동일)",
       "CS13_유효기간": "YYYY-MM-DD",
-      "CS14_신청기한": "YYYY-MM-DD",
-      "CS15_효능효과": "string",
-      "CS16_용법용량": "string",
-      "CS17_전세계허가현황표": "array of object",
-      "CS17.1_허가국가": "array of string",
-      "CS17.2_허가일": "array of date",
-      "CS17.3_허가품목명": "array of string",
-      "CS17.4_허가권자": "array of string",
-      "CS17.5_허가비고": "array of string",
-      "CS17.6_허가현황서술문": "string",
-      "CS18_임상노출": "string",
-      "CS19_시판후노출시작날짜": "YYYY-MM-DD",
-      "CS19.1_시판후노출종료날짜": "YYYY-MM-DD",
-      "CS19.2_판매연도": "array of string",
-      "CS19.3_연도별판매량": "array of string",
-      "CS19.4_판매량합계": "string",
-      "CS20_1일사용량": "string",
-      "CS21_환자1명당사용량": "string",
-      "CS22_연평균판매량": "string",
-      "CS23_연평균환자노출": "string",
-      "CS24_MedDRA버전넘버": "string",
-      "CS25.1_신속보고일자": "array of date",
-      "CS25.2_신속관리번호": "array of string",
-      "CS25.3_신속이상사례명": "array of string",
-      "CS25.4_신속비고": "array of string",
-      "CS28_원시총환자수": "number",
-      "CS29_원시총이상사례수": "number",
-      "CS30_원시중대한사례수": "number",
+      "CS14_신청기한": "YYYY-MM-DD (계산값: CS13-6개월)",
+      "CS24_MedDRA버전넘버": "string (예: 27.0)",
       "CS31_원시자료신청일": "YYYY-MM-DD",
-      "CS32_신속정기보고총사례수": "number",
-      "CS33_신속보고총사례수": "number",
-      "CS34_정기보고총사례수": "number",
-      "CS35_신속정기원시총사례수": "number",
-      "CS36_중대한총사례수": "number",
-      "CS37_중대하지않은총사례수": "number",
-      "CS53_문헌DB": "string",
+      "CS53_문헌DB": "string (예: PubMed, EMBASE)",
+
+      "_comment2": "=== 목차 관련 (문서 생성 후 자동, 4개) ===",
+      "CS9_목차": "string (GENERATED)",
+      "CS10_표목차": "string (GENERATED)",
+      "CS11_별첨목차": "string (GENERATED)",
+      "CS12_약어표": "string (GENERATED)",
+
+      "_comment3": "=== 첨부문서 정보 (RAW1, RAW2, 2개) ===",
+      "CS15_효능효과": "string (RAW1.1/RAW2.2)",
+      "CS16_용법용량": "string (RAW1.1/RAW2.1)",
+
+      "_comment4": "=== 허가 현황 (RAW4, 7개) ===",
+      "CS17_전세계허가현황표": [{"국가": "string", "허가일": "YYYY-MM-DD", "품목명": "string", "허가권자": "string", "비고": "string"}],
+      "CS17_.1_허가국가": ["string"],
+      "CS17_.2_허가일": ["YYYY-MM-DD"],
+      "CS17_.3_허가품목명": ["string"],
+      "CS17_.4_허가권자": ["string"],
+      "CS17_.5_허가비고": ["string"],
+      "CS17_.6_허가현황서술문": "string (GENERATED from CS17)",
+
+      "_comment5": "=== 임상 노출 (RAW8, 1개) ===",
+      "CS18_임상노출": "string",
+
+      "_comment6": "=== 시판후 노출 (RAW3, 6개) ===",
+      "CS19_시판후노출count시작날짜": "YYYY-MM-DD",
+      "CS19_.1_시판후노출count종료날짜": "YYYY-MM-DD",
+      "CS19_.2_시판후판매연도": ["string (예: 2020년(6월-12월), 2021년, ...)"],
+      "CS19_.3_시판후판매연도별판매량": ["string (예: 1,234정, 2,456정, ...)"],
+      "CS19_.4_시판후판매량합계": "string (계산값)",
+
+      "_comment7": "=== 용량/환자 계산 (4개) ===",
+      "CS20_1일사용량": "string (예: 1일 2정)",
+      "CS21_환자1명당사용량": "string (예: 연 730정)",
+      "CS22_연평균판매량": "string (계산값, 예: 6,104,779정/년)",
+      "CS23_연평균환자노출": "string (계산값, 예: 약 8,363명/년)",
+
+      "_comment8": "=== 신속보고 관련 (RAW12, RAW13, 4개) ===",
+      "CS25_.1_신속보고일자": ["YYYY-MM-DD"],
+      "CS25_.2_신속관리번호": ["string"],
+      "CS25_.3_신속이상사례명": ["string (PT)"],
+      "CS25_.4_신속비고": ["string"],
+
+      "_comment9": "=== 원시자료 관련 (RAW14, 4개) ===",
+      "CS28_원시총환자수": 0,
+      "CS29_원시총이상사례수": 0,
+      "CS30_원시중대한사례수": 0,
+
+      "_comment10": "=== 보고 건수 합계 (계산값, 6개) ===",
+      "CS32_신속정기보고총사례수": 0,
+      "CS33_신속보고총사례수": 0,
+      "CS34_정기보고총사례수": 0,
+      "CS35_신속정기원시총사례수": 0,
+      "CS36_중대한총사례수": 0,
+      "CS37_중대하지않은총사례수": 0,
+
+      "_comment11": "=== 안전성 조치 (RAW5, RAW6, 1개) ===",
       "CS55_안전성조치서술문": "string",
-      "CS56.0_참고정보의변경서술문": "string",
-      "CS56.1_허가사항변경일": "string",
-      "CS57_참고문헌리스트": "string"
+
+      "_comment12": "=== 참고정보 변경 (RAW7, 8개) ===",
+      "CS56_참고정보의변경서술문": "string",
+      "CS56_별첨2참고정보변경표": "string (마크다운 테이블)",
+      "CS56_.1_허가사항변경일": "string (복수 날짜 가능)",
+      "CS56_.2_기존효능효과": "string (RAW1.2/RAW2.4)",
+      "CS56_.3_기존용법용량": "string (RAW1.2/RAW2.5)",
+      "CS56_.4_기존사용상의주의사항": "string (RAW1.2/RAW2.6)",
+      "CS56_.5_최신효능효과": "string (RAW1.1/RAW2.2)",
+      "CS56_.6_최신용법용량": "string (RAW1.1/RAW2.1)",
+      "CS56_.7_최신사용상의주의사항": "string (RAW1.1/RAW2.3)",
+
+      "_comment13": "=== 참고문헌 (RAW9, 1개) ===",
+      "CS57_참고문헌리스트": "string",
+
+      "_comment14": "=== 별첨1 (RAW1.1, RAW2, 3개) ===",
+      "CS58_.1_별첨1효능효과": "string (전문)",
+      "CS58_.2_별첨1용법용량": "string (전문)",
+      "CS58_.3_별첨1사용상의주의사항": "string (전문)",
+
+      "_comment15": "=== 별첨3 일람표 (모든 LineListing, 1개) ===",
+      "CS59_별첨3_일람표": "string (마크다운 테이블 또는 구조화 데이터)"
     },
+
     "PH": {
+      "_comment": "=== 서술문 데이터 (9개) ===",
       "PH4_원시자료서술문": "string",
       "PH5_원시자료서술문2": "string",
       "PH6_개별증례분석문": "string",
@@ -1340,42 +1418,183 @@ Table 데이터는 보고서에 포함되는 표 형식의 구조화된 데이�
       "PH11_총괄평가문": "string",
       "PH12_결론": "string"
     },
+
     "Tables": {
-      "표1_전세계판매허가현황": [],
-      "표2_연도별판매량": [],
-      "표3_연평균환자노출": {},
-      "표5_신속보고내역": [],
-      "표6_정기보고내역": [],
-      "표7_KIDS원시자료내역": [],
-      "표8_이상사례건수": {},
-      "표9_SOC별건수": []
+      "_comment": "=== 표 데이터 (9개) ===",
+      "표1_전세계판매허가현황": [
+        {"국가": "string", "허가일": "YYYY-MM-DD", "품목명": "string", "허가권자": "string", "비고": "string"}
+      ],
+      "표2_연도별판매량": [
+        {"구분": "판매량", "columns": {"연도1": "value", "연도2": "value", "총합계": "value"}}
+      ],
+      "표3_연평균환자노출": {
+        "1일사용량": "string",
+        "환자1명당연간사용량": "string",
+        "연평균판매량": "string",
+        "연평균환자노출": "string"
+      },
+      "표4_각증례병력소개": "FIXED_TEMPLATE",
+      "표5_신속보고내역": [
+        {"순번": 1, "보고일자": "YYYY-MM-DD", "관리번호": "string", "이상사례명": "string", "비고": "string"}
+      ],
+      "표6_정기보고내역": [
+        {"순번": 1, "보고일자": "YYYY-MM-DD", "관리번호": "string", "이상사례명": "string", "비고": "string"}
+      ],
+      "표7_KIDS원시자료내역": [
+        {"순번": 1, "보고일자": "YYYY-MM-DD", "관리번호": "string", "이상사례명": "string", "중대성": "string", "비고": "string"}
+      ],
+      "표8_이상사례건수": {
+        "중대함": 0,
+        "중대하지않음": 0,
+        "합계": 0
+      },
+      "표9_SOC별건수": [
+        {"SOC": "string", "PT": "string", "중대함": 0, "중대하지않음": 0, "총누적": 0, "허가사항반영여부": "기반영|미반영", "판단근거": "string"}
+      ]
     }
   },
+
   "sections": {
-    "00_표지": { "sectionId": "00", "sectionName": "표지", "content": "..." },
-    "01_목차": { "sectionId": "01", "sectionName": "목차", "content": "..." },
-    "02_약어설명": { "sectionId": "02", "sectionName": "약어설명", "content": "..." },
-    "03_서론": { "sectionId": "03", "sectionName": "서론", "content": "..." },
-    "04_전세계판매허가현황": { "sectionId": "04", "sectionName": "전세계판매허가현황", "content": "..." },
-    "05_안전성조치": { "sectionId": "05", "sectionName": "안전성조치", "content": "..." },
-    "06_안전성정보참고정보변경": { "sectionId": "06", "sectionName": "안전성정보참고정보변경", "content": "..." },
-    "07_환자노출": { "sectionId": "07", "sectionName": "환자노출", "content": "..." },
-    "08_개별증례병력": { "sectionId": "08", "sectionName": "개별증례병력", "content": "..." },
-    "09_시험": { "sectionId": "09", "sectionName": "시험", "content": "..." },
-    "10_기타정보": { "sectionId": "10", "sectionName": "기타정보", "content": "..." },
-    "11_종합적인안전성평가": { "sectionId": "11", "sectionName": "종합적인안전성평가", "content": "..." },
-    "12_결론": { "sectionId": "12", "sectionName": "결론", "content": "..." },
-    "13_참고문헌": { "sectionId": "13", "sectionName": "참고문헌", "content": "..." },
-    "14_별첨": { "sectionId": "14", "sectionName": "별첨", "content": "..." }
+    "00_표지": {
+      "sectionId": "00",
+      "sectionName": "표지",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS0_성분명", "CS1_브랜드명", "..."]
+    },
+    "01_목차": {
+      "sectionId": "01",
+      "sectionName": "목차",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS9_목차", "CS10_표목차"]
+    },
+    "02_약어설명": {
+      "sectionId": "02",
+      "sectionName": "약어설명",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS12_약어표"]
+    },
+    "03_서론": {
+      "sectionId": "03",
+      "sectionName": "서론",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS0_성분명", "CS1_브랜드명", "CS2_회사명", "CS3_보고시작날짜", "CS4_보고종료날짜", "CS5_국내허가일자", "CS13_유효기간", "CS14_신청기한", "CS15_효능효과", "CS16_용법용량"]
+    },
+    "04_전세계판매허가현황": {
+      "sectionId": "04",
+      "sectionName": "전세계판매허가현황",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS17_전세계허가현황표", "CS17_.6_허가현황서술문"]
+    },
+    "05_안전성조치": {
+      "sectionId": "05",
+      "sectionName": "안전성조치",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS55_안전성조치서술문"]
+    },
+    "06_안전성정보참고정보변경": {
+      "sectionId": "06",
+      "sectionName": "안전성정보참고정보변경",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS56_참고정보의변경서술문"]
+    },
+    "07_환자노출": {
+      "sectionId": "07",
+      "sectionName": "환자노출",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS18_임상노출", "CS19_시판후노출count시작날짜", "CS19_.1_시판후노출count종료날짜", "CS19_.2_시판후판매연도", "CS19_.3_시판후판매연도별판매량", "CS19_.4_시판후판매량합계", "CS20_1일사용량", "CS21_환자1명당사용량", "CS22_연평균판매량", "CS23_연평균환자노출"]
+    },
+    "08_개별증례병력": {
+      "sectionId": "08",
+      "sectionName": "개별증례병력",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS24_MedDRA버전넘버", "CS32_신속정기보고총사례수", "CS33_신속보고총사례수", "CS34_정기보고총사례수", "CS35_신속정기원시총사례수", "CS36_중대한총사례수", "CS37_중대하지않은총사례수", "CS53_문헌DB", "PH4_원시자료서술문", "PH5_원시자료서술문2", "PH6_개별증례분석문"]
+    },
+    "09_시험": {
+      "sectionId": "09",
+      "sectionName": "시험",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["PH7_새로분석된의뢰시험", "PH8_시작또는진행중시험", "PH9_문헌에발표된안전성"]
+    },
+    "10_기타정보": {
+      "sectionId": "10",
+      "sectionName": "기타정보",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["PH10_유효성관련정보", "CS4_보고종료날짜"]
+    },
+    "11_종합적인안전성평가": {
+      "sectionId": "11",
+      "sectionName": "종합적인안전성평가",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS3_보고시작날짜", "CS4_보고종료날짜", "CS33_신속보고총사례수", "CS34_정기보고총사례수", "CS29_원시총이상사례수", "CS35_신속정기원시총사례수", "PH11_총괄평가문"]
+    },
+    "12_결론": {
+      "sectionId": "12",
+      "sectionName": "결론",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["PH12_결론"]
+    },
+    "13_참고문헌": {
+      "sectionId": "13",
+      "sectionName": "참고문헌",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS57_참고문헌리스트"]
+    },
+    "14_별첨": {
+      "sectionId": "14",
+      "sectionName": "별첨",
+      "content": "마크다운 문자열",
+      "status": "completed | partial | missing_data",
+      "usedVariables": ["CS56_.1_허가사항변경일", "CS56_.2_기존효능효과", "CS56_.3_기존용법용량", "CS56_.4_기존사용상의주의사항", "CS56_.5_최신효능효과", "CS56_.6_최신용법용량", "CS56_.7_최신사용상의주의사항", "CS58_.1_별첨1효능효과", "CS58_.2_별첨1용법용량", "CS58_.3_별첨1사용상의주의사항", "CS59_별첨3_일람표"]
+    }
   },
+
   "fullReport": {
-    "content": "전체 15개 섹션 통합 마크다운",
+    "content": "전체 15개 섹션 통합 마크다운 (00_표지 ~ 14_별첨)",
     "wordCount": 0,
+    "charCount": 0,
     "generatedAt": "YYYY-MM-DDTHH:mm:ssZ"
   },
+
   "metadata": {
-    "missingData": [],
-    "warnings": [],
+    "processingInfo": {
+      "promptVersion": "UserPrompt_2_260115",
+      "executionMode": "single-turn",
+      "modelUsed": "gemini-2.5-pro-preview",
+      "inputTokens": 0,
+      "outputTokens": 0
+    },
+    "dataQuality": {
+      "totalCSVariables": 75,
+      "extractedCSVariables": 0,
+      "totalPHVariables": 9,
+      "extractedPHVariables": 0,
+      "totalTables": 9,
+      "extractedTables": 0
+    },
+    "missingData": [
+      {"variable": "CS_ID", "reason": "RAW 데이터에서 찾을 수 없음", "requiredRAW": ["RAW_ID"]}
+    ],
+    "conflictData": [
+      {"variable": "CS_ID", "values": [{"source": "RAW_ID", "value": "..."}], "resolution": "사용자 선택 필요"}
+    ],
+    "warnings": ["경고 메시지"],
+    "calculationLog": [
+      {"variable": "CS3_보고시작날짜", "formula": "CS4 - 5년", "result": "YYYY-MM-DD"}
+    ],
     "dbRequiredFields": {
       "userInputRequired": [
         "CS0_성분명", "CS1_브랜드명", "CS2_회사명", "CS4_보고종료날짜",
@@ -1383,22 +1602,42 @@ Table 데이터는 보고서에 포함되는 표 형식의 구조화된 데이�
         "CS13_유효기간", "CS24_MedDRA버전넘버", "CS31_원시자료신청일", "CS53_문헌DB"
       ],
       "rawDataRequired": [
-        "RAW1_최신첨부문서", "RAW2_허가사항", "RAW3_시판후sales데이터",
-        "RAW4_허가현황", "RAW5_안전성조치메일", "RAW7_안전성정보변경",
-        "RAW12_국내신속보고", "RAW14_원시자료LineListing", "RAW15_정기보고"
+        "RAW1.1_최신첨부문서", "RAW1.2_보고기간시작시점첨부문서",
+        "RAW2.1_용법용량", "RAW2.2_효능효과", "RAW2.3_사용상의주의사항",
+        "RAW2.4_보고기간시작시점효능효과", "RAW2.5_보고기간시작시점용법용량", "RAW2.6_보고시작시점사용상의주의사항",
+        "RAW3_시판후sales데이터", "RAW4_허가현황",
+        "RAW5_안전성조치허가팀메일", "RAW6_안전성조치허가팀메일취합본", "RAW7_안전성정보변경",
+        "RAW8_임상노출데이터", "RAW9_문헌자료",
+        "RAW12_국외신속보고LineListing", "RAW13_국내신속보고LineListing",
+        "RAW14_원시자료LineListing", "RAW15_정기보고LineListing",
+        "RAW16_MedDRA_SMQ_lack_of_efficacy", "RAW17_IIT및NIS트래커"
       ],
       "calculatedFields": {
-        "CS3_보고시작날짜": "CS4 - 5년",
-        "CS8_버전날짜": "CS4와 동일",
-        "CS14_신청기한": "CS13 - 6개월",
+        "CS3_보고시작날짜": "CS4_보고종료날짜 - 5년",
+        "CS8_버전날짜": "CS4_보고종료날짜와 동일",
+        "CS14_신청기한": "CS13_유효기간 - 6개월",
+        "CS19_.4_시판후판매량합계": "CS19_.3 합계",
+        "CS22_연평균판매량": "총판매량 / 기간(년)",
+        "CS23_연평균환자노출": "CS22 / CS21",
         "CS32_신속정기보고총사례수": "CS33 + CS34",
         "CS35_신속정기원시총사례수": "CS33 + CS34 + CS29",
         "CS37_중대하지않은총사례수": "CS35 - CS36"
-      }
+      },
+      "generatedFields": [
+        "CS9_목차", "CS10_표목차", "CS11_별첨목차", "CS12_약어표",
+        "CS17_.6_허가현황서술문", "CS57_참고문헌리스트"
+      ]
     }
   }
 }
 ```
+
+### 필수 응답 규칙
+
+1. **완전성**: 위 스키마의 모든 필드를 포함해야 한다. 빈 값은 `null`, `[]`, `{}` 또는 `"DATA_NOT_FOUND"`로 표시.
+2. **데이터 무결성**: 추출할 수 없는 데이터는 절대 생성하지 않는다. `missingData`에 기록.
+3. **계산 검증**: 모든 계산값은 `calculationLog`에 계산 과정 기록.
+4. **충돌 해결**: 동일 변수에 여러 값이 있으면 `conflictData`에 모든 값 기록, 임의 선택 금지.
 
 ---
 

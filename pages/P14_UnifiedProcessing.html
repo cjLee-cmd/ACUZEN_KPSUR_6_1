@@ -19,6 +19,33 @@
             padding: 0;
         }
 
+        /* File Type Badge */
+        .file-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            min-width: 32px;
+            text-align: center;
+        }
+        .file-type-badge.pdf { background: rgba(239, 68, 68, 0.15); color: #DC2626; }
+        .file-type-badge.doc { background: rgba(59, 130, 246, 0.15); color: #2563EB; }
+        .file-type-badge.xls { background: rgba(16, 185, 129, 0.15); color: #059669; }
+
+        /* Section Icon Badge */
+        .section-icon {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            background: rgba(31, 78, 140, 0.1);
+            color: var(--color-primary);
+            border-radius: 3px;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-primary);
@@ -725,7 +752,7 @@
                     <div class="step-content active" id="step1">
                         <div class="section-card">
                             <div class="section-header">
-                                <span class="section-icon">📄</span>
+                                <span class="section-icon"><svg class="mono-icon icon-document" aria-hidden="true" focusable="false"><use href="#icon-document"></use></svg></span>
                                 <h2 class="section-title">Reference Safety Information (제품정보)</h2>
                             </div>
                             <p class="section-subtitle">첨부문서, 용법용량/효능효과/사용상의주의사항</p>
@@ -754,7 +781,7 @@
                                             보고기간 시작시점 제품정보 (첨부문서, 용법용량/효능효과/사용상주의사항)
                                         </div>
                                         <button class="upload-btn" onclick="triggerFileInput('startPeriod')">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="startPeriod_input" class="hidden-input" multiple
                                             accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md"
@@ -767,7 +794,7 @@
                                             보고기간 종료날짜 기준 최신 제품정보 (첨부문서, 용법용량/효능효과/사용상주의사항)
                                         </div>
                                         <button class="upload-btn" onclick="triggerFileInput('endPeriod')">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="endPeriod_input" class="hidden-input" multiple
                                             accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md"
@@ -782,7 +809,7 @@
                                         기타 자료 - 보고기간 동안 복수의 변경이 있었을 때 변경이력을 알 수 있는 자료 (허가팀 이메일, 변경이력 등)
                                     </div>
                                     <button class="upload-btn" onclick="triggerFileInput('changeHistory')">
-                                        <span>📤</span> 파일 추가
+                                        파일 추가
                                     </button>
                                     <input type="file" id="changeHistory_input" class="hidden-input" multiple
                                         accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md"
@@ -799,7 +826,7 @@
                     <div class="step-content" id="step2">
                         <div class="section-card">
                             <div class="section-header">
-                                <span class="section-icon">📄</span>
+                                <span class="section-icon"><svg class="mono-icon icon-document" aria-hidden="true" focusable="false"><use href="#icon-document"></use></svg></span>
                                 <h2 class="section-title">임상 자료</h2>
                             </div>
                             <p class="section-subtitle">회사 Sponsored 임상 및 기타임상 (IIT, NIS등) 관련 자료</p>
@@ -829,7 +856,7 @@
                                             임상 노출(exposure), 이메일, 안전성 관련자료 (CSR일부 등)
                                         </div>
                                         <button class="upload-btn" onclick="triggerFileInput('sponsored')">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="sponsored_input" class="hidden-input" multiple
                                             accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md"
@@ -864,7 +891,7 @@
                                             기타임상 (IIT, NIS등) 관련 자료
                                         </div>
                                         <button class="upload-btn" onclick="triggerFileInput('iitnis')">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="iitnis_input" class="hidden-input" multiple
                                             accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md"
@@ -883,7 +910,7 @@
                         <!-- 라인리스팅 업로드 -->
                         <div class="section-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                             <div class="section-header" style="margin-bottom: 0.25rem;">
-                                <span class="section-icon" style="font-size: 1.25rem;">📊</span>
+                                <span class="section-icon" style="font-size: 1.25rem;">[DATA]</span>
                                 <h2 class="section-title" style="font-size: 1rem;">Line Listing 자료</h2>
                             </div>
                             <p class="section-subtitle" style="margin-bottom: 0.5rem; font-size: 0.8rem;">이상사례 Line
@@ -896,7 +923,7 @@
                                             Listing</div>
                                         <button class="upload-btn" onclick="triggerFileInput('lineListing_domestic')"
                                             style="padding: 0.5rem;">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="lineListing_domestic_input" class="hidden-input" multiple
                                             accept=".xlsx,.xls"
@@ -909,7 +936,7 @@
                                             Listing</div>
                                         <button class="upload-btn" onclick="triggerFileInput('lineListing_foreign')"
                                             style="padding: 0.5rem;">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="lineListing_foreign_input" class="hidden-input" multiple
                                             accept=".xlsx,.xls"
@@ -924,7 +951,7 @@
                                         </div>
                                         <button class="upload-btn" onclick="triggerFileInput('lineListing_raw')"
                                             style="padding: 0.5rem;">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="lineListing_raw_input" class="hidden-input" multiple
                                             accept=".xlsx,.xls"
@@ -937,7 +964,7 @@
                                         </div>
                                         <button class="upload-btn" onclick="triggerFileInput('lineListing_periodic')"
                                             style="padding: 0.5rem;">
-                                            <span>📤</span> 파일 추가
+                                            파일 추가
                                         </button>
                                         <input type="file" id="lineListing_periodic_input" class="hidden-input" multiple
                                             accept=".xlsx,.xls"
@@ -951,7 +978,7 @@
                         <!-- 기타 자료 업로드 -->
                         <div class="section-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                             <div class="section-header" style="margin-bottom: 0.25rem;">
-                                <span class="section-icon" style="font-size: 1.25rem;">📁</span>
+                                <span class="section-icon" style="font-size: 1.25rem;">[FILES]</span>
                                 <h2 class="section-title" style="font-size: 1rem;">기타 자료 업로드</h2>
                             </div>
                             <p class="section-subtitle" style="margin-bottom: 0.5rem; font-size: 0.8rem;">나머지 자료를 업로드하고
@@ -960,7 +987,7 @@
                             <!-- 업로드 영역 -->
                             <div class="upload-zone" style="margin-bottom: 0.5rem; padding: 0.75rem;">
                                 <button class="upload-btn" onclick="triggerStep3FileInput()" style="padding: 0.75rem;">
-                                    <span>📤</span> 파일 추가 (복수 선택 가능)
+                                    파일 추가 (복수 선택 가능)
                                 </button>
                                 <input type="file" id="step3_file_input" class="hidden-input" multiple
                                     accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md"
@@ -973,14 +1000,14 @@
 
                         <!-- 이전 단계 업로드 파일 요약 -->
                         <div class="file-summary" id="fileSummary" style="display: none;">
-                            <div class="file-summary-title">📋 Step 1~2 업로드된 파일</div>
+                            <div class="file-summary-title">Step 1~2 업로드된 파일</div>
                             <div class="file-summary-list" id="fileSummaryList"></div>
                         </div>
 
                         <!-- 처리 상태 -->
                         <div class="section-card processing-status" id="processingStatus">
                             <div class="section-header">
-                                <span class="section-icon">⚙️</span>
+                                <span class="section-icon">[PROC]</span>
                                 <h2 class="section-title">처리 상태</h2>
                             </div>
 
@@ -1003,6 +1030,11 @@
                                 <div class="processing-step-icon" id="procIcon4">4</div>
                                 <div class="processing-step-text">PSUR 섹션 생성 (LLM)</div>
                                 <div class="processing-step-status" id="procStatus4">대기 중</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+                                <div class="processing-step-icon" id="procIcon5">5</div>
+                                <div class="processing-step-text">Line Listing 분석</div>
+                                <div class="processing-step-status" id="procStatus5">대기 중</div>
                             </div>
                         </div>
                     </div>
@@ -1066,6 +1098,7 @@
     <script src="../js/extract/extract-cs.js"></script>
     <script src="../js/extract/extract-ph.js"></script>
     <script src="../js/extract/extract-tables.js"></script>
+    <script src="../js/extract/extract-linelisting.js?v=20260118"></script>
     <!-- 신규: 예시 로더 및 형식 검증 모듈 -->
     <script src="../js/extract/example-loader.js"></script>
     <script src="../js/extract/format-validator.js"></script>
@@ -1870,20 +1903,9 @@
                 return;
             }
 
-            // convertedMarkdowns에서 Line Listing 파일 존재 여부 확인
-            const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
-            const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
-            const hasLineListingFiles = Object.keys(convertedMarkdowns).some(key => {
-                return lineListingRawIds.some(rawId => key.includes(rawId));
-            });
-
-            if (hasLineListingFiles) {
-                console.log('[P14] Skip → P16 Line Listing 분석 페이지로 이동');
-                navigateTo(`P16_LineListingAnalysis.html?reportId=${reportId}`);
-            } else {
-                console.log('[P14] Skip → P15 섹션 에디터로 이동');
-                navigateTo(`P15_SectionEditor.html?reportId=${reportId}`);
-            }
+            // Line Listing 분석은 P14에서 자동 처리되므로 항상 P15로 이동
+            console.log('[P14] Skip → P15 섹션 에디터로 이동');
+            navigateTo(`P15_SectionEditor.html?reportId=${reportId}`);
         }
 
         // ========================================
@@ -1997,8 +2019,8 @@
             const hasFiles = uploadedFiles[zoneId].length > 0;
             btn.classList.toggle('has-files', hasFiles);
             btn.innerHTML = hasFiles
-                ? `<span>✓</span> ${uploadedFiles[zoneId].length}개 파일`
-                : `<span>📤</span> 파일 추가`;
+                ? `${uploadedFiles[zoneId].length}개 파일 ✓`
+                : `파일 추가`;
         }
 
         // ========================================
@@ -2117,15 +2139,15 @@
         function getFileIcon(filename) {
             const ext = filename.split('.').pop().toLowerCase();
             const icons = {
-                'pdf': '📕',
-                'docx': '📘',
-                'doc': '📘',
-                'xlsx': '📗',
-                'xls': '📗',
-                'txt': '📄',
-                'md': '📝'
+                'pdf': '<span class="file-type-badge pdf">PDF</span>',
+                'docx': '<span class="file-type-badge doc">DOC</span>',
+                'doc': '<span class="file-type-badge doc">DOC</span>',
+                'xlsx': '<span class="file-type-badge xls">XLS</span>',
+                'xls': '<span class="file-type-badge xls">XLS</span>',
+                'txt': '<span class="file-type-badge">TXT</span>',
+                'md': '<span class="file-type-badge">MD</span>'
             };
-            return icons[ext] || '📄';
+            return icons[ext] || '<span class="file-type-badge">FILE</span>';
         }
 
         function formatFileSize(bytes) {
@@ -2218,21 +2240,29 @@
                     `<li><strong>${f.name}</strong> <span style="color:#888;">(${f.rawId})</span></li>`
                 ).join('');
 
+                // 다크모드 감지
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const modalBg = isDark ? '#1e1e1e' : 'white';
+                const modalBorder = isDark ? '#333' : '#e0e0e0';
+                const warnBg = isDark ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0';
+                const errorBg = isDark ? 'rgba(244, 67, 54, 0.15)' : '#ffebee';
+                const textMuted = isDark ? '#aaa' : '#666';
+
                 const html = `
-                    <div class="modal-overlay" id="reuploadModal" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
-                        <div class="modal-content" style="background: white; padding: 30px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
-                            <h2 style="color: #f44336; margin-bottom: 20px;">📁 파일 재업로드 필요</h2>
-                            <div style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800; margin-bottom: 15px; border-radius: 4px;">
+                    <div class="modal-overlay" id="reuploadModal" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999;">
+                        <div class="modal-content" style="background: ${modalBg}; padding: 30px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid ${modalBorder};">
+                            <h2 style="color: #f44336; margin-bottom: 20px;">파일 재업로드 필요</h2>
+                            <div style="background: ${warnBg}; padding: 15px; border-left: 4px solid #ff9800; margin-bottom: 15px; border-radius: 4px;">
                                 <p style="margin: 0 0 10px 0;">
                                     <strong>이전 세션에서 복원된 파일들의 원본 데이터가 없습니다.</strong>
                                 </p>
-                                <p style="margin: 0; color: #666; font-size: 14px;">
+                                <p style="margin: 0; color: ${textMuted}; font-size: 14px;">
                                     브라우저 보안 정책으로 인해 파일 내용은 세션 간에 저장되지 않습니다.<br>
                                     아래 파일들을 다시 업로드해 주세요.
                                 </p>
                             </div>
-                            <div style="background: #ffebee; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                                <strong style="color: #d32f2f;">재업로드 필요 파일 (${files.length}개):</strong>
+                            <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                                <strong style="color: #ef5350;">재업로드 필요 파일 (${files.length}개):</strong>
                                 <ul style="margin: 10px 0 0 0; padding-left: 20px; max-height: 200px; overflow-y: auto;">
                                     ${fileList}
                                 </ul>
@@ -2358,10 +2388,11 @@
                 window.llmProgressBar.init({
                     title: 'RAW 데이터 처리',
                     steps: [
-                        { id: 'convert', name: 'MD 변환', icon: '📄' },
-                        { id: 'classify', name: 'RAW 분류', icon: '🏷️' },
-                        { id: 'integrate', name: '데이터 통합', icon: '🔗' },
-                        { id: 'generate', name: 'PSUR 생성', icon: '🤖' }
+                        { id: 'convert', name: 'MD 변환', icon: '1' },
+                        { id: 'classify', name: 'RAW 분류', icon: '2' },
+                        { id: 'integrate', name: '데이터 통합', icon: '3' },
+                        { id: 'generate', name: 'PSUR 생성', icon: '4' },
+                        { id: 'linelisting', name: 'Line Listing', icon: '5' }
                     ]
                 }).show().startStep(0);
             }
@@ -2433,42 +2464,122 @@
                 }
 
                 updateProcessingStep(4, 'completed', '완료');
-                if (window.llmProgressBar) window.llmProgressBar.completeStep(3).complete('처리 완료!');
+                if (window.llmProgressBar) window.llmProgressBar.completeStep(3).startStep(4);
 
+                // Step 5: Line Listing 분석 (RAW12-15)
+                const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+                const hasLineListingFiles = convertedFiles.some(f => {
+                    const rawId = f.assignedRawId || f.rawId || '';
+                    return lineListingRawIds.includes(rawId);
+                });
+
+                if (hasLineListingFiles && window.extractLineListings) {
+                    updateProcessingStep(5, 'active', '분석 중...');
+                    if (window.llmProgressBar) window.llmProgressBar.setStreamText('Line Listing 분석 중...');
+
+                    try {
+                        const extractor = window.extractLineListings;
+                        const lineListingFiles = extractor.getLineListingFilesFromStorage();
+                        console.log(`[P14] Line Listing 파일 ${lineListingFiles.length}개 감지, 자동 분석 시작`);
+
+                        const fileResults = [];
+                        for (const file of lineListingFiles) {
+                            if (!file.markdownContent) continue;
+
+                            const { aeData, causData } = extractor.parseMarkdownTable(file.markdownContent);
+                            if (!aeData || aeData.length === 0) continue;
+
+                            // LLM 분석 (Seriousness, Causality, SOC)
+                            const apiKey = localStorage.getItem('GOOGLE_API_KEY');
+                            if (apiKey) {
+                                const analysisResult = await extractor.analyzeWithLLM(aeData, causData, {
+                                    apiKey: apiKey,
+                                    batchSize: 30,
+                                    provider: 'gemini'
+                                });
+                                if (analysisResult && analysisResult.processedData) {
+                                    fileResults.push({
+                                        rawId: file.rawId,
+                                        fileName: file.name,
+                                        processedData: analysisResult.processedData,
+                                        statistics: extractor.statistics
+                                    });
+                                    console.log(`[P14] ${file.rawId} LLM 분석 완료: ${analysisResult.processedData.length}건`);
+                                }
+                            } else {
+                                // API 키 없으면 기본 파싱
+                                extractor.processedData = aeData;
+                                if (extractor.updateStatistics) extractor.updateStatistics();
+                                fileResults.push({
+                                    rawId: file.rawId,
+                                    fileName: file.name,
+                                    processedData: aeData,
+                                    statistics: extractor.statistics
+                                });
+                                console.log(`[P14] ${file.rawId} 기본 분석: ${aeData.length}건`);
+                            }
+
+                            await new Promise(r => setTimeout(r, 200));
+                        }
+
+                        // CS 값 추출 및 저장
+                        if (fileResults.length > 0) {
+                            const csValues = extractor.extractAllCSValues(fileResults);
+                            console.log('[P14] Line Listing CS 값 추출:', csValues);
+
+                            // extractedData에 병합
+                            let extractedData = {};
+                            try {
+                                const stored = localStorage.getItem('extractedData');
+                                if (stored) extractedData = JSON.parse(stored);
+                            } catch (e) {}
+
+                            if (!extractedData.CS) extractedData.CS = {};
+                            for (const [key, value] of Object.entries(csValues)) {
+                                const formattedValue = Array.isArray(value) ? value.join('\n') : value;
+                                extractedData.CS[key] = {
+                                    value: formattedValue,
+                                    source: 'LINE_LISTING_ANALYSIS',
+                                    extractedAt: new Date().toISOString()
+                                };
+                            }
+                            localStorage.setItem('extractedData', JSON.stringify(extractedData));
+                            console.log('[P14] extractedData에 Line Listing CS 값 저장 완료');
+
+                            // Line Listing 분석 결과 저장
+                            const reportId = getUrlParam('reportId') || localStorage.getItem('current_report');
+                            extractor.saveToStorage(reportId);
+                        }
+
+                        updateProcessingStep(5, 'completed', `완료 (${fileResults.length}개)`);
+                    } catch (llError) {
+                        console.error('[P14] Line Listing 분석 오류:', llError);
+                        updateProcessingStep(5, 'completed', '오류 (스킵)');
+                    }
+                } else {
+                    updateProcessingStep(5, 'completed', '해당 없음');
+                }
+
+                if (window.llmProgressBar) window.llmProgressBar.complete('처리 완료!');
                 showToast('처리 완료! 다음 단계로 이동합니다.', 'success');
 
-                // 다음 페이지로 이동 (Line Listing 파일이 있으면 P16, 없으면 P15)
+                // 다음 페이지로 이동 (항상 P15로 이동 - Line Listing은 P14에서 처리됨)
                 setTimeout(() => {
-                    // reportId 추출 (URL 우선, localStorage fallback)
                     let reportId = getUrlParam('reportId');
                     if (!reportId) {
                         const storedReport = localStorage.getItem('current_report');
                         if (storedReport) {
                             try {
                                 const parsed = JSON.parse(storedReport);
-                                // JSON 객체인 경우 reportId 추출, UUID 문자열인 경우 그대로 사용
                                 reportId = (typeof parsed === 'object' && parsed !== null) ? parsed.reportId : storedReport;
                             } catch (e) {
-                                // JSON 파싱 실패 시 UUID 문자열로 간주
                                 reportId = storedReport;
                             }
                         }
                     }
 
-                    // Line Listing 파일 존재 여부 확인 (RAW12-15)
-                    const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
-                    const hasLineListingFiles = convertedFiles.some(f => {
-                        const rawId = f.assignedRawId || f.rawId || '';
-                        return lineListingRawIds.includes(rawId);
-                    });
-
-                    if (hasLineListingFiles) {
-                        console.log('[P14] Line Listing 파일 감지됨 → P16 분석 페이지로 이동');
-                        navigateTo(`P16_LineListingAnalysis.html?reportId=${reportId}`);
-                    } else {
-                        console.log('[P14] Line Listing 파일 없음 → P15 섹션 에디터로 이동');
-                        navigateTo(`P15_SectionEditor.html?reportId=${reportId}`);
-                    }
+                    console.log('[P14] 처리 완료 → P15 섹션 에디터로 이동');
+                    navigateTo(`P15_SectionEditor.html?reportId=${reportId}`);
                 }, 1000);
 
             } catch (error) {
@@ -2612,7 +2723,7 @@
 
                 if (needsOCR && typeof Tesseract !== 'undefined') {
                     console.log(`🔍 이미지 기반 PDF 감지 - OCR 시작: ${fileName}`);
-                    showToast(`🔍 OCR 변환 중: ${fileName}...`, 'info');
+                    showToast(`OCR 변환 중: ${fileName}...`, 'info');
 
                     try {
                         const worker = await Tesseract.createWorker('kor+eng', 1, {
@@ -2626,7 +2737,7 @@
                         let ocrText = '';
                         for (let i = 1; i <= numPages; i++) {
                             console.log(`🔄 OCR 페이지 ${i}/${numPages}...`);
-                            showToast(`🔍 OCR 변환 중: ${fileName} (${i}/${numPages} 페이지)...`, 'info');
+                            showToast(`OCR 변환 중: ${fileName} (${i}/${numPages} 페이지)...`, 'info');
                             const page = await pdf.getPage(i);
 
                             // 고해상도 렌더링 (2배)
@@ -2807,7 +2918,21 @@
             localStorage.setItem('current_report', JSON.stringify(currentReport));
 
             // DB에 저장 (reports.user_inputs 업데이트)
-            const reportId = getUrlParam('reportId');
+            // reportId를 URL 또는 localStorage에서 가져오기 (일관성 확보)
+            let reportId = getUrlParam('reportId');
+            if (!reportId) {
+                const storedReport = localStorage.getItem('current_report');
+                if (storedReport) {
+                    try {
+                        const parsed = JSON.parse(storedReport);
+                        reportId = (typeof parsed === 'object' && parsed !== null) ? parsed.reportId : storedReport;
+                    } catch (e) {
+                        // JSON 파싱 실패 시 UUID 문자열로 간주
+                        reportId = storedReport;
+                    }
+                }
+            }
+            console.log('[saveProcessingResults] reportId:', reportId);
             if (reportId && window.supabaseClient && typeof window.supabaseClient.updateReport === 'function') {
                 try {
                     await window.supabaseClient.updateReport(reportId, {
@@ -2884,11 +3009,21 @@
             console.log('✅ extractedData 캐시 저장 완료:', extractedData.length, '개 항목');
 
             // DB에 extracted_data 저장 (Primary Storage)
+            if (!reportId) {
+                console.warn('⚠️ [DB 저장 스킵] reportId가 없습니다. URL 파라미터와 localStorage를 확인하세요.');
+            }
             if (reportId && window.supabaseClient && typeof window.supabaseClient.bulkUpsertExtractedData === 'function') {
                 try {
                     // DB 스키마에 맞게 데이터 정제
                     const dbReadyData = sanitizeExtractedDataForDB(extractedData);
-                    console.log('📋 DB 저장용 데이터 정제 완료:', dbReadyData.length, '개 항목');
+
+                    // 디버깅: 플레이스홀더 vs 실제 값 개수 확인
+                    const placeholderCount = dbReadyData.filter(d =>
+                        d.data_value?.includes('LLM 추출 필요') ||
+                        d.data_value?.includes('사용자 입력 필요') ||
+                        (d.data_value?.startsWith('[') && d.data_value?.includes(']'))
+                    ).length;
+                    console.log('📋 DB 저장용 데이터 정제 완료:', dbReadyData.length, '개 항목 (플레이스홀더:', placeholderCount, '개)');
 
                     const dbResult = await window.supabaseClient.bulkUpsertExtractedData(reportId, dbReadyData);
                     if (dbResult.success) {
@@ -3527,13 +3662,13 @@
         }
 
         /**
-         * 하이브리드 데이터 추출 - LLM 검증 및 보완
+         * 하이브리드 데이터 추출 - LLM 검증 및 보완 (싱글턴 모듈 연동)
          * @param {Array} regexExtractedData - Regex로 추출한 데이터
          * @param {Object} convertedMarkdowns - RAW 파일별 마크다운 내용
          * @returns {Promise<Array>} 검증 및 보완된 데이터
          */
         async function hybridExtractWithLLM(regexExtractedData, convertedMarkdowns) {
-            console.log('[Hybrid] LLM 검증 및 보완 시작...');
+            console.log('[Hybrid] LLM 검증 및 보완 시작 (싱글턴 모듈 연동)...');
 
             // API 키 확인
             const apiKey = localStorage.getItem('GOOGLE_API_KEY');
@@ -3541,6 +3676,10 @@
                 console.warn('[Hybrid] API 키 없음 - Regex 결과만 사용');
                 return regexExtractedData;
             }
+
+            // 싱글턴 모듈 확인
+            const useExtractBase = !!(window.extractBase && typeof window.extractBase.extractFromMarkdown === 'function');
+            console.log(`[Hybrid] 싱글턴 모듈 사용: ${useExtractBase ? 'window.extractBase' : 'Fallback 모드'}`);
 
             try {
                 // 1. Regex 추출 결과 요약
@@ -3638,6 +3777,110 @@
 
                 console.log(`[Hybrid] 누락된 필수 CS 항목: ${missingCS.length}개`, missingCS);
 
+                // ========================================
+                // 2.5. 싱글턴 모듈(window.extractBase) 사용한 파일별 LLM 추출
+                // ========================================
+                if (useExtractBase && missingCS.length > 0) {
+                    console.log('[Hybrid] 싱글턴 모듈로 파일별 LLM 추출 시작...');
+
+                    // CS_DEFINITIONS에서 누락된 항목에 필요한 RAW 파일 매핑
+                    const missingCSToRaw = {};
+                    missingCS.forEach(csKey => {
+                        const def = window.CS_DEFINITIONS?.[csKey];
+                        if (def && def.rawIds) {
+                            const actualRawIds = def.rawIds.filter(id => !['USER_INPUT', 'CALCULATED', 'GENERATED'].includes(id));
+                            if (actualRawIds.length > 0) {
+                                missingCSToRaw[csKey] = actualRawIds;
+                            }
+                        }
+                    });
+
+                    // RAW 파일별로 그룹화
+                    const rawToMissingCS = {};
+                    Object.entries(missingCSToRaw).forEach(([csKey, rawIds]) => {
+                        rawIds.forEach(rawId => {
+                            if (!rawToMissingCS[rawId]) rawToMissingCS[rawId] = [];
+                            if (!rawToMissingCS[rawId].includes(csKey)) {
+                                rawToMissingCS[rawId].push(csKey);
+                            }
+                        });
+                    });
+
+                    console.log('[Hybrid] RAW별 누락 CS 매핑:', rawToMissingCS);
+
+                    // 파일별 LLM 추출 수행
+                    for (const [fileName, markdownContent] of Object.entries(convertedMarkdowns)) {
+                        // 파일명에서 RAW ID 추출 (예: "RAW4_허가현황.xlsx.md" -> "RAW4")
+                        const rawIdMatch = fileName.match(/(RAW\d+(?:\.\d+)?)/i);
+                        const rawId = rawIdMatch ? rawIdMatch[1].toUpperCase() : null;
+
+                        if (!rawId || !rawToMissingCS[rawId]) continue;
+
+                        const targetCSKeys = rawToMissingCS[rawId];
+                        console.log(`[Hybrid] ${rawId}: ${targetCSKeys.length}개 CS 추출 시도...`);
+
+                        // 해당 RAW에서 추출해야 할 CS 정의 필터링
+                        const targetDefs = {};
+                        targetCSKeys.forEach(csKey => {
+                            if (window.CS_DEFINITIONS?.[csKey]) {
+                                targetDefs[csKey] = window.CS_DEFINITIONS[csKey];
+                            }
+                        });
+
+                        if (Object.keys(targetDefs).length === 0) continue;
+
+                        // extractBase.extractFromMarkdown 호출
+                        try {
+                            if (window.llmProgressBar) {
+                                window.llmProgressBar.setStreamText(`${rawId}에서 CS 데이터 추출 중...`);
+                            }
+
+                            const result = await window.extractBase.extractFromMarkdown(
+                                markdownContent,
+                                rawId,
+                                targetDefs
+                            );
+
+                            if (result.success && result.data) {
+                                // 추출된 데이터를 regexExtractedData에 병합
+                                Object.entries(result.data).forEach(([varId, value]) => {
+                                    if (!value || value === 'DATA_NOT_FOUND' || isPlaceholder(value)) return;
+
+                                    const existing = regexExtractedData.find(d => d.variable_id === varId);
+                                    if (existing && isPlaceholder(existing.data_value)) {
+                                        // 기존 플레이스홀더 값 업데이트
+                                        existing.data_value = value;
+                                        existing.source_raw_id = rawId;
+                                        existing.validation_status = 'LLM_Extracted';
+                                        console.log(`[Hybrid] ✅ ${varId} 업데이트 완료 (${rawId})`);
+
+                                        // missingCS에서 제거
+                                        const idx = missingCS.indexOf(varId);
+                                        if (idx > -1) missingCS.splice(idx, 1);
+                                    } else if (!existing) {
+                                        // 새 항목 추가
+                                        regexExtractedData.push({
+                                            data_type: 'CS',
+                                            variable_id: varId,
+                                            data_value: value,
+                                            source_raw_id: rawId,
+                                            validation_status: 'LLM_Extracted'
+                                        });
+                                        console.log(`[Hybrid] ✅ ${varId} 신규 추가 (${rawId})`);
+
+                                        const idx = missingCS.indexOf(varId);
+                                        if (idx > -1) missingCS.splice(idx, 1);
+                                    }
+                                });
+                            }
+                        } catch (err) {
+                            console.error(`[Hybrid] ${rawId} 추출 오류:`, err.message);
+                        }
+                    }
+
+                    console.log(`[Hybrid] 싱글턴 모듈 추출 완료, 잔여 누락: ${missingCS.length}개`);
+                }
+
                 // 3. PH 서술문 생성 대상 식별
                 const phToGenerate = regexExtractedData
                     .filter(d => d.data_type === 'PH' && d.validation_status === 'Pending')
@@ -3645,13 +3888,18 @@
 
                 // 4. GENERATED 항목 중 LLM 생성 필요한 항목 식별
                 const generatedToCreate = [
+                    { id: 'CS9_목차', description: '전체 PSUR 보고서의 섹션 목차 (00~14번 섹션 제목 리스트)' },
+                    { id: 'CS10_표목차', description: '보고서에 포함된 표 목록 (표1~표9 등 표 제목 리스트)' },
+                    { id: 'CS11_별첨목차', description: '별첨 문서 목록 (별첨1: 첨부문서, 별첨2: 변경대비표, 별첨3: 일람표 등)' },
                     { id: 'CS12_약어표', description: '문서에서 사용된 약어와 정의 목록을 표 형식으로 작성' },
                     { id: 'CS17_.6_허가현황서술문', description: '전세계 허가 현황을 요약한 서술문 (어느 국가에서 언제 허가되었는지)' },
                     { id: 'CS57_참고문헌리스트', description: '문서에서 인용된 참고문헌 목록을 번호순으로 정리' }
                 ];
-                const generatedItems = generatedToCreate.filter(item =>
-                    regexExtractedData.find(d => d.variable_id === item.id && d.source_raw_id === 'GENERATED')
-                );
+                // placeholder 상태인 GENERATED 항목만 필터링 (기존 isPlaceholder 함수 사용)
+                const generatedItems = generatedToCreate.filter(item => {
+                    const existing = regexExtractedData.find(d => d.variable_id === item.id);
+                    return !existing || isPlaceholder(existing.data_value);
+                });
 
                 // 누락된 데이터가 없고 PH/GENERATED 생성도 불필요하면 Regex 결과 반환
                 if (missingCS.length === 0 && phToGenerate.length === 0 && generatedItems.length === 0) {
@@ -3746,10 +3994,13 @@ ${allMarkdowns.substring(0, 60000)}
 ## 작업 지침
 1. **누락된 CS 항목**: 위 RAW 자료에서 해당 값을 찾아 추출하세요.
 2. **PH 서술문**: RAW 자료를 기반으로 간결한 서술문을 작성하세요 (각 100-300자).
-3. **GENERATED 항목**: 아래 형식에 맞게 생성하세요.
+3. **GENERATED 항목 (⚠️ 필수 생성 - 모두 반드시 생성해야 함!)**: 아래 형식에 맞게 생성하세요.
+   - CS9_목차: 마크다운 목록 형식으로 섹션 목차 (예: "1. 서론\\n2. 전세계 판매허가 현황\\n3. 안전성 조치..." 형식, 00~14번 섹션 포함)
+   - CS10_표목차: 마크다운 목록 형식으로 표 목록 (예: "표 1. 전세계 허가현황\\n표 2. 연도별 판매량\\n표 3. 연평균 환자노출..." 형식)
+   - CS11_별첨목차: 마크다운 목록 형식으로 별첨 목록 (예: "별첨 1. 최신 첨부문서\\n별첨 2. 참고정보 변경 대비표\\n별첨 3. 이상사례 일람표")
    - CS12_약어표: 마크다운 표 형식으로 약어|정의 목록 (예: | 약어 | 정의 |\\n|---|---|\\n| PSUR | 정기 안전성 업데이트 보고서 |)
-   - CS17_.6_허가현황서술문: "본 의약품은 YYYY년 MM월 DD일 [국가]에서 최초 허가되었으며..." 형식
-   - CS57_참고문헌리스트: 번호순 참고문헌 목록 (1. 저자명. 제목. 저널명. 연도.)
+   - **CS17_.6_허가현황서술문** (⚠️ 필수!): RAW4 허가현황 데이터를 기반으로 서술문 작성. 반드시 "본 의약품은 YYYY년 MM월 DD일 [국가]에서 최초 허가되었으며, 이후 [국가](YYYY-MM-DD), [국가](YYYY-MM-DD) 등에서 순차적으로 허가되었다." 형식으로 작성. CS17_.1~CS17_.5에서 추출한 정보를 활용하여 완전한 문장으로 생성!
+   - **CS57_참고문헌리스트** (⚠️ 필수!): RAW9 문헌자료에서 참고문헌 목록 생성. 반드시 번호순 목록 형식 (예: "1. Smith J. et al. Drug Safety Study. J Pharm. 2024.\\n2. Lee K. et al. Clinical Trial Results. BMJ. 2023.")으로 작성. RAW9 데이터가 없으면 "해당 보고기간 내 참고문헌 없음"으로 작성!
 4. **검증**: Regex 추출 결과 중 명백히 틀린 값이 있으면 수정하세요.
 5. **CS17 허가현황 추출** (RAW4 허가현황 파일에서):
    - CS17_전세계허가현황표: 마크다운 표 형식 (| 국가 | 브랜드명 | 허가번호 | 허가상태 | 허가일 |)
@@ -3911,15 +4162,27 @@ ${allMarkdowns.substring(0, 60000)}
                 // 8. 결과 병합
                 const enhancedData = [...regexExtractedData];
 
+                // GENERATED 항목 목록 (placeholder 체크 우회 대상 - 이 항목들은 LLM이 반드시 생성해야 함)
+                const generatedVarIds = ['CS9_목차', 'CS10_표목차', 'CS11_별첨목차', 'CS12_약어표', 'CS17_.6_허가현황서술문', 'CS57_참고문헌리스트'];
+
                 // 8-1. 새로 추출된 데이터 추가 (GENERATED 포함)
                 if (llmResult.extracted) {
                     Object.entries(llmResult.extracted).forEach(([varId, value]) => {
-                        // LLM이 플레이스홀더 값을 반환한 경우 무시
-                        if (!value || value === 'DATA_NOT_FOUND' || isPlaceholder(value)) {
-                            if (value && isPlaceholder(value)) {
-                                console.log(`[Hybrid] 스킵: ${varId} - LLM이 플레이스홀더 반환`);
-                            }
+                        // 값이 없거나 DATA_NOT_FOUND인 경우만 스킵
+                        if (!value || value === 'DATA_NOT_FOUND') {
                             return;
+                        }
+
+                        // GENERATED 항목은 placeholder 체크 우회 (실제 내용이 있으면 저장)
+                        const isGeneratedItem = generatedVarIds.includes(varId);
+                        if (!isGeneratedItem && isPlaceholder(value)) {
+                            console.log(`[Hybrid] 스킵: ${varId} - LLM이 플레이스홀더 반환`);
+                            return;
+                        }
+
+                        // GENERATED 항목이 여전히 placeholder 패턴이면 경고만 출력하고 진행
+                        if (isGeneratedItem && isPlaceholder(value)) {
+                            console.warn(`[Hybrid] GENERATED 항목 ${varId}가 placeholder 패턴 - 강제 저장`);
                         }
 
                         const existing = enhancedData.find(d => d.variable_id === varId);
@@ -3949,6 +4212,80 @@ ${allMarkdowns.substring(0, 60000)}
                         }
                     });
                 }
+
+                // 8-1-1. GENERATED 항목 강제 생성 (LLM이 생성하지 않은 경우)
+                generatedVarIds.forEach(varId => {
+                    const existing = enhancedData.find(d => d.variable_id === varId);
+                    if (!existing || isPlaceholder(existing.data_value)) {
+                        let generatedValue = null;
+
+                        // CS17_.6_허가현황서술문: CS17_.1~CS17_.5 데이터 기반 서술문 생성
+                        if (varId === 'CS17_.6_허가현황서술문') {
+                            const cs17_1 = enhancedData.find(d => d.variable_id === 'CS17_.1_허가국가')?.data_value;
+                            const cs17_2 = enhancedData.find(d => d.variable_id === 'CS17_.2_허가일')?.data_value;
+                            if (cs17_1 && cs17_2 && !isPlaceholder(cs17_1) && !isPlaceholder(cs17_2)) {
+                                // 허가일에서 최초 허가 정보 추출
+                                const dates = cs17_2.split(',').map(d => d.trim());
+                                const countries = cs17_1.split(',').map(c => c.trim());
+                                if (dates.length > 0 && countries.length > 0) {
+                                    // 날짜 파싱해서 가장 빠른 날짜 찾기
+                                    let firstCountry = countries[0];
+                                    let firstDate = dates[0];
+
+                                    // "국가: 날짜" 형식 파싱
+                                    if (firstDate.includes(':')) {
+                                        const parts = firstDate.split(':');
+                                        firstCountry = parts[0].trim();
+                                        firstDate = parts[1]?.trim() || firstDate;
+                                    }
+
+                                    // 나머지 국가 목록
+                                    const otherCountries = countries.slice(1).join(', ');
+
+                                    generatedValue = `본 의약품은 ${firstDate} ${firstCountry}에서 최초 허가되었으며, 이후 ${otherCountries} 등에서 순차적으로 허가되었다. 현재까지 총 ${countries.length}개국에서 허가를 받았다.`;
+                                }
+                            }
+                            if (!generatedValue) {
+                                generatedValue = '허가현황 데이터 부족으로 서술문 생성 불가 - 수동 입력 필요';
+                            }
+                        }
+
+                        // CS57_참고문헌리스트: RAW9 문헌자료 데이터 기반
+                        else if (varId === 'CS57_참고문헌리스트') {
+                            // RAW9 마크다운에서 참고문헌 추출 시도
+                            const raw9Markdown = rawIdToMarkdown['RAW9'] || '';
+                            if (raw9Markdown && raw9Markdown.length > 50) {
+                                // 간단한 참고문헌 목록 생성
+                                const lines = raw9Markdown.split('\n').filter(l => l.trim().length > 10);
+                                if (lines.length > 0) {
+                                    generatedValue = lines.slice(0, 20).map((line, idx) => `${idx + 1}. ${line.trim()}`).join('\n');
+                                }
+                            }
+                            if (!generatedValue) {
+                                generatedValue = '해당 보고기간 내 참고문헌 없음';
+                            }
+                        }
+
+                        // 값이 생성되었으면 업데이트/추가
+                        if (generatedValue) {
+                            if (existing) {
+                                existing.data_value = generatedValue;
+                                existing.validation_status = 'Auto_Generated';
+                                existing.source_raw_id = 'GENERATED';
+                                console.log(`[Hybrid] GENERATED 강제 생성: ${varId}`);
+                            } else {
+                                enhancedData.push({
+                                    data_type: 'CS',
+                                    variable_id: varId,
+                                    data_value: generatedValue,
+                                    source_raw_id: 'GENERATED',
+                                    validation_status: 'Auto_Generated'
+                                });
+                                console.log(`[Hybrid] GENERATED 신규 생성: ${varId}`);
+                            }
+                        }
+                    }
+                });
 
                 // 8-2. 수정 사항 적용
                 if (llmResult.corrections) {
@@ -3993,35 +4330,77 @@ ${allMarkdowns.substring(0, 60000)}
                 const successFiles = convertedFiles.filter(f => !f.markdown.includes('변환 실패'));
                 const failedFiles = convertedFiles.filter(f => f.markdown.includes('변환 실패'));
 
+                // 다크모드 감지
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+                // 다크모드 색상 정의
+                const colors = isDark ? {
+                    modalBg: '#1e1e1e',
+                    modalBorder: '#333',
+                    titleColor: '#64b5f6',
+                    successBg: '#1b3d20',
+                    successText: '#81c784',
+                    successBorder: '#2e7d32',
+                    failBg: '#3d1b1b',
+                    failText: '#ef9a9a',
+                    failBorder: '#c62828',
+                    neutralBg: '#2d2d2d',
+                    neutralText: '#9e9e9e',
+                    tableBorder: '#444',
+                    tableHeaderBg: 'rgba(76, 175, 80, 0.2)',
+                    codeBg: '#333',
+                    codeText: '#e0e0e0',
+                    textMuted: '#aaa',
+                    rowBorder: '#444'
+                } : {
+                    modalBg: 'white',
+                    modalBorder: '#e0e0e0',
+                    titleColor: '#1976d2',
+                    successBg: '#e8f5e9',
+                    successText: '#2e7d32',
+                    successBorder: '#4caf50',
+                    failBg: '#ffebee',
+                    failText: '#c62828',
+                    failBorder: '#f44336',
+                    neutralBg: '#f5f5f5',
+                    neutralText: '#9e9e9e',
+                    tableBorder: '#c8e6c9',
+                    tableHeaderBg: 'rgba(46, 125, 50, 0.1)',
+                    codeBg: '#f5f5f5',
+                    codeText: '#333',
+                    textMuted: '#666',
+                    rowBorder: '#e0e0e0'
+                };
+
                 let html = `
-                    <div class="modal-overlay" id="conversionResultPopup" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
-                        <div class="modal-content" style="background: white; padding: 30px; border-radius: 8px; max-width: 800px; max-height: 80vh; overflow-y: auto;">
-                            <h2 style="color: #1976d2; margin-bottom: 20px;">📄 마크다운 변환 결과</h2>
+                    <div class="modal-overlay" id="conversionResultPopup" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999;">
+                        <div class="modal-content" style="background: ${colors.modalBg}; padding: 30px; border-radius: 8px; max-width: 800px; max-height: 80vh; overflow-y: auto; border: 1px solid ${colors.modalBorder};">
+                            <h2 style="color: ${colors.titleColor}; margin-bottom: 20px;">마크다운 변환 결과</h2>
 
                             <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-                                <div style="flex: 1; background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 2rem; color: #2e7d32;">✅ ${successFiles.length}</div>
-                                    <div style="color: #2e7d32;">성공</div>
+                                <div style="flex: 1; background: ${colors.successBg}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${colors.successBorder};">
+                                    <div style="font-size: 2rem; color: ${colors.successText};">${successFiles.length}</div>
+                                    <div style="color: ${colors.successText};">성공</div>
                                 </div>
-                                <div style="flex: 1; background: ${failedFiles.length > 0 ? '#ffebee' : '#f5f5f5'}; padding: 15px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 2rem; color: ${failedFiles.length > 0 ? '#c62828' : '#9e9e9e'};">❌ ${failedFiles.length}</div>
-                                    <div style="color: ${failedFiles.length > 0 ? '#c62828' : '#9e9e9e'};">실패</div>
+                                <div style="flex: 1; background: ${failedFiles.length > 0 ? colors.failBg : colors.neutralBg}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${failedFiles.length > 0 ? colors.failBorder : colors.modalBorder};">
+                                    <div style="font-size: 2rem; color: ${failedFiles.length > 0 ? colors.failText : colors.neutralText};">${failedFiles.length}</div>
+                                    <div style="color: ${failedFiles.length > 0 ? colors.failText : colors.neutralText};">실패</div>
                                 </div>
                             </div>
                 `;
 
                 if (failedFiles.length > 0) {
                     html += `
-                        <div style="background: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin-bottom: 15px; border-radius: 4px;">
-                            <strong style="color: #d32f2f;">⚠️ 변환 실패 파일:</strong>
+                        <div style="background: ${colors.failBg}; padding: 15px; border-left: 4px solid ${colors.failBorder}; margin-bottom: 15px; border-radius: 4px;">
+                            <strong style="color: ${colors.failText};">[!] 변환 실패 파일:</strong>
                             <ul style="margin-top: 10px; padding-left: 20px;">
                     `;
                     failedFiles.forEach(f => {
                         const errorMsg = f.markdown.match(/변환 실패: (.+)/)?.[1] || '알 수 없는 오류';
                         html += `
-                            <li style="margin: 8px 0; color: #c62828;">
+                            <li style="margin: 8px 0; color: ${colors.failText};">
                                 <strong>${f.name}</strong>
-                                <br><small style="color: #666;">${errorMsg}</small>
+                                <br><small style="color: ${colors.textMuted};">${errorMsg}</small>
                             </li>
                         `;
                     });
@@ -4029,14 +4408,14 @@ ${allMarkdowns.substring(0, 60000)}
                 }
 
                 html += `
-                    <div style="background: #e8f5e9; padding: 15px; border-left: 4px solid #4caf50; margin-bottom: 15px; border-radius: 4px; max-height: 200px; overflow-y: auto;">
-                        <strong style="color: #2e7d32;">✅ 변환 성공 파일:</strong>
+                    <div style="background: ${colors.successBg}; padding: 15px; border-left: 4px solid ${colors.successBorder}; margin-bottom: 15px; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                        <strong style="color: ${colors.successText};">변환 성공 파일:</strong>
                         <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
                             <thead>
-                                <tr style="background: rgba(46, 125, 50, 0.1);">
-                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #c8e6c9;">파일명</th>
-                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #c8e6c9;">RAW ID</th>
-                                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #c8e6c9;">크기</th>
+                                <tr style="background: ${colors.tableHeaderBg};">
+                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid ${colors.tableBorder}; color: ${colors.successText};">파일명</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid ${colors.tableBorder}; color: ${colors.successText};">RAW ID</th>
+                                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid ${colors.tableBorder}; color: ${colors.successText};">크기</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -4048,9 +4427,9 @@ ${allMarkdowns.substring(0, 60000)}
                         : `${f.markdown.length}B`;
                     html += `
                         <tr>
-                            <td style="padding: 6px 8px; border-bottom: 1px solid #e0e0e0;">${f.name}</td>
-                            <td style="padding: 6px 8px; border-bottom: 1px solid #e0e0e0;"><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">${rawId}</code></td>
-                            <td style="padding: 6px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;">${size}</td>
+                            <td style="padding: 6px 8px; border-bottom: 1px solid ${colors.rowBorder}; color: ${colors.successText};">${f.name}</td>
+                            <td style="padding: 6px 8px; border-bottom: 1px solid ${colors.rowBorder};"><code style="background: ${colors.codeBg}; color: ${colors.codeText}; padding: 2px 6px; border-radius: 3px;">${rawId}</code></td>
+                            <td style="padding: 6px 8px; border-bottom: 1px solid ${colors.rowBorder}; text-align: right; color: ${colors.successText};">${size}</td>
                         </tr>
                     `;
                 });
@@ -4062,16 +4441,16 @@ ${allMarkdowns.substring(0, 60000)}
 
                 const canProceed = successFiles.length > 0;
                 html += `
-                    <p style="margin-bottom: 20px; color: #666;">
+                    <p style="margin-bottom: 20px; color: ${colors.textMuted};">
                         ${failedFiles.length > 0
-                        ? '⚠️ 일부 파일 변환에 실패했습니다. 실패한 파일을 다시 업로드하거나, 성공한 파일로만 계속 진행할 수 있습니다.'
-                        : '✅ 모든 파일이 정상적으로 변환되었습니다.'}
+                        ? '[!] 일부 파일 변환에 실패했습니다. 실패한 파일을 다시 업로드하거나, 성공한 파일로만 계속 진행할 수 있습니다.'
+                        : '모든 파일이 정상적으로 변환되었습니다.'}
                     </p>
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button id="cancelConversionBtn" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer;">
                             취소 (파일 재업로드)
                         </button>
-                        <button id="continueConversionBtn" style="padding: 10px 20px; background: ${canProceed ? '#2196f3' : '#ccc'}; color: white; border: none; border-radius: 4px; cursor: ${canProceed ? 'pointer' : 'not-allowed'};" ${canProceed ? '' : 'disabled'}>
+                        <button id="continueConversionBtn" style="padding: 10px 20px; background: ${canProceed ? '#2196f3' : '#555'}; color: white; border: none; border-radius: 4px; cursor: ${canProceed ? 'pointer' : 'not-allowed'};" ${canProceed ? '' : 'disabled'}>
                             ${failedFiles.length > 0 ? '성공한 파일로 계속 진행' : '계속 진행'}
                         </button>
                     </div>
@@ -4198,24 +4577,36 @@ ${allMarkdowns.substring(0, 60000)}
 
         function showDataValidationWarning(validation) {
             return new Promise((resolve) => {
+                // 다크모드 감지 및 색상 설정
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const colors = {
+                    modalBg: isDark ? '#1e1e1e' : 'white',
+                    modalBorder: isDark ? '#333' : '#e0e0e0',
+                    errorBg: isDark ? 'rgba(244, 67, 54, 0.15)' : '#ffebee',
+                    warnBg: isDark ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0',
+                    infoBg: isDark ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd',
+                    textMuted: isDark ? '#aaa' : '#666',
+                    textLight: isDark ? '#888' : '#888'
+                };
+
                 let html = `
-                    <div class="modal-overlay" id="validationWarning" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
-                        <div class="modal-content" style="background: white; padding: 30px; border-radius: 8px; max-width: 700px; max-height: 80vh; overflow-y: auto;">
-                            <h2 style="color: #ff9800; margin-bottom: 20px;">⚠️ 데이터 부족 경고</h2>
+                    <div class="modal-overlay" id="validationWarning" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999;">
+                        <div class="modal-content" style="background: ${colors.modalBg}; padding: 30px; border-radius: 8px; max-width: 700px; max-height: 80vh; overflow-y: auto; border: 1px solid ${colors.modalBorder};">
+                            <h2 style="color: #ff9800; margin-bottom: 20px;">[!] 데이터 부족 경고</h2>
                 `;
 
                 if (validation.criticalMissing.length > 0) {
                     html += `
-                        <div style="background: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin-bottom: 15px; border-radius: 4px;">
-                            <strong style="color: #d32f2f;">다음 섹션은 필수 데이터가 없어 생성되지 않을 수 있습니다:</strong>
+                        <div style="background: ${colors.errorBg}; padding: 15px; border-left: 4px solid #f44336; margin-bottom: 15px; border-radius: 4px;">
+                            <strong style="color: #ef5350;">다음 섹션은 필수 데이터가 없어 생성되지 않을 수 있습니다:</strong>
                             <ul style="margin-top: 10px; padding-left: 20px;">
                     `;
                     validation.criticalMissing.forEach(item => {
                         html += `
                             <li style="margin: 10px 0;">
                                 <strong>섹션 ${item.sectionId}: ${item.sectionName}</strong>
-                                <br><span style="color: #666;">누락 파일: ${item.missingFiles.join(', ')}</span>
-                                <br><small style="color: #888;">${item.description}</small>
+                                <br><span style="color: ${colors.textMuted};">누락 파일: ${item.missingFiles.join(', ')}</span>
+                                <br><small style="color: ${colors.textLight};">${item.description}</small>
                             </li>
                         `;
                     });
@@ -4224,15 +4615,15 @@ ${allMarkdowns.substring(0, 60000)}
 
                 if (validation.warnings.length > 0) {
                     html += `
-                        <div style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800; margin-bottom: 15px; border-radius: 4px;">
-                            <strong style="color: #f57c00;">권장 파일이 누락되었습니다 (선택적):</strong>
+                        <div style="background: ${colors.warnBg}; padding: 15px; border-left: 4px solid #ff9800; margin-bottom: 15px; border-radius: 4px;">
+                            <strong style="color: #ffb74d;">권장 파일이 누락되었습니다 (선택적):</strong>
                             <ul style="margin-top: 10px; padding-left: 20px;">
                     `;
                     validation.warnings.forEach(item => {
                         html += `
                             <li style="margin: 5px 0;">
                                 섹션 ${item.sectionId}: ${item.sectionName}
-                                <br><span style="color: #666;">누락 파일: ${item.missingFiles.join(', ')}</span>
+                                <br><span style="color: ${colors.textMuted};">누락 파일: ${item.missingFiles.join(', ')}</span>
                             </li>
                         `;
                     });
@@ -4240,12 +4631,12 @@ ${allMarkdowns.substring(0, 60000)}
                 }
 
                 html += `
-                            <div style="background: #e3f2fd; padding: 15px; border-left: 4px solid #2196f3; margin-bottom: 20px; border-radius: 4px;">
-                                <strong style="color: #1976d2;">업로드된 파일:</strong>
-                                <span style="color: #666;">${Array.from(validation.uploadedRAWIds).join(', ')}</span>
+                            <div style="background: ${colors.infoBg}; padding: 15px; border-left: 4px solid #2196f3; margin-bottom: 20px; border-radius: 4px;">
+                                <strong style="color: #64b5f6;">업로드된 파일:</strong>
+                                <span style="color: ${colors.textMuted};">${Array.from(validation.uploadedRAWIds).join(', ')}</span>
                             </div>
                             <p style="margin-bottom: 10px;"><strong>계속 진행하시겠습니까?</strong></p>
-                            <p style="color: #666; margin-bottom: 20px;">누락된 섹션은 기본 템플릿으로 생성되며, 나중에 수동으로 편집할 수 있습니다.</p>
+                            <p style="color: ${colors.textMuted}; margin-bottom: 20px;">누락된 섹션은 기본 템플릿으로 생성되며, 나중에 수동으로 편집할 수 있습니다.</p>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button id="cancelValidationBtn" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                     취소 (파일 추가하기)
@@ -4289,7 +4680,7 @@ ${allMarkdowns.substring(0, 60000)}
                 if (!apiKey) {
                     console.warn('[generatePSURSections] API 키가 없습니다. 설정 페이지로 이동을 권장합니다.');
                     const goToSettings = confirm(
-                        '⚠️ Google API 키가 설정되지 않았습니다.\n\n' +
+                        '[!] Google API 키가 설정되지 않았습니다.\n\n' +
                         'PSUR 섹션 생성을 위해 API 키가 필요합니다.\n' +
                         '설정 페이지로 이동하시겠습니까?\n\n' +
                         '(취소를 누르면 기본 템플릿으로 생성됩니다)'
@@ -4515,6 +4906,199 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
             }
         }
 
+        /**
+         * 싱글턴(Single-Turn) LLM 응답 파싱 - 새 Structured Output 스키마
+         * @param {string} responseText - LLM JSON 응답
+         * @returns {Object} { extractedData, sections, fullReport, metadata }
+         */
+        function parseSingleTurnResponse(responseText) {
+            console.group('🔄 Single-Turn Response Parser');
+            console.log('📥 Response Length:', responseText.length, 'chars');
+
+            const result = {
+                extractedData: { CS: {}, PH: {}, Tables: {} },
+                sections: {},
+                fullReport: null,
+                metadata: null,
+                parseSuccess: false
+            };
+
+            try {
+                // JSON 코드블록 제거
+                let cleanText = responseText.trim();
+                if (cleanText.startsWith('```json')) {
+                    cleanText = cleanText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+                }
+                if (cleanText.startsWith('```')) {
+                    cleanText = cleanText.replace(/^```\n?/, '').replace(/\n?```$/, '');
+                }
+
+                // JSON 파싱
+                const jsonData = JSON.parse(cleanText);
+                console.log('✅ JSON Parse Success');
+
+                // 1. extractedData 파싱 (CS/PH/Tables)
+                if (jsonData.extractedData) {
+                    if (jsonData.extractedData.CS) {
+                        result.extractedData.CS = jsonData.extractedData.CS;
+                        console.log(`  📊 CS: ${Object.keys(jsonData.extractedData.CS).length}개 변수`);
+                    }
+                    if (jsonData.extractedData.PH) {
+                        result.extractedData.PH = jsonData.extractedData.PH;
+                        console.log(`  📊 PH: ${Object.keys(jsonData.extractedData.PH).length}개 변수`);
+                    }
+                    if (jsonData.extractedData.Tables) {
+                        result.extractedData.Tables = jsonData.extractedData.Tables;
+                        console.log(`  📊 Tables: ${Object.keys(jsonData.extractedData.Tables).length}개 표`);
+                    }
+                }
+
+                // 2. sections 파싱 (새 구조: status, usedVariables 포함)
+                if (jsonData.sections) {
+                    for (const [key, value] of Object.entries(jsonData.sections)) {
+                        // 키 형식: "00_표지" 또는 "00"
+                        const sectionId = key.substring(0, 2);
+                        result.sections[sectionId] = {
+                            id: sectionId,
+                            name: value.sectionName || key.substring(3), // "00_표지" → "표지"
+                            content: value.content || '',
+                            status: value.status || 'unknown',
+                            usedVariables: value.usedVariables || [],
+                            generatedAt: new Date().toISOString(),
+                            isEdited: false,
+                            isSuccessful: value.status === 'complete' || value.status === 'partial'
+                        };
+                    }
+                    console.log(`  📄 Sections: ${Object.keys(result.sections).length}개 섹션`);
+                }
+
+                // 3. fullReport 파싱
+                if (jsonData.fullReport) {
+                    result.fullReport = {
+                        content: jsonData.fullReport.content || '',
+                        wordCount: jsonData.fullReport.wordCount || 0,
+                        charCount: jsonData.fullReport.charCount || 0,
+                        generatedAt: jsonData.fullReport.generatedAt || new Date().toISOString()
+                    };
+                    console.log(`  📑 Full Report: ${result.fullReport.wordCount} words`);
+                }
+
+                // 4. metadata 파싱
+                if (jsonData.metadata) {
+                    result.metadata = {
+                        processingInfo: jsonData.metadata.processingInfo || {},
+                        dataQuality: jsonData.metadata.dataQuality || {},
+                        missingData: jsonData.metadata.missingData || [],
+                        conflictData: jsonData.metadata.conflictData || [],
+                        calculationLog: jsonData.metadata.calculationLog || []
+                    };
+
+                    // 데이터 품질 로그
+                    if (result.metadata.dataQuality) {
+                        const dq = result.metadata.dataQuality;
+                        console.log(`  📈 Data Quality: CS ${dq.completenessCS || 0}%, PH ${dq.completenessPH || 0}%, Tables ${dq.completenessTables || 0}%`);
+                    }
+
+                    // 누락 데이터 경고
+                    if (result.metadata.missingData?.length > 0) {
+                        console.warn(`  ⚠️ Missing Data: ${result.metadata.missingData.length}개 항목`);
+                        result.metadata.missingData.forEach(item => {
+                            console.warn(`    - ${item.variableId}: ${item.reason}`);
+                        });
+                    }
+
+                    // 충돌 데이터 경고
+                    if (result.metadata.conflictData?.length > 0) {
+                        console.warn(`  ⚠️ Conflict Data: ${result.metadata.conflictData.length}개 항목`);
+                    }
+                }
+
+                result.parseSuccess = true;
+
+            } catch (e) {
+                console.error('❌ JSON Parse Error:', e.message);
+                console.log('📝 Response Preview:', responseText.substring(0, 500));
+                result.parseSuccess = false;
+            }
+
+            console.groupEnd();
+            return result;
+        }
+
+        /**
+         * extractedData를 localStorage 및 내부 상태에 저장
+         * @param {Object} extractedData - { CS: {...}, PH: {...}, Tables: {...} }
+         */
+        function storeExtractedDataFromSingleTurn(extractedData) {
+            const dataArray = [];
+
+            // CS 데이터 변환
+            if (extractedData.CS) {
+                Object.entries(extractedData.CS).forEach(([varId, value]) => {
+                    if (value !== null && value !== '' && value !== 'DATA_NOT_FOUND') {
+                        dataArray.push({
+                            data_type: 'CS',
+                            variable_id: varId,
+                            data_value: value,
+                            source_raw_id: 'LLM_SingleTurn',
+                            validation_status: 'LLM_Extracted'
+                        });
+                    }
+                });
+            }
+
+            // PH 데이터 변환
+            if (extractedData.PH) {
+                Object.entries(extractedData.PH).forEach(([varId, value]) => {
+                    if (value !== null && value !== '' && value !== 'DATA_NOT_FOUND') {
+                        dataArray.push({
+                            data_type: 'PH',
+                            variable_id: varId,
+                            data_value: value,
+                            source_raw_id: 'LLM_SingleTurn',
+                            validation_status: 'LLM_Extracted'
+                        });
+                    }
+                });
+            }
+
+            // Table 데이터 변환
+            if (extractedData.Tables) {
+                Object.entries(extractedData.Tables).forEach(([tableId, tableData]) => {
+                    if (tableData !== null && Object.keys(tableData).length > 0) {
+                        dataArray.push({
+                            data_type: 'Table',
+                            variable_id: tableId,
+                            data_value: JSON.stringify(tableData), // 객체를 JSON 문자열로 저장
+                            source_raw_id: 'LLM_SingleTurn',
+                            validation_status: 'LLM_Extracted'
+                        });
+                    }
+                });
+            }
+
+            console.log(`📦 Storing ${dataArray.length} extracted items (CS: ${Object.keys(extractedData.CS || {}).length}, PH: ${Object.keys(extractedData.PH || {}).length}, Tables: ${Object.keys(extractedData.Tables || {}).length})`);
+
+            // localStorage에 저장 (기존 데이터와 병합)
+            try {
+                const existing = JSON.parse(localStorage.getItem('extractedData') || '[]');
+
+                // 새 데이터로 기존 데이터 업데이트 (variable_id 기준)
+                const mergedMap = new Map();
+                existing.forEach(item => mergedMap.set(item.variable_id, item));
+                dataArray.forEach(item => mergedMap.set(item.variable_id, item));
+
+                const merged = Array.from(mergedMap.values());
+                localStorage.setItem('extractedData', JSON.stringify(merged));
+
+                console.log(`✅ localStorage updated: ${merged.length} total items`);
+            } catch (e) {
+                console.error('❌ localStorage save failed:', e);
+            }
+
+            return dataArray;
+        }
+
         function extractSectionsWithLogging(responseText, sectionNames, validation) {
             const sections = {};
 
@@ -4535,8 +5119,48 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
 
                 const jsonData = JSON.parse(cleanText);
 
-                if (jsonData.sections) {
-                    console.log('✓ JSON format detected and parsed');
+                // ========================================
+                // 새 스키마 (Single-Turn) 감지 및 처리
+                // ========================================
+                if (jsonData.extractedData || jsonData.fullReport || jsonData.metadata) {
+                    console.log('✓ Single-Turn Schema Detected');
+
+                    if (window.llmProgressBar) {
+                        window.llmProgressBar.setStreamText('싱글턴 응답 처리 중...');
+                    }
+
+                    // 새 스키마 파서 호출
+                    const parsed = parseSingleTurnResponse(responseText);
+
+                    if (parsed.parseSuccess) {
+                        // extractedData 저장 (CS/PH/Tables)
+                        if (parsed.extractedData) {
+                            storeExtractedDataFromSingleTurn(parsed.extractedData);
+                        }
+
+                        // sections 복사
+                        Object.assign(sections, parsed.sections);
+
+                        // fullReport 저장 (있으면)
+                        if (parsed.fullReport) {
+                            localStorage.setItem('fullReport', JSON.stringify(parsed.fullReport));
+                            console.log('✅ Full Report saved to localStorage');
+                        }
+
+                        // metadata 저장 (있으면)
+                        if (parsed.metadata) {
+                            localStorage.setItem('llmMetadata', JSON.stringify(parsed.metadata));
+                            console.log('✅ LLM Metadata saved to localStorage');
+                        }
+
+                        console.log('✓ Single-Turn parsing successful:', Object.keys(sections).length, 'sections');
+                    }
+                }
+                // ========================================
+                // 기존 스키마 (sections만 있음) 처리
+                // ========================================
+                else if (jsonData.sections) {
+                    console.log('✓ Legacy JSON format detected and parsed');
 
                     // 프로그레스 바 업데이트
                     if (window.llmProgressBar) {
@@ -4554,7 +5178,7 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                             isSuccessful: true  // 정상 파싱된 섹션
                         };
                     }
-                    console.log('✓ JSON parsing successful:', Object.keys(sections).length, 'sections');
+                    console.log('✓ Legacy JSON parsing successful:', Object.keys(sections).length, 'sections');
                 }
 
             } catch (e) {
@@ -4568,12 +5192,13 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 // === 부분 JSON 복구 시도 ===
                 // 잘린 JSON에서 개별 섹션 추출
                 try {
-                    // 섹션 패턴: "00": { "sectionName": "표지", "content": "..." }
-                    const sectionPattern = /"(\d{2})"\s*:\s*\{\s*"sectionName"\s*:\s*"([^"]+)"\s*,\s*"content"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
-                    let match;
                     let recoveredCount = 0;
 
-                    while ((match = sectionPattern.exec(responseText)) !== null) {
+                    // 패턴 1: 새 스키마 - "00_표지": { "sectionId": "00", "sectionName": "표지", "content": "..." }
+                    const newSchemaPattern = /"(\d{2})_([^"]+)"\s*:\s*\{[^}]*"content"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+                    let match;
+
+                    while ((match = newSchemaPattern.exec(responseText)) !== null) {
                         const sectionId = match[1];
                         const sectionName = match[2];
                         let content = match[3];
@@ -4585,16 +5210,47 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                             .replace(/\\"/g, '"')
                             .replace(/\\\\/g, '\\');
 
-                        sections[sectionId] = {
-                            id: sectionId,
-                            name: sectionName,
-                            content: content || `## ${sectionId}. ${sectionName}\n\n[내용 복구 실패]`,
-                            generatedAt: new Date().toISOString(),
-                            isEdited: false,
-                            isSuccessful: true,
-                            recoveredFromPartialJSON: true
-                        };
-                        recoveredCount++;
+                        if (!sections[sectionId]) {
+                            sections[sectionId] = {
+                                id: sectionId,
+                                name: sectionName,
+                                content: content || `## ${sectionId}. ${sectionName}\n\n[내용 복구 실패]`,
+                                generatedAt: new Date().toISOString(),
+                                isEdited: false,
+                                isSuccessful: true,
+                                recoveredFromPartialJSON: true
+                            };
+                            recoveredCount++;
+                        }
+                    }
+
+                    // 패턴 2: 기존 스키마 - "00": { "sectionName": "표지", "content": "..." }
+                    const legacyPattern = /"(\d{2})"\s*:\s*\{\s*"sectionName"\s*:\s*"([^"]+)"\s*,\s*"content"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+
+                    while ((match = legacyPattern.exec(responseText)) !== null) {
+                        const sectionId = match[1];
+                        const sectionName = match[2];
+                        let content = match[3];
+
+                        // JSON 이스케이프 문자 복원
+                        content = content
+                            .replace(/\\n/g, '\n')
+                            .replace(/\\t/g, '\t')
+                            .replace(/\\"/g, '"')
+                            .replace(/\\\\/g, '\\');
+
+                        if (!sections[sectionId]) {
+                            sections[sectionId] = {
+                                id: sectionId,
+                                name: sectionName,
+                                content: content || `## ${sectionId}. ${sectionName}\n\n[내용 복구 실패]`,
+                                generatedAt: new Date().toISOString(),
+                                isEdited: false,
+                                isSuccessful: true,
+                                recoveredFromPartialJSON: true
+                            };
+                            recoveredCount++;
+                        }
                     }
 
                     if (recoveredCount > 0) {
@@ -4672,7 +5328,7 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                 content += `1. 위 파일들을 업로드하십시오\n`;
                 content += `2. "재생성" 버튼을 클릭하여 이 섹션을 다시 생성하십시오\n`;
             } else if (warningInfo) {
-                content += `**⚠️ 데이터 부족**: 권장 파일이 누락되었습니다.\n\n`;
+                content += `**[!] 데이터 부족**: 권장 파일이 누락되었습니다.\n\n`;
                 content += `**권장 파일**: ${warningInfo.missingFiles.join(', ')}\n\n`;
                 content += `기본 템플릿으로 작성되었습니다. 상세 데이터를 추가하려면 권장 파일을 업로드하고 재생성하십시오.\n`;
             } else {

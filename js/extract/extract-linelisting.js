@@ -1462,6 +1462,159 @@
         }
 
         /**
+         * Line Listing 분석 결과에서 CS 값 추출
+         * @param {string} rawId - RAW ID (RAW12, RAW13, RAW14, RAW15)
+         * @returns {Object} CS 변수 매핑
+         */
+        extractCSValues(rawId) {
+            const csValues = {};
+
+            if (!this.processedData || this.processedData.length === 0) {
+                console.warn(`[LineListingExtractor] extractCSValues: 분석 데이터 없음 (${rawId})`);
+                return csValues;
+            }
+
+            // RAW12, RAW13: 신속보고 데이터 → CS25_.1-4
+            if (rawId === 'RAW12' || rawId === 'RAW13') {
+                // CS25_.1: 신속보고일자 (배열)
+                const reportDates = this.processedData
+                    .map(d => d['A.1.1a'] || d['보고일자'] || d['reportDate'] || '')
+                    .filter(v => v);
+                csValues['CS25_.1_신속보고일자'] = reportDates.length > 0 ? reportDates : ['(데이터 없음)'];
+
+                // CS25_.2: 신속관리번호 (배열)
+                const caseNumbers = this.processedData
+                    .map(d => d['A.1.0.1'] || d['관리번호'] || d['부서접수번호'] || d['caseNumber'] || '')
+                    .filter(v => v);
+                csValues['CS25_.2_신속관리번호'] = caseNumbers.length > 0 ? caseNumbers : ['(데이터 없음)'];
+
+                // CS25_.3: 신속이상사례명 (PT) (배열)
+                const ptNames = this.processedData
+                    .map(d => d['E.i.3.2c'] || d['E.i.3.2d'] || d['이상사례·약물이상반응 MedDRA명'] ||
+                             d['PT'] || d['이상사례명'] || d['MedDRA명(영문)'] || '')
+                    .filter(v => v);
+                csValues['CS25_.3_신속이상사례명'] = ptNames.length > 0 ? ptNames : ['(데이터 없음)'];
+
+                // CS25_.4: 신속비고 (요약)
+                const totalCases = this.processedData.length;
+                const seriousCases = this.processedData.filter(d => d.Seriousness === 'Yes').length;
+                csValues['CS25_.4_신속비고'] = `총 ${totalCases}건 (중대: ${seriousCases}건)`;
+
+                console.log(`[LineListingExtractor] ${rawId} → CS25 추출 완료:`, {
+                    dates: reportDates.length,
+                    cases: caseNumbers.length,
+                    pts: ptNames.length
+                });
+            }
+
+            // RAW14: 원시자료 → CS28, CS29, CS30
+            if (rawId === 'RAW14') {
+                // CS28: 원시총환자수 (유니크 케이스 수)
+                // 다양한 필드명 지원: KARES 형식, E2B 형식, 한글 형식
+                const caseIdFields = [
+                    'A.1.0.1', '부서접수번호', '부서접수번호(KAERS 안전원관리번호)',
+                    '관리번호', '보고자관리번호', 'C.1.1', 'caseNumber', 'caseId',
+                    'Unnamed: 0' // 첫 번째 컬럼이 케이스 ID인 경우
+                ];
+
+                const uniqueCases = new Set();
+                this.processedData.forEach(d => {
+                    for (const field of caseIdFields) {
+                        const value = d[field];
+                        if (value && String(value).trim() && !String(value).includes('부서접수번호')) {
+                            uniqueCases.add(String(value).trim());
+                            break;
+                        }
+                    }
+                });
+                csValues['CS28_원시총환자수'] = uniqueCases.size > 0 ? String(uniqueCases.size) : '0';
+
+                // CS29: 원시총이상사례수 (총 이벤트 수)
+                csValues['CS29_원시총이상사례수'] = String(this.processedData.length);
+
+                // CS30: 원시중대한사례수
+                // Seriousness 판단: E.i.3.2a~f (ICH E2B 중대성 기준) 또는 Seriousness 필드
+                const seriousnessFields = [
+                    'E.i.3.2a', 'E.i.3.2b', 'E.i.3.2c', 'E.i.3.2d', 'E.i.3.2e', 'E.i.3.2f',
+                    '사망을 초래', '생명을 위협', '입원 또는 입원기간의 연장이 필요',
+                    '지속적 또는 중대한 장애나 기능저하 초래', '선천적 기형 또는 이상을 초래',
+                    '기타 의학적으로 중요한 상황이 발생하여 치료 필요', '기타 의학적으로 중요한 상황'
+                ];
+
+                const isSeriousCase = (d) => {
+                    // 방법 1: Seriousness 필드 직접 체크
+                    if (d.Seriousness === 'Yes' || d.Seriousness === '예' || d.Seriousness === 'Y') {
+                        return true;
+                    }
+                    if (d['중대성'] === '예' || d['중대성'] === 'Yes' || d['중대성'] === 'Y') {
+                        return true;
+                    }
+
+                    // 방법 2: E.i.3.2a~f 필드 중 하나라도 "예" 또는 "Yes"면 중대함
+                    for (const field of seriousnessFields) {
+                        const value = d[field];
+                        if (value) {
+                            const strValue = String(value).trim().toLowerCase();
+                            if (strValue === '예' || strValue === 'yes' || strValue === 'y' || strValue === '1') {
+                                return true;
+                            }
+                        }
+                    }
+
+                    // 방법 3: LLM 분석 결과의 Seriousness 필드 (analyzeWithLLM에서 설정)
+                    if (d._seriousness === 'Yes' || d._seriousness === true) {
+                        return true;
+                    }
+
+                    return false;
+                };
+
+                const seriousCount = this.processedData.filter(isSeriousCase).length;
+                csValues['CS30_원시중대한사례수'] = String(seriousCount);
+
+                console.log(`[LineListingExtractor] ${rawId} → CS28-30 추출 완료:`, {
+                    CS28: csValues['CS28_원시총환자수'],
+                    CS29: csValues['CS29_원시총이상사례수'],
+                    CS30: csValues['CS30_원시중대한사례수'],
+                    uniqueCaseIds: Array.from(uniqueCases).slice(0, 5)
+                });
+            }
+
+            // RAW15: 정기보고 → CS34 (추가 가능)
+            if (rawId === 'RAW15') {
+                csValues['CS34_정기보고총사례수'] = String(this.processedData.length);
+                console.log(`[LineListingExtractor] ${rawId} → CS34 추출 완료: ${this.processedData.length}건`);
+            }
+
+            return csValues;
+        }
+
+        /**
+         * 모든 Line Listing 파일에서 CS 값 일괄 추출
+         * @param {Array} fileResults - 파일별 분석 결과 [{rawId, processedData, statistics}, ...]
+         * @returns {Object} 통합 CS 값
+         */
+        extractAllCSValues(fileResults) {
+            const allCSValues = {};
+
+            for (const result of fileResults) {
+                if (!result.rawId || !result.processedData) continue;
+
+                // 임시로 processedData 설정
+                const originalData = this.processedData;
+                this.processedData = result.processedData;
+
+                const csValues = this.extractCSValues(result.rawId);
+                Object.assign(allCSValues, csValues);
+
+                // 복원
+                this.processedData = originalData;
+            }
+
+            return allCSValues;
+        }
+
+        /**
          * localStorage에 결과 저장
          */
         saveToStorage(reportId = null) {

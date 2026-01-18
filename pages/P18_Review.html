@@ -390,13 +390,17 @@
             margin-bottom: 14px;
         }
 
+        .document-editor .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
         .document-editor table {
             width: 100%;
+            min-width: 500px;
             border-collapse: collapse;
-            margin: 20px 0;
             font-size: 13px;
             border-radius: var(--radius-lg);
-            overflow: hidden;
             box-shadow: var(--glass-shadow);
         }
 
@@ -1239,6 +1243,35 @@
         [data-theme="dark"] .md-inline-code {
             background: rgba(100, 100, 100, 0.3);
         }
+
+        /* Tag and File Type Badges */
+        .tag-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(31, 78, 140, 0.15);
+            color: var(--color-primary);
+            margin-right: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .file-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 3px;
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            min-width: 32px;
+            text-align: center;
+        }
+        .file-type-badge.pdf { background: rgba(239, 68, 68, 0.15); color: #DC2626; }
+        .file-type-badge.doc { background: rgba(59, 130, 246, 0.15); color: #2563EB; }
+        .file-type-badge.xls { background: rgba(16, 185, 129, 0.15); color: #059669; }
     </style>
 </head>
 
@@ -1267,11 +1300,11 @@
 
             <div class="header-right">
                 <button class="icon-button" onclick="location.href='P10_Dashboard.html'" title="대시보드">
-                    🏠
+                    <svg class="mono-icon icon-home" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg>
                 </button>
                 <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="다크모드 전환">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
+                    <span class="icon-sun">○</span>
+                    <span class="icon-moon">●</span>
                 </button>
                 <div class="user-menu">
                     <div class="user-avatar">사</div>
@@ -1320,7 +1353,7 @@
     <!-- Change History Panel -->
     <div id="changeHistoryPanel" class="change-history-panel">
         <div class="change-history-header">
-            <div class="change-history-title">📝 변경 이력</div>
+            <div class="change-history-title">변경 이력</div>
             <button class="icon-btn" onclick="closeChangeHistory()">✕</button>
         </div>
         <div id="changeHistoryList">
@@ -1331,7 +1364,7 @@
     <!-- Export Modal -->
     <div id="exportModal" class="export-modal">
         <div class="export-modal-content">
-            <h3 class="export-modal-title">📄 문서 내보내기</h3>
+            <h3 class="export-modal-title">문서 내보내기</h3>
             <div class="export-options">
                 <label class="export-option">
                     <input type="checkbox" id="exportMerge" checked>
@@ -1362,7 +1395,7 @@
         <div class="markdown-popup" onclick="event.stopPropagation()">
             <div class="markdown-popup-header">
                 <div class="markdown-popup-title">
-                    <span>📄</span>
+                    <span class="tag-badge">MD</span>
                     <span id="markdownPopupFileName">파일명</span>
                 </div>
                 <button class="markdown-popup-close" onclick="closeMarkdownPopup()">&times;</button>
@@ -1371,7 +1404,7 @@
                 <!-- 마크다운 내용이 여기에 표시됩니다 -->
             </div>
             <div class="markdown-popup-footer">
-                <button class="btn btn-secondary" onclick="copyPopupMarkdown()">📋 복사</button>
+                <button class="btn btn-secondary" onclick="copyPopupMarkdown()">복사</button>
                 <button class="btn btn-primary" onclick="closeMarkdownPopup()">닫기</button>
             </div>
         </div>
@@ -1382,7 +1415,7 @@
         <div class="md-view-container" onclick="event.stopPropagation()">
             <div class="md-view-header">
                 <div class="md-view-title">
-                    <span>📄</span>
+                    <span class="tag-badge">MD</span>
                     <span>마크다운 변환 문서 조회</span>
                 </div>
                 <button class="md-view-close" onclick="closeMdViewModal()">&times;</button>
@@ -1391,7 +1424,7 @@
                 <!-- 좌측: 파일 목록 -->
                 <div class="md-view-file-list">
                     <div class="md-view-file-list-header">
-                        <span>📁 변환된 파일 목록</span>
+                        <span>변환된 파일 목록</span>
                         <span class="md-view-file-count" id="mdViewFileCount">0</span>
                     </div>
                     <div id="mdViewFileList">
@@ -1402,20 +1435,20 @@
                 <div class="md-view-content">
                     <div class="md-view-content-header">
                         <div class="md-view-content-title" id="mdViewContentTitle">
-                            <span>📝</span>
+                            <span class="tag-badge">MD</span>
                             <span>파일을 선택하세요</span>
                         </div>
                         <div class="md-view-content-actions">
                             <button class="btn btn-secondary btn-sm" onclick="copyMdViewContent()" id="mdViewCopyBtn" style="display: none;">
-                                📋 복사
+                                복사
                             </button>
                             <button class="btn btn-secondary btn-sm" onclick="downloadMdViewContent()" id="mdViewDownloadBtn" style="display: none;">
-                                ⬇️ 다운로드
+                                다운로드
                             </button>
                         </div>
                     </div>
                     <div id="mdViewMarkdown" class="md-view-empty">
-                        <div class="md-view-empty-icon">📄</div>
+                        <div class="md-view-empty-icon">[MD]</div>
                         <div>좌측 목록에서 파일을 선택하면</div>
                         <div>마크다운 내용이 표시됩니다</div>
                     </div>
@@ -1692,7 +1725,7 @@
                 tableContent = tableContent.replace(/<tr class="md-tr">(.*?)<\/tr>/,
                     (m, cells) => `<thead><tr class="md-tr">${cells.replace(/md-td/g, 'md-th')}</tr></thead><tbody>`);
                 tableContent += '</tbody>';
-                return `<table class="md-table">${tableContent}</table>`;
+                return `<div class="table-wrapper"><table class="md-table">${tableContent}</table></div>`;
             });
 
             // 비순서 리스트
@@ -1742,7 +1775,7 @@
                     <!-- Left Panel - Section Navigation -->
                     <div class="section-nav-panel">
                         <div class="section-nav-header">
-                            <div class="section-nav-title">📑 섹션</div>
+                            <div class="section-nav-title">섹션</div>
                             <div class="review-progress">
                                 <span id="reviewedCount">0</span>/${sections.length}
                             </div>
@@ -1752,7 +1785,7 @@
                         <!-- 마크다운 변환 파일 리스트 -->
                         <div class="markdown-files-section">
                             <div class="markdown-files-header">
-                                <div class="markdown-files-title">📝 마크다운 변환 파일</div>
+                                <div class="markdown-files-title">마크다운 변환 파일</div>
                                 <div class="markdown-files-count">
                                     <span id="markdownFilesCount">0</span>개
                                 </div>
@@ -1764,7 +1797,7 @@
                     <!-- Main Panel - Review Editor -->
                     <div class="review-panel">
                         <div class="review-header">
-                            <h2 class="review-title">✏️ 리뷰 및 편집 (Stage 7)</h2>
+                            <h2 class="review-title">리뷰 및 편집 (Stage 7)</h2>
 
                             <div class="review-info">
                                 <div class="review-info-text">
@@ -1781,18 +1814,18 @@
                                         <button class="view-mode-btn" onclick="setViewMode('single')">편집만</button>
                                     </div>
                                     <button class="btn btn-secondary" onclick="showChangeHistory()">
-                                        📝 변경 이력 (<span id="changeCount">0</span>)
+                                        변경 이력 (<span id="changeCount">0</span>)
                                     </button>
                                 </div>
                                 <div class="review-controls-right">
                                     <button class="btn btn-secondary" onclick="openMdViewModal()">
-                                        📄 MD View
+                                        MD View
                                     </button>
                                     <button class="btn btn-secondary" onclick="resetSection()">
-                                        🔄 원본으로 복원
+                                        원본으로 복원
                                     </button>
                                     <button class="btn btn-primary" onclick="saveSection()">
-                                        💾 저장
+                                        저장
                                     </button>
                                 </div>
                             </div>
@@ -1802,9 +1835,9 @@
                             <!-- Left Column - Markdown Source -->
                             <div class="review-column" id="markdownColumn">
                                 <div class="column-header">
-                                    📋 마크다운 원본
+                                    마크다운 원본
                                     <div class="column-actions">
-                                        <button class="icon-btn" onclick="copyMarkdown()">📋 복사</button>
+                                        <button class="icon-btn" onclick="copyMarkdown()">복사</button>
                                     </div>
                                 </div>
                                 <div class="markdown-viewer" id="markdownViewer"></div>
@@ -1813,10 +1846,10 @@
                             <!-- Right Column - Document Editor -->
                             <div class="review-column">
                                 <div class="column-header">
-                                    ✏️ 편집 가능한 문서
+                                    편집 가능한 문서
                                     <div class="column-actions">
                                         <button class="icon-btn" onclick="toggleEdit()">
-                                            <span id="editToggleIcon">🔓</span> <span id="editToggleText">편집 중</span>
+                                            <span id="editToggleIcon"><svg class="mono-icon icon-pencil" aria-hidden="true" focusable="false" style="width:14px;height:14px;"><use href="#icon-pencil"></use></svg></span> <span id="editToggleText">편집 중</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1832,8 +1865,8 @@
                             <div class="footer-actions">
                                 <button class="btn btn-secondary" onclick="previousSection()">← 이전</button>
                                 <button class="btn btn-primary" onclick="saveAndNext()">저장 및 다음 →</button>
-                                <button class="btn btn-secondary" onclick="mergeAll()">🔗 모두 병합</button>
-                                <button class="btn btn-success" onclick="showExportModal()">📤 내보내기</button>
+                                <button class="btn btn-secondary" onclick="mergeAll()">모두 병합</button>
+                                <button class="btn btn-success" onclick="showExportModal()">내보내기</button>
                                 <button class="btn btn-success" onclick="proceedToQC()">QC 단계로 →</button>
                             </div>
                         </div>
@@ -1879,7 +1912,7 @@
                     <div class="section-nav-name">${section.name}</div>
                     <div class="section-nav-status">
                         <span class="status-badge ${section.status}">
-                            ${section.status === 'reviewed' ? '✓' : section.status === 'edited' ? '✏️' : '○'}
+                            ${section.status === 'reviewed' ? '✓' : section.status === 'edited' ? 'E' : '○'}
                         </span>
                     </div>
                 </div>
@@ -1908,15 +1941,15 @@
             // Get file icon based on original file type
             const getFileIcon = (filename) => {
                 const ext = filename.split('.').pop().toLowerCase();
-                if (ext === 'pdf') return '📄';
-                if (ext === 'xlsx' || ext === 'xls') return '📊';
-                if (ext === 'docx' || ext === 'doc') return '📝';
-                return '📁';
+                if (ext === 'pdf') return '<span class="file-type-badge pdf">PDF</span>';
+                if (ext === 'xlsx' || ext === 'xls') return '<span class="file-type-badge xls">XLS</span>';
+                if (ext === 'docx' || ext === 'doc') return '<span class="file-type-badge doc">DOC</span>';
+                return '<span class="file-type-badge">FILE</span>';
             };
 
             const filesHtml = markdownFiles.map((file, index) => `
                 <div class="markdown-file-item" onclick="showMarkdownPopup(${index})" title="${file.name}">
-                    <span class="markdown-file-icon">${getFileIcon(file.name)}</span>
+                    ${getFileIcon(file.name)}
                     <span class="markdown-file-name">${file.name}</span>
                     ${file.rawId ? `<span class="markdown-file-rawid">${file.rawId}</span>` : ''}
                 </div>
@@ -1998,7 +2031,7 @@
             if (markdownFiles.length === 0) {
                 listContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                        <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">📭</div>
+                        <div style="font-size: 14px; margin-bottom: 12px; opacity: 0.5;">[없음]</div>
                         <div>변환된 마크다운 파일이 없습니다</div>
                         <div style="font-size: 12px; margin-top: 8px;">Stage 2에서 파일을 업로드하고 변환을 실행하세요</div>
                     </div>
@@ -2007,12 +2040,12 @@
             }
 
             // 파일 타입별 아이콘
-            const getFileIcon = (filename) => {
+            const getMdViewFileIcon = (filename) => {
                 const ext = filename.split('.').pop().toLowerCase();
-                if (ext === 'pdf') return '📕';
-                if (ext === 'xlsx' || ext === 'xls') return '📗';
-                if (ext === 'docx' || ext === 'doc') return '📘';
-                return '📄';
+                if (ext === 'pdf') return '<span class="file-type-badge pdf">PDF</span>';
+                if (ext === 'xlsx' || ext === 'xls') return '<span class="file-type-badge xls">XLS</span>';
+                if (ext === 'docx' || ext === 'doc') return '<span class="file-type-badge doc">DOC</span>';
+                return '<span class="file-type-badge">FILE</span>';
             };
 
             // 파일 크기 표시 (마크다운 길이 기반)
@@ -2027,7 +2060,7 @@
                 <div class="md-view-file-item ${currentMdViewFileIndex === index ? 'active' : ''}"
                      onclick="selectMdViewFile(${index})"
                      title="${file.name}">
-                    <span class="md-view-file-icon">${getFileIcon(file.name)}</span>
+                    ${getMdViewFileIcon(file.name)}
                     <div class="md-view-file-info">
                         <div class="md-view-file-name">${file.name}</div>
                         <div class="md-view-file-meta">
@@ -2059,12 +2092,12 @@
 
             // 파일 타입별 아이콘
             const ext = file.name.split('.').pop().toLowerCase();
-            let icon = '📄';
-            if (ext === 'pdf') icon = '📕';
-            else if (ext === 'xlsx' || ext === 'xls') icon = '📗';
-            else if (ext === 'docx' || ext === 'doc') icon = '📘';
+            let iconHtml = '<span class="file-type-badge">FILE</span>';
+            if (ext === 'pdf') iconHtml = '<span class="file-type-badge pdf">PDF</span>';
+            else if (ext === 'xlsx' || ext === 'xls') iconHtml = '<span class="file-type-badge xls">XLS</span>';
+            else if (ext === 'docx' || ext === 'doc') iconHtml = '<span class="file-type-badge doc">DOC</span>';
 
-            contentTitle.innerHTML = `<span>${icon}</span><span>${file.name}</span>`;
+            contentTitle.innerHTML = `${iconHtml}<span>${file.name}</span>`;
 
             // 마크다운 내용 설정
             if (file.markdown && file.markdown.trim()) {
@@ -2075,7 +2108,7 @@
             } else {
                 markdownContainer.className = 'md-view-empty';
                 markdownContainer.innerHTML = `
-                    <div class="md-view-empty-icon">⚠️</div>
+                    <div class="md-view-empty-icon">[!]</div>
                     <div>마크다운 내용이 비어 있습니다</div>
                 `;
                 copyBtn.style.display = 'none';
@@ -2252,7 +2285,9 @@
             const isEditable = editor.contentEditable === 'true';
 
             editor.contentEditable = !isEditable;
-            document.getElementById('editToggleIcon').textContent = isEditable ? '🔒' : '🔓';
+            document.getElementById('editToggleIcon').innerHTML = isEditable
+                ? '<svg class="mono-icon icon-lock" aria-hidden="true" focusable="false" style="width:14px;height:14px;"><use href="#icon-lock"></use></svg>'
+                : '<svg class="mono-icon icon-pencil" aria-hidden="true" focusable="false" style="width:14px;height:14px;"><use href="#icon-pencil"></use></svg>';
             document.getElementById('editToggleText').textContent = isEditable ? '편집 잠금' : '편집 중';
 
             if (isEditable) {

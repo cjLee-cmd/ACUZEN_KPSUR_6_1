@@ -516,7 +516,7 @@
         <div class="test-items">
             <!-- LLM 연결 테스트 -->
             <div class="test-item" id="testLLM">
-                <div class="test-icon">🤖</div>
+                <div class="test-icon">[AI]</div>
                 <div class="test-info">
                     <div class="test-name">AI 엔진 연결</div>
                     <div class="test-status">대기 중</div>
@@ -526,7 +526,7 @@
 
             <!-- 데이터베이스 연결 테스트 -->
             <div class="test-item" id="testDB">
-                <div class="test-icon">💾</div>
+                <div class="test-icon">[DB]</div>
                 <div class="test-info">
                     <div class="test-name">데이터베이스 연결</div>
                     <div class="test-status">대기 중</div>
@@ -536,7 +536,7 @@
 
             <!-- 파일 저장소 연결 테스트 -->
             <div class="test-item" id="testStorage">
-                <div class="test-icon">📁</div>
+                <div class="test-icon">[FS]</div>
                 <div class="test-info">
                     <div class="test-name">파일 저장소 연결</div>
                     <div class="test-status">대기 중</div>
@@ -547,7 +547,7 @@
 
         <!-- 에러 메시지 -->
         <div class="error-details" id="errorDetails">
-            <div class="error-title">⚠️ 연결 실패</div>
+            <div class="error-title">[!] 연결 실패</div>
             <div class="error-message" id="errorMessage"></div>
             <div class="error-actions">
                 <button class="btn btn-retry" onclick="retryTests()">다시 시도</button>
@@ -559,7 +559,7 @@
         <div class="footer-note">
             시스템 점검은 약 5-10초 정도 소요됩니다
             <div class="medical-badge">
-                <span class="medical-icon">🏥</span>
+                <span class="medical-icon">+</span>
                 <span>의료용 AI 소프트웨어</span>
             </div>
         </div>
@@ -704,12 +704,12 @@
             } else if (status === 'success') {
                 testItem.classList.add('success');
                 spinner.style.display = 'none';
-                icon.textContent = '✅';
+                icon.innerHTML = '<svg class="mono-icon icon-check" aria-hidden="true" focusable="false" style="width:16px;height:16px;"><use href="#icon-check"></use></svg>';
                 statusEl.textContent = message || '연결 성공';
             } else if (status === 'error') {
                 testItem.classList.add('error');
                 spinner.style.display = 'none';
-                icon.textContent = '❌';
+                icon.innerHTML = '<svg class="mono-icon icon-x" aria-hidden="true" focusable="false" style="width:16px;height:16px;"><use href="#icon-x"></use></svg>';
                 statusEl.textContent = message || '연결 실패';
             }
         }
@@ -869,7 +869,7 @@
                 errorMessage.innerHTML = `
                     Gemini API 키가 설정되지 않았습니다.<br><br>
                     <a href="#" onclick="navigateTo('P91_Settings.html'); return false;" style="color: #12305B; font-weight: 600; text-decoration: underline; cursor: pointer;">
-                        ⚙️ 시스템 설정에서 API 키 등록하기 →
+                        시스템 설정에서 API 키 등록하기 →
                     </a>
                 `;
             } else {
@@ -899,7 +899,7 @@
                 testItem.querySelector('.spinner').style.display = 'none';
 
                 // 아이콘 초기화
-                const icons = ['🤖', '💾', '📁'];
+                const icons = ['[AI]', '[DB]', '[FS]'];
                 const index = ['testLLM', 'testDB', 'testStorage'].indexOf(id);
                 testItem.querySelector('.test-icon').textContent = icons[index];
             });
