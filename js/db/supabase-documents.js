@@ -27,14 +27,14 @@
             await this.core.init();
 
             try {
+                // DB 스키마: original_filename, raw_id, file_type, file_path (NOT NULL)
+                const fileName = data.fileName || data.file_name || data.original_filename || 'unknown';
                 const docData = {
                     report_id: reportId,
-                    file_name: data.fileName || data.file_name,
-                    original_type: data.originalType || data.original_type || 'unknown',
-                    raw_id: data.rawId || data.raw_id || null,
-                    file_size: data.fileSize || data.file_size || 0,
-                    storage_path: data.storagePath || data.storage_path || null,
-                    status: data.status || 'uploaded'
+                    original_filename: fileName,
+                    raw_id: data.rawId || data.raw_id || 'unknown',
+                    file_type: data.fileType || data.file_type || data.originalType || fileName.split('.').pop() || 'unknown',
+                    file_path: data.filePath || data.file_path || `/${reportId}/${fileName}`
                 };
 
                 const { data: result, error } = await this.core.client
@@ -45,7 +45,7 @@
 
                 if (error) throw error;
 
-                console.log(`✅ Source document created: ${docData.file_name}`);
+                console.log(`✅ Source document created: ${docData.original_filename}`);
                 return { success: true, document: result };
 
             } catch (error) {
@@ -136,15 +136,17 @@
             await this.core.init();
 
             try {
-                const docsData = documents.map(doc => ({
-                    report_id: reportId,
-                    file_name: doc.fileName || doc.file_name,
-                    original_type: doc.originalType || doc.original_type || 'unknown',
-                    raw_id: doc.rawId || doc.raw_id || null,
-                    file_size: doc.fileSize || doc.file_size || 0,
-                    storage_path: doc.storagePath || doc.storage_path || null,
-                    status: doc.status || 'uploaded'
-                }));
+                // DB 스키마: original_filename, raw_id, file_type, file_path (NOT NULL)
+                const docsData = documents.map(doc => {
+                    const fileName = doc.fileName || doc.file_name || doc.original_filename || 'unknown';
+                    return {
+                        report_id: reportId,
+                        original_filename: fileName,
+                        raw_id: doc.rawId || doc.raw_id || 'unknown',
+                        file_type: doc.fileType || doc.file_type || doc.originalType || fileName.split('.').pop() || 'unknown',
+                        file_path: doc.filePath || doc.file_path || `/${reportId}/${fileName}`
+                    };
+                });
 
                 const { data, error } = await this.core.client
                     .from('source_documents')
@@ -249,10 +251,19 @@
         /**
          * 마크다운 문서 일괄 저장 (P14용)
          * @param {string} reportId - 보고서 UUID
-         * @param {Array} markdowns - [{fileName, rawId, content, convertedBy}]
+         * @param {Array} markdowns - [{fileName, rawId, content, convertedBy, sourceDocId?}]
          */
         async bulkSaveMarkdownDocuments(reportId, markdowns) {
             await this.core.init();
+
+            // PostgreSQL이 지원하지 않는 유니코드 문자 제거 (특히 \u0000 null character)
+            const sanitizeContent = (content) => {
+                if (!content || typeof content !== 'string') return content;
+                // null character 및 기타 제어 문자 제거 (탭, 개행 제외)
+                return content
+                    .replace(/\u0000/g, '')  // null character
+                    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');  // 제어 문자 (탭\x09, 개행\x0A, 캐리지리턴\x0D 제외)
+            };
 
             try {
                 // 기존 마크다운 삭제 (덮어쓰기)
@@ -266,11 +277,30 @@
                     return { success: true, count: 0 };
                 }
 
+                // source_documents 테이블에서 파일명으로 ID 조회 (자동 매핑)
+                const { data: sourceDocs, error: sourceError } = await this.core.client
+                    .from('source_documents')
+                    .select('id, original_filename')
+                    .eq('report_id', reportId);
+
+                if (sourceError) {
+                    console.warn('⚠️ source_documents 조회 실패, sourceDocId 없이 진행:', sourceError.message);
+                }
+
+                // 파일명 -> source_document_id 매핑 생성
+                const fileNameToId = {};
+                if (sourceDocs && sourceDocs.length > 0) {
+                    sourceDocs.forEach(doc => {
+                        fileNameToId[doc.original_filename] = doc.id;
+                    });
+                    console.log(`📋 source_documents에서 ${sourceDocs.length}개 파일 ID 매핑 완료`);
+                }
+
                 const mdDocs = markdowns.map(md => ({
                     report_id: reportId,
-                    source_document_id: md.sourceDocId || null,
+                    source_document_id: md.sourceDocId || fileNameToId[md.fileName] || null,
                     raw_id: md.rawId || 'unknown',
-                    markdown_content: md.content,
+                    markdown_content: sanitizeContent(md.content),
                     file_path: md.fileName || null,
                     converted_by: md.convertedBy || 'gemini-flash'
                 }));
@@ -305,16 +335,16 @@
                 const extractedData = {
                     report_id: reportId,
                     data_type: dataType,
-                    data_key: data.key || data.data_key,
+                    variable_id: data.variable_id || data.key || data.data_key,
                     data_value: data.value || data.data_value,
                     source_raw_id: data.sourceRawId || data.source_raw_id || null,
-                    confidence: data.confidence || 1.0
+                    validation_status: data.validation_status || 'Pending'
                 };
 
                 const { data: result, error } = await this.core.client
                     .from('extracted_data')
                     .upsert(extractedData, {
-                        onConflict: 'report_id,data_type,data_key',
+                        onConflict: 'report_id,data_type,variable_id',
                         ignoreDuplicates: false
                     })
                     .select()
@@ -322,7 +352,7 @@
 
                 if (error) throw error;
 
-                console.log(`✅ Extracted data upserted: ${dataType}.${extractedData.data_key}`);
+                console.log(`✅ Extracted data upserted: ${dataType}.${extractedData.variable_id}`);
                 return { success: true, data: result };
 
             } catch (error) {
@@ -347,18 +377,12 @@
                     query = query.eq('data_type', dataType);
                 }
 
-                const { data, error } = await query.order('data_key');
+                const { data, error } = await query.order('variable_id');
 
                 if (error) throw error;
 
-                // P15 호환성: data_key를 variable_id로도 제공
-                const mappedData = data.map(item => ({
-                    ...item,
-                    variable_id: item.data_key  // P15 CS/PH/Table 뷰어 호환
-                }));
-
-                console.log(`✅ Retrieved ${mappedData.length} extracted data items`);
-                return { success: true, data: mappedData };
+                console.log(`✅ Retrieved ${data.length} extracted data items`);
+                return { success: true, data: data };
 
             } catch (error) {
                 console.error('❌ Get extracted data failed:', error.message);
