@@ -1292,9 +1292,16 @@
                 cs33: 0,  // 신속보고총사례수 (RAW12 + RAW13)
                 cs34: 0,  // 정기보고총사례수 (RAW15)
                 cs36: 0,  // 중대한총사례수 (전체에서 중대한 사례)
+                // RAW14 원시자료 통계 추가
+                cs28: 0,  // 원시총환자수 (RAW14 고유 환자 수)
+                cs29: 0,  // 원시총이상사례수 (RAW14 총 사례 수)
+                cs30: 0,  // 원시중대한사례수 (RAW14 중대한 사례 수)
                 details: {
                     raw12Cases: 0,
                     raw13Cases: 0,
+                    raw14Cases: 0,
+                    raw14Patients: 0,
+                    raw14SeriousCases: 0,
                     raw15Cases: 0,
                     seriousCaseIds: new Set()
                 }
@@ -1389,9 +1396,49 @@
             // CS34: 정기보고총사례수 = RAW15 고유 사례 수
             stats.cs34 = raw15Cases.size;
 
-            // CS36: 중대한총사례수 (모든 LineListing에서 중대한 사례)
+            // RAW14 (원시자료) - CS28, CS29, CS30 계산
+            const raw14Md = findMarkdownByRawId('RAW14');
+            const raw14Cases = extractUniqueCaseIds(raw14Md);
+            stats.details.raw14Cases = raw14Cases.size;
+
+            // CS29: 원시총이상사례수 = RAW14 고유 사례 수
+            stats.cs29 = raw14Cases.size;
+
+            // CS28: 원시총환자수 (고유 환자 ID 기준)
+            // 환자 ID는 C.1.4 (보고자관리번호) 또는 D.1 컬럼에서 추출
+            const extractUniquePatientIds = (markdown) => {
+                if (!markdown) return new Set();
+                const basicInfoRows = parseLineListingSection(markdown, config.sections.basicInfo);
+                const patientIds = new Set();
+
+                basicInfoRows.forEach(row => {
+                    // C.1.4 (보고자관리번호)에서 환자 식별
+                    const patientIdCols = ['C.1.4', 'D.1', '보고자관리번호'];
+                    for (const col of patientIdCols) {
+                        if (row[col] && row[col].trim() !== '') {
+                            // 동일 관리번호의 다른 보고는 같은 환자로 처리
+                            const baseId = row[col].trim().split(',')[0].trim();
+                            patientIds.add(baseId);
+                            break;
+                        }
+                    }
+                });
+
+                return patientIds;
+            };
+
+            const raw14Patients = extractUniquePatientIds(raw14Md);
+            stats.cs28 = raw14Patients.size;
+            stats.details.raw14Patients = raw14Patients.size;
+
+            // CS30: 원시중대한사례수 (RAW14에서 중대한 사례)
+            const raw14SeriousCases = extractSeriousCaseIds(raw14Md);
+            stats.cs30 = raw14SeriousCases.size;
+            stats.details.raw14SeriousCases = raw14SeriousCases.size;
+
+            // CS36: 중대한총사례수 (모든 LineListing에서 중대한 사례, RAW14 포함)
             const allSeriousCaseIds = new Set();
-            [raw12Md, raw13Md, raw15Md].forEach(md => {
+            [raw12Md, raw13Md, raw14Md, raw15Md].forEach(md => {
                 if (md) {
                     const seriousIds = extractSeriousCaseIds(md);
                     seriousIds.forEach(id => allSeriousCaseIds.add(id));
@@ -1404,9 +1451,15 @@
                 CS33_신속보고: stats.cs33,
                 CS34_정기보고: stats.cs34,
                 CS36_중대한: stats.cs36,
+                CS28_원시환자수: stats.cs28,
+                CS29_원시사례수: stats.cs29,
+                CS30_원시중대한: stats.cs30,
                 상세: {
                     RAW12: stats.details.raw12Cases,
                     RAW13: stats.details.raw13Cases,
+                    RAW14: stats.details.raw14Cases,
+                    RAW14_환자: stats.details.raw14Patients,
+                    RAW14_중대한: stats.details.raw14SeriousCases,
                     RAW15: stats.details.raw15Cases
                 }
             });
@@ -3333,12 +3386,30 @@
                     addIfNotExists('CS36_중대한총사례수', String(lineListingStats.cs36), 'LineListing_Auto');
                     console.log(`✅ CS36_중대한총사례수 자동 계산: ${lineListingStats.cs36}`);
                 }
+
+                // CS28_원시총환자수 (RAW14 LineListing 자동 계산)
+                if (lineListingStats.cs28 > 0) {
+                    addIfNotExists('CS28_원시총환자수', String(lineListingStats.cs28), 'LineListing_Auto');
+                    console.log(`✅ CS28_원시총환자수 자동 계산: ${lineListingStats.cs28}`);
+                }
+
+                // CS29_원시총이상사례수 (RAW14 LineListing 자동 계산)
+                if (lineListingStats.cs29 > 0) {
+                    addIfNotExists('CS29_원시총이상사례수', String(lineListingStats.cs29), 'LineListing_Auto');
+                    console.log(`✅ CS29_원시총이상사례수 자동 계산: ${lineListingStats.cs29}`);
+                }
+
+                // CS30_원시중대한사례수 (RAW14 LineListing 자동 계산)
+                if (lineListingStats.cs30 > 0) {
+                    addIfNotExists('CS30_원시중대한사례수', String(lineListingStats.cs30), 'LineListing_Auto');
+                    console.log(`✅ CS30_원시중대한사례수 자동 계산: ${lineListingStats.cs30}`);
+                }
             }
 
             // 숫자 계산 필드들 (LineListing 자동 계산 우선, fallback: userInputs)
             const cs33 = lineListingStats.cs33 || parseFloat(userInputs?.CS33_신속보고총사례수) || 0;
             const cs34 = lineListingStats.cs34 || parseFloat(userInputs?.CS34_정기보고총사례수) || 0;
-            const cs29 = parseFloat(userInputs?.CS29_원시총이상사례수) || 0;
+            const cs29 = lineListingStats.cs29 || parseFloat(userInputs?.CS29_원시총이상사례수) || 0;
             const cs36 = lineListingStats.cs36 || parseFloat(userInputs?.CS36_중대한총사례수) || 0;
 
             // CS32_신속정기보고총사례수 = CS33 + CS34
