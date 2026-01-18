@@ -32,9 +32,9 @@ Stage 8: QC 검증 (P19_QC.html)
 Stage 9: 최종 출력 (P20_Output.html)
 ```
 
-### 테스트 데이터 (총 30개 파일 필수)
+### 테스트 데이터 (5차테스트 - 총 37개 파일)
 ```
-02_relateDocs/00_fromKSJ/학습데이터세트_output예시+raw데이터예시_20260102/raw데이터예시__20260102/
+02_relateDocs/00_fromKSJ/5차테스트/학습데이터세트예시/학습데이터_raw_20260118/
 ├── 01_PreProcessing_LineListing/ (4개: RAW12-15)
 │   ├── Raw12_국외신속보고LineListing_예시1.xlsx
 │   ├── Raw13_국내신속보고LineListing_예시1.xlsx

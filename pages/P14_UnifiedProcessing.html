@@ -2398,6 +2398,80 @@
         }
 
         /**
+         * 파일 수 미달 경고 모달
+         * @param {Array<string>} issues - Step별 미달 현황 메시지
+         * @param {number} totalUploaded - 현재 업로드된 총 파일 수
+         * @param {number} requiredTotal - 필수 총 파일 수
+         * @returns {Promise<boolean>} - 계속 진행 여부
+         */
+        function showFileCountWarningModal(issues, totalUploaded, requiredTotal) {
+            return new Promise((resolve) => {
+                const issueList = issues.map(issue =>
+                    `<li style="margin-bottom: 8px;">${issue}</li>`
+                ).join('');
+
+                // 다크모드 감지
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const modalBg = isDark ? '#1e1e1e' : 'white';
+                const modalBorder = isDark ? '#333' : '#e0e0e0';
+                const warnBg = isDark ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0';
+                const errorBg = isDark ? 'rgba(244, 67, 54, 0.15)' : '#ffebee';
+                const textMuted = isDark ? '#aaa' : '#666';
+
+                const html = `
+                    <div class="modal-overlay" id="fileCountWarningModal" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999;">
+                        <div class="modal-content" style="background: ${modalBg}; padding: 30px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid ${modalBorder};">
+                            <h2 style="color: #ff9800; margin-bottom: 20px;">⚠️ 파일 수 부족 경고</h2>
+                            <div style="background: ${warnBg}; padding: 15px; border-left: 4px solid #ff9800; margin-bottom: 15px; border-radius: 4px;">
+                                <p style="margin: 0 0 10px 0;">
+                                    <strong>일부 Step의 파일 수가 필수 요구사항에 미달합니다.</strong>
+                                </p>
+                                <p style="margin: 0; color: ${textMuted}; font-size: 14px;">
+                                    필수 파일이 누락되면 데이터 추출이 불완전할 수 있습니다.<br>
+                                    가능하면 필요한 파일을 모두 업로드 후 진행하세요.
+                                </p>
+                            </div>
+                            <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                                <strong style="color: #ef5350;">현재 상태:</strong>
+                                <p style="margin: 10px 0; font-size: 18px; font-weight: bold;">
+                                    총 ${totalUploaded}개 / 필수 ${requiredTotal}개
+                                </p>
+                            </div>
+                            <div style="background: ${warnBg}; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                                <strong style="color: #e65100;">Step별 미달 현황:</strong>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                                    ${issueList}
+                                </ul>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button id="fileCountProceedBtn" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    그래도 진행
+                                </button>
+                                <button id="fileCountCancelBtn" style="padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                    파일 추가 후 진행
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.insertAdjacentHTML('beforeend', html);
+
+                document.getElementById('fileCountProceedBtn').onclick = () => {
+                    document.getElementById('fileCountWarningModal').remove();
+                    console.log('⚠️ 파일 수 미달 상태로 진행 선택');
+                    resolve(true);
+                };
+
+                document.getElementById('fileCountCancelBtn').onclick = () => {
+                    document.getElementById('fileCountWarningModal').remove();
+                    console.log('📁 파일 추가 업로드를 위해 취소');
+                    resolve(false);
+                };
+            });
+        }
+
+        /**
          * 업로드 실패 (fileSize === 0) 파일 감지 및 재업로드 팝업 표시
          */
         function showUploadFailedModal(failedFiles) {
@@ -2531,6 +2605,44 @@
             if (allFiles.length === 0) {
                 showToast('업로드된 파일이 없습니다', 'error');
                 return;
+            }
+
+            // ========================================
+            // Step별 파일 수 검증 (TestSequence 요구사항)
+            // ========================================
+            const step1Files = allFiles.filter(f =>
+                f.zoneId === 'startPeriod' || f.zoneId === 'endPeriod' || f.zoneId === 'changeHistory'
+            );
+            const step2Files = allFiles.filter(f =>
+                f.zoneId === 'sponsored' || f.zoneId === 'iitnis'
+            );
+            const step3FilesCount = step3Files.length;
+
+            const REQUIRED_FILES = {
+                step1: 8,
+                step2: 2,
+                step3: 27,
+                total: 37
+            };
+
+            const fileCountIssues = [];
+            if (step1Files.length < REQUIRED_FILES.step1) {
+                fileCountIssues.push(`Step 1 (제품정보): ${step1Files.length}개 / 필수 ${REQUIRED_FILES.step1}개`);
+            }
+            if (step2Files.length < REQUIRED_FILES.step2) {
+                fileCountIssues.push(`Step 2 (임상자료): ${step2Files.length}개 / 필수 ${REQUIRED_FILES.step2}개`);
+            }
+            if (step3FilesCount < REQUIRED_FILES.step3) {
+                fileCountIssues.push(`Step 3 (기타자료): ${step3FilesCount}개 / 필수 ${REQUIRED_FILES.step3}개`);
+            }
+
+            if (fileCountIssues.length > 0) {
+                const totalUploaded = step1Files.length + step2Files.length + step3FilesCount;
+                const confirmProceed = await showFileCountWarningModal(fileCountIssues, totalUploaded, REQUIRED_FILES.total);
+                if (!confirmProceed) {
+                    console.log('⚠️ 파일 수 미달로 사용자가 진행 취소');
+                    return;
+                }
             }
 
             // UI 업데이트

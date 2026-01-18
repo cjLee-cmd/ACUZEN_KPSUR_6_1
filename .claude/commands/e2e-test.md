@@ -22,7 +22,7 @@
 **반드시 Read tool로 다음 파일을 먼저 읽을 것:**
 
 ```
-03_Test/01_Context/TestSequence_Login_to_Stage2.md
+03_Test/01_Context/TestSequence_Login_to_Stage3.md
 ```
 
 이 문서의 다음 섹션을 반드시 확인:
@@ -77,14 +77,14 @@
 
 ---
 
-## 테스트 데이터 위치
+## 테스트 데이터 위치 (5차테스트)
 
 ```
-02_relateDocs/00_fromKSJ/학습데이터세트_output예시+raw데이터예시_20260102/raw데이터예시__20260102/
+02_relateDocs/00_fromKSJ/5차테스트/학습데이터세트예시/학습데이터_raw_20260118/
 ├── 01_PreProcessing_LineListing/  (4개: RAW12-15)
 ├── 02_Step_1/                      (8개: RAW1.x, RAW2.x, RAW7)
 ├── 03_Step_2/                      (2개: RAW8, RAW17)
-└── 03_Step_3/                      (16개: RAW2.3-2.6, RAW3-6, RAW9, RAW16)
+└── 03_Step_3/                      (17개: RAW2.3-2.6, RAW3-6, RAW9, RAW16 등)
 ```
 
 ---
