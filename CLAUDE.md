@@ -70,7 +70,7 @@ python3 -m http.server 8000
 │                                                                       │
 │  ✅ 반드시 /e2e-test command 실행                                     │
 │  ✅ 사양 문서 먼저 읽기: 03_Test/01_Context/TestSequence_Login_to_Stage3.md │
-│  ✅ 파일 수 요구사항: Step1=8, Step2=2, Step3=20, 총합=30개           │
+│  ✅ 파일 수 요구사항: Step1=6, Step2=2, Step3=17, 총합=25개           │
 │  ❌ 파일 수 미달 시 진행 금지                                          │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -367,4 +367,4 @@ SELECT variable_id, data_value, source_raw_id FROM extracted_data WHERE report_i
 | E2E 테스트 시퀀스 | `03_Test/01_Context/TestSequence_Login_to_Stage3.md` |
 | RAW ID 정의 | `01_Context/02_RAW_ID_ExtractContext.md` |
 | DB 스키마 | `02_relateDocs/DATABASE_SCHEMA.md` |
-| 테스트 데이터 | `02_relateDocs/00_fromKSJ/학습데이터세트_output예시+raw데이터예시_20260102/raw데이터예시__20260102/` |
+| 테스트 데이터 | `02_relateDocs/00_fromKSJ/5차테스트/` (5차테스트데이터세트 + 학습데이터세트예시) |
