@@ -224,8 +224,48 @@
             return inputCost + outputCost;
         }
 
-        // 대화 로그 저장
-        logDialog(prompt, result) {
+        /**
+         * LLM 대화 로그를 Supabase DB에 저장
+         * @param {string} prompt - 사용자 프롬프트
+         * @param {Object} result - LLM 응답 결과
+         * @param {Object} options - 추가 옵션 (stage 등)
+         */
+        async logDialogToDb(prompt, result, options = {}) {
+            const reportId = localStorage.getItem('current_report');
+            if (!reportId) {
+                console.debug('[LLMBase] No reportId, skipping DB log');
+                return;
+            }
+
+            const supabase = window.supabaseClient;
+            if (!supabase?.createLLMDialog) {
+                console.debug('[LLMBase] Supabase not ready, skipping DB log');
+                return;
+            }
+
+            try {
+                const dbResult = await supabase.createLLMDialog(reportId, {
+                    stage: options.stage || 'llm_generate',
+                    model_name: result.model || 'unknown',
+                    user_message: (prompt || '').substring(0, 10000),
+                    assistant_message: (result.text || '').substring(0, 50000),
+                    input_tokens: result.usage?.inputTokens || 0,
+                    output_tokens: result.usage?.outputTokens || 0,
+                    estimated_cost_usd: result.cost || 0,
+                    actual_duration_ms: result.duration ? parseFloat(result.duration) * 1000 : 0
+                });
+
+                if (!dbResult.success) {
+                    console.warn('[LLMBase] DB log failed:', dbResult.error);
+                }
+            } catch (e) {
+                console.warn('[LLMBase] DB log error:', e.message);
+            }
+        }
+
+        // 대화 로그 저장 (메모리 + DB)
+        logDialog(prompt, result, options = {}) {
+            // 메모리 로그 (기존 유지)
             this.dialogHistory.push({
                 timestamp: window.DateHelper.formatISO(),
                 prompt: prompt.substring(0, 500) + (prompt.length > 500 ? '...' : ''),
@@ -236,6 +276,9 @@
                 cost: result.cost,
                 usage: result.usage
             });
+
+            // DB 로그 (비동기, 실패해도 무시)
+            this.logDialogToDb(prompt, result, options).catch(() => {});
         }
 
         // 대화 로그 내보내기

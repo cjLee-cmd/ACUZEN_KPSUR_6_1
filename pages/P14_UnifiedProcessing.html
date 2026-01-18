@@ -1028,13 +1028,18 @@
                             </div>
                             <div class="processing-step">
                                 <div class="processing-step-icon" id="procIcon4">4</div>
-                                <div class="processing-step-text">PSUR 섹션 생성 (LLM)</div>
+                                <div class="processing-step-text">PH 데이터 생성 (LLM)</div>
                                 <div class="processing-step-status" id="procStatus4">대기 중</div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+                            <div class="processing-step">
                                 <div class="processing-step-icon" id="procIcon5">5</div>
-                                <div class="processing-step-text">Line Listing 분석</div>
+                                <div class="processing-step-text">PSUR 섹션 생성 (LLM)</div>
                                 <div class="processing-step-status" id="procStatus5">대기 중</div>
+                            </div>
+                            <div class="processing-step">
+                                <div class="processing-step-icon" id="procIcon6">6</div>
+                                <div class="processing-step-text">Line Listing 분석</div>
+                                <div class="processing-step-status" id="procStatus6">대기 중</div>
                             </div>
                         </div>
                     </div>
@@ -1939,8 +1944,19 @@
         async function handleFileSelect(zoneId, files) {
             if (!files || files.length === 0) return;
 
+            // 업로드 실패 파일 (size === 0) 감지용
+            const failedFiles = [];
+            const validFiles = [];
+
             // 파일 추가 (ArrayBuffer 읽기 시도, 실패해도 파일 저장)
             for (const file of files) {
+                // 파일 크기가 0인 경우 업로드 실패로 처리
+                if (file.size === 0) {
+                    console.error(`❌ 업로드 실패 (파일 크기 0): ${file.name}`);
+                    failedFiles.push({ name: file.name, size: 0 });
+                    continue;
+                }
+
                 let arrayBuffer = null;
                 try {
                     arrayBuffer = await file.arrayBuffer();
@@ -1952,7 +1968,7 @@
                 // 파일 ID 생성 (IndexedDB 저장용)
                 const fileId = `${zoneId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-                uploadedFiles[zoneId].push({
+                const fileData = {
                     id: fileId,
                     file: file,
                     arrayBuffer: arrayBuffer,
@@ -1960,7 +1976,10 @@
                     size: file.size,
                     type: file.type,
                     rawIdCandidates: rawIdMapping[zoneId] || []
-                });
+                };
+
+                uploadedFiles[zoneId].push(fileData);
+                validFiles.push(fileData);
 
                 // IndexedDB에 파일 저장 (백그라운드)
                 if (window.fileStorage && arrayBuffer) {
@@ -1984,7 +2003,15 @@
             renderZoneFiles(zoneId);
             updateUploadButton(zoneId);
 
-            showToast(`${files.length}개 파일 추가됨`, 'success');
+            // 업로드 실패 파일이 있으면 팝업 표시
+            if (failedFiles.length > 0) {
+                showUploadFailedModal(failedFiles);
+                if (validFiles.length > 0) {
+                    showToast(`${validFiles.length}개 파일 추가됨 (${failedFiles.length}개 실패)`, 'warning');
+                }
+            } else {
+                showToast(`${files.length}개 파일 추가됨`, 'success');
+            }
         }
 
         function renderZoneFiles(zoneId) {
@@ -2033,7 +2060,18 @@
         async function handleStep3FileSelect(files) {
             if (!files || files.length === 0) return;
 
+            // 업로드 실패 파일 (size === 0) 감지용
+            const failedFiles = [];
+            let validCount = 0;
+
             for (const file of files) {
+                // 파일 크기가 0인 경우 업로드 실패로 처리
+                if (file.size === 0) {
+                    console.error(`❌ 업로드 실패 (파일 크기 0): ${file.name}`);
+                    failedFiles.push({ name: file.name, size: 0 });
+                    continue;
+                }
+
                 let arrayBuffer = null;
                 try {
                     arrayBuffer = await file.arrayBuffer();
@@ -2061,6 +2099,8 @@
                     rawId: detectedRawId
                 });
 
+                validCount++;
+
                 // IndexedDB에 파일 저장 (백그라운드)
                 if (window.fileStorage && arrayBuffer) {
                     window.fileStorage.saveFile({
@@ -2080,7 +2120,16 @@
             }
 
             renderStep3FileList();
-            showToast(`${files.length}개 파일 추가됨`, 'success');
+
+            // 업로드 실패 파일이 있으면 팝업 표시
+            if (failedFiles.length > 0) {
+                showUploadFailedModal(failedFiles);
+                if (validCount > 0) {
+                    showToast(`${validCount}개 파일 추가됨 (${failedFiles.length}개 실패)`, 'warning');
+                }
+            } else {
+                showToast(`${files.length}개 파일 추가됨`, 'success');
+            }
 
             // input 초기화 (같은 파일 다시 선택 가능하도록)
             document.getElementById('step3_file_input').value = '';
@@ -2295,6 +2344,59 @@
             });
         }
 
+        /**
+         * 업로드 실패 (fileSize === 0) 파일 감지 및 재업로드 팝업 표시
+         */
+        function showUploadFailedModal(failedFiles) {
+            return new Promise((resolve) => {
+                const fileList = failedFiles.map(f =>
+                    `<li><strong>${f.name}</strong> <span style="color:#f44336;">(크기: 0 bytes)</span></li>`
+                ).join('');
+
+                // 다크모드 감지
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const modalBg = isDark ? '#1e1e1e' : 'white';
+                const modalBorder = isDark ? '#333' : '#e0e0e0';
+                const errorBg = isDark ? 'rgba(244, 67, 54, 0.15)' : '#ffebee';
+                const textMuted = isDark ? '#aaa' : '#666';
+
+                const html = `
+                    <div class="modal-overlay" id="uploadFailedModal" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999;">
+                        <div class="modal-content" style="background: ${modalBg}; padding: 30px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid ${modalBorder};">
+                            <h2 style="color: #f44336; margin-bottom: 20px;">파일 업로드 실패</h2>
+                            <div style="background: ${errorBg}; padding: 15px; border-left: 4px solid #f44336; margin-bottom: 15px; border-radius: 4px;">
+                                <p style="margin: 0 0 10px 0;">
+                                    <strong>다음 파일들이 제대로 업로드되지 않았습니다 (파일 크기 0).</strong>
+                                </p>
+                                <p style="margin: 0; color: ${textMuted}; font-size: 14px;">
+                                    파일이 손상되었거나 업로드 중 오류가 발생했을 수 있습니다.<br>
+                                    파일을 다시 선택해 주세요.
+                                </p>
+                            </div>
+                            <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                                <strong style="color: #ef5350;">업로드 실패 파일 (${failedFiles.length}개):</strong>
+                                <ul style="margin: 10px 0 0 0; padding-left: 20px; max-height: 200px; overflow-y: auto;">
+                                    ${fileList}
+                                </ul>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button id="uploadFailedOkBtn" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    확인 (파일 다시 선택)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.insertAdjacentHTML('beforeend', html);
+
+                document.getElementById('uploadFailedOkBtn').onclick = () => {
+                    document.getElementById('uploadFailedModal').remove();
+                    resolve(true);
+                };
+            });
+        }
+
         function clearRestoredFiles() {
             // Step 1 & 2에서 복원된 파일 제거
             for (const zoneId of Object.keys(uploadedFiles)) {
@@ -2431,9 +2533,79 @@
                 updateProcessingStep(3, 'completed', '완료');
                 if (window.llmProgressBar) window.llmProgressBar.completeStep(2).startStep(3);
 
+                // Step 3.5: PH 데이터 LLM 생성 (NEW!)
+                updateProcessingStep(4, 'active', 'PH 생성 중...');
+                if (window.llmProgressBar) window.llmProgressBar.setStreamText('LLM으로 PH(서술문) 데이터 생성 중...');
+
+                // CS/Table 데이터 로드
+                const extractedDataForPH = JSON.parse(localStorage.getItem('extractedData') || '[]');
+                const csDataForPH = {};
+                const tableDataForPH = {};
+                extractedDataForPH.forEach(item => {
+                    if (item.variable_id && item.data_value && item.data_value !== 'DATA_NOT_FOUND') {
+                        if (item.variable_id.startsWith('CS')) {
+                            csDataForPH[item.variable_id] = item.data_value;
+                        } else if (item.variable_id.startsWith('표')) {
+                            tableDataForPH[item.variable_id] = item.data_value;
+                        }
+                    }
+                });
+
+                // 마크다운 데이터 로드
+                const convertedMarkdownsForPH = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
+
+                // PH 데이터 생성
+                const generatedPHData = await generatePHData(
+                    convertedMarkdownsForPH,
+                    csDataForPH,
+                    tableDataForPH,
+                    (msg) => {
+                        if (window.llmProgressBar) window.llmProgressBar.setStreamText(msg);
+                    }
+                );
+
+                // PH 데이터를 extractedData에 병합
+                if (Object.keys(generatedPHData).length > 0) {
+                    const currentReportIdForPH = getUrlParam('reportId') || localStorage.getItem('current_report');
+                    const phDataEntries = Object.entries(generatedPHData).map(([variableId, value]) => ({
+                        report_id: currentReportIdForPH,
+                        variable_id: variableId,
+                        data_type: 'PH',
+                        data_value: value,
+                        source_raw_id: 'LLM_GENERATED',
+                        extraction_method: 'llm_generation',
+                        confidence_score: 0.9,
+                        created_at: new Date().toISOString()
+                    }));
+
+                    // localStorage 업데이트
+                    const updatedExtractedData = [...extractedDataForPH.filter(item => !item.variable_id?.startsWith('PH')), ...phDataEntries];
+                    localStorage.setItem('extractedData', JSON.stringify(updatedExtractedData));
+                    console.log(`[P14] PH 데이터 ${phDataEntries.length}개 저장 완료`);
+
+                    // DB 저장 시도
+                    if (currentReportIdForPH && window.supabaseClient?.saveExtractedData) {
+                        try {
+                            const dbResult = await window.supabaseClient.saveExtractedData(currentReportIdForPH, phDataEntries);
+                            if (dbResult.success) {
+                                console.log('[P14] PH 데이터 DB 저장 완료:', dbResult.data?.length || phDataEntries.length, '개');
+                            } else {
+                                console.error('[P14] PH 데이터 DB 저장 실패:', dbResult.error);
+                                // 에러 상세 정보 로깅
+                                console.error('[P14] DB 저장 실패 상세 - reportId:', currentReportIdForPH);
+                                console.error('[P14] DB 저장 실패 상세 - 저장 시도 항목:', phDataEntries.map(e => e.variable_id));
+                            }
+                        } catch (dbErr) {
+                            console.error('[P14] PH 데이터 DB 저장 예외:', dbErr);
+                        }
+                    }
+                }
+
+                updateProcessingStep(4, 'completed', '완료');
+
                 // Step 4: PSUR 섹션 생성 (LLM)
                 // 누락 파일 체크는 generatePSURSections 내부에서 수행됨
-                updateProcessingStep(4, 'active', '섹션 생성 중...');
+                updateProcessingStep(5, 'active', '섹션 생성 중...');
                 if (window.llmProgressBar) window.llmProgressBar.setStreamText('LLM으로 PSUR 섹션 생성 중...');
                 const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
                 const generatedSections = await generatePSURSections(convertedMarkdowns);
@@ -2463,10 +2635,10 @@
                     }
                 }
 
-                updateProcessingStep(4, 'completed', '완료');
-                if (window.llmProgressBar) window.llmProgressBar.completeStep(3).startStep(4);
+                updateProcessingStep(5, 'completed', '완료');
+                if (window.llmProgressBar) window.llmProgressBar.completeStep(4).startStep(5);
 
-                // Step 5: Line Listing 분석 (RAW12-15)
+                // Step 6: Line Listing 분석 (RAW12-15)
                 const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
                 const hasLineListingFiles = convertedFiles.some(f => {
                     const rawId = f.assignedRawId || f.rawId || '';
@@ -2474,7 +2646,7 @@
                 });
 
                 if (hasLineListingFiles && window.extractLineListings) {
-                    updateProcessingStep(5, 'active', '분석 중...');
+                    updateProcessingStep(6, 'active', '분석 중...');
                     if (window.llmProgressBar) window.llmProgressBar.setStreamText('Line Listing 분석 중...');
 
                     try {
@@ -2551,13 +2723,13 @@
                             extractor.saveToStorage(reportId);
                         }
 
-                        updateProcessingStep(5, 'completed', `완료 (${fileResults.length}개)`);
+                        updateProcessingStep(6, 'completed', `완료 (${fileResults.length}개)`);
                     } catch (llError) {
                         console.error('[P14] Line Listing 분석 오류:', llError);
-                        updateProcessingStep(5, 'completed', '오류 (스킵)');
+                        updateProcessingStep(6, 'completed', '오류 (스킵)');
                     }
                 } else {
-                    updateProcessingStep(5, 'completed', '해당 없음');
+                    updateProcessingStep(6, 'completed', '해당 없음');
                 }
 
                 if (window.llmProgressBar) window.llmProgressBar.complete('처리 완료!');
@@ -3186,6 +3358,97 @@
                     addIfNotExists('CS37_중대하지않은총사례수', String(cs37Value));
                 }
             }
+
+            // ========================================
+            // 시판후판매 계산 CS 변수 선계산 (CS19_.4, CS22, CS23)
+            // LLM 호출 전에 userInputs 또는 RAW3에서 계산
+            // ========================================
+            console.log('📊 [시판후판매] 계산 CS 변수 선계산 시작...');
+
+            // userInputs에서 CS19 관련 값 가져오기
+            const cs19_start_val = userInputs?.['CS19_시판후노출count시작날짜'];
+            const cs19_1_end_val = userInputs?.['CS19_.1_시판후노출count종료날짜'];
+            const cs19_3_val = userInputs?.['CS19_.3_시판후판매연도별판매량'];
+            const cs21_val = userInputs?.['CS21_환자1명당사용량'];
+
+            // RAW3 마크다운에서 판매량 데이터 파싱 시도
+            let parsedSalesData = null;
+            const raw3Markdown = rawIdToMarkdown['RAW3'] || '';
+            if (raw3Markdown && !cs19_3_val) {
+                // RAW3 테이블에서 연도별 판매량 파싱 (| 연도 | 판매량 | 형식)
+                const tableMatch = raw3Markdown.match(/\|[^|]*연도[^|]*\|[^|]*판매[^|]*\|[\s\S]*?(?=\n\n|\n#|$)/i);
+                if (tableMatch) {
+                    const rows = tableMatch[0].split('\n').filter(r => r.includes('|') && !r.includes('---'));
+                    const salesByYear = [];
+                    rows.slice(1).forEach(row => {
+                        const cols = row.split('|').map(c => c.trim()).filter(c => c);
+                        if (cols.length >= 2) {
+                            const yearMatch = cols[0].match(/\d{4}/);
+                            const salesMatch = cols[1].match(/[\d,]+/);
+                            if (yearMatch && salesMatch) {
+                                salesByYear.push({ year: yearMatch[0], sales: parseFloat(salesMatch[0].replace(/,/g, '')) });
+                            }
+                        }
+                    });
+                    if (salesByYear.length > 0) {
+                        parsedSalesData = salesByYear;
+                        console.log('📊 RAW3에서 판매량 데이터 파싱:', salesByYear);
+                    }
+                }
+            }
+
+            // CS19_.4_시판후판매량합계 계산
+            let cs19_4_calculated = null;
+            if (cs19_3_val) {
+                // userInputs에서 연도별 판매량 합산
+                const numbers = cs19_3_val.match(/[\d,]+(?:\.\d+)?/g) || [];
+                const salesSum = numbers.reduce((sum, numStr) => {
+                    const num = parseFloat(numStr.replace(/,/g, ''));
+                    return sum + (isNaN(num) ? 0 : num);
+                }, 0);
+                if (salesSum > 0) {
+                    cs19_4_calculated = Math.round(salesSum);
+                    addIfNotExists('CS19_.4_시판후판매량합계', String(cs19_4_calculated), 'CALCULATED');
+                    console.log(`📐 CS19_.4 계산 (userInputs): ${cs19_3_val} → ${cs19_4_calculated}`);
+                }
+            } else if (parsedSalesData) {
+                // RAW3 파싱 데이터에서 합산
+                const salesSum = parsedSalesData.reduce((sum, d) => sum + d.sales, 0);
+                if (salesSum > 0) {
+                    cs19_4_calculated = Math.round(salesSum);
+                    addIfNotExists('CS19_.4_시판후판매량합계', String(cs19_4_calculated), 'RAW3_Parsed');
+                    console.log(`📐 CS19_.4 계산 (RAW3): ${salesSum} → ${cs19_4_calculated}`);
+                }
+            }
+
+            // CS22_연평균판매량 계산: (CS19_.4 / 기간일수) × 365
+            if (cs19_4_calculated && cs19_start_val && cs19_1_end_val) {
+                try {
+                    const startDate = new Date(cs19_start_val);
+                    const endDate = new Date(cs19_1_end_val);
+                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+                    if (daysDiff > 0) {
+                        const annualAvg = Math.round((cs19_4_calculated / daysDiff) * 365);
+                        addIfNotExists('CS22_연평균판매량', String(annualAvg), 'CALCULATED');
+                        console.log(`📐 CS22 계산: ${cs19_4_calculated} / ${daysDiff}일 × 365 = ${annualAvg}`);
+
+                        // CS23_연평균환자노출 계산: CS22 / CS21
+                        if (cs21_val) {
+                            const usagePerPatient = parseFloat(cs21_val.replace(/,/g, ''));
+                            if (usagePerPatient > 0) {
+                                const patientExposure = Math.round(annualAvg / usagePerPatient);
+                                addIfNotExists('CS23_연평균환자노출', String(patientExposure), 'CALCULATED');
+                                console.log(`📐 CS23 계산: ${annualAvg} / ${usagePerPatient} = ${patientExposure}`);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('📐 CS22/CS23 계산 실패:', e.message);
+                }
+            }
+
+            console.log('📊 [시판후판매] 계산 CS 변수 선계산 완료');
 
             // 정규식 패턴 정의 (하드코딩된 추출 패턴)
             const CS_PATTERNS = {
@@ -3921,7 +4184,20 @@
                     'CS16': ['RAW2.1', 'RAW2.5'],  // 용법용량
                 };
 
-                // 누락된 CS에서 필요한 RAW 파일 식별
+                // PH 서술문 생성에 필요한 RAW 파일 매핑
+                const PH_TO_RAW_PRIORITY = {
+                    'PH4': ['RAW14'],  // 원시자료서술문
+                    'PH5': ['RAW14'],  // 원시자료서술문2
+                    'PH6': ['RAW12', 'RAW13', 'RAW14', 'RAW15'],  // 개별증례분석문
+                    'PH7': ['RAW8', 'RAW17'],  // 새로분석된의뢰의시험
+                    'PH8': ['RAW8', 'RAW17'],  // 시작또는진행중시험
+                    'PH9': ['RAW9'],  // 문헌에발표된안전성
+                    'PH10': ['RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16'],  // 유효성관련정보
+                    'PH11': [],  // 총괄평가문 - 전체 문서 기반
+                    'PH12': []   // 결론 - 전체 문서 기반
+                };
+
+                // 누락된 CS 및 PH에서 필요한 RAW 파일 식별
                 const priorityRawIds = new Set();
                 missingCS.forEach(csKey => {
                     const baseKey = csKey.split('_')[0] + '_' + csKey.split('_')[1]?.split('.')[0]; // CS17_.1 -> CS17
@@ -3932,7 +4208,17 @@
                         }
                     });
                 });
-                console.log('[Hybrid] 우선 포함 RAW 파일:', [...priorityRawIds]);
+
+                // PH 서술문에 필요한 RAW 파일도 우선순위에 추가
+                phToGenerate.forEach(phKey => {
+                    const prefix = phKey.split('_')[0]; // PH4_xxx -> PH4
+                    Object.entries(PH_TO_RAW_PRIORITY).forEach(([phPrefix, rawIds]) => {
+                        if (phKey.startsWith(phPrefix)) {
+                            rawIds.forEach(r => priorityRawIds.add(r));
+                        }
+                    });
+                });
+                console.log('[Hybrid] 우선 포함 RAW 파일 (CS+PH):', [...priorityRawIds]);
 
                 // 파일을 우선순위에 따라 정렬
                 const sortedEntries = Object.entries(convertedMarkdowns).sort((a, b) => {
@@ -3993,7 +4279,18 @@ ${allMarkdowns.substring(0, 60000)}
 
 ## 작업 지침
 1. **누락된 CS 항목**: 위 RAW 자료에서 해당 값을 찾아 추출하세요.
-2. **PH 서술문**: RAW 자료를 기반으로 간결한 서술문을 작성하세요 (각 100-300자).
+2. **PH 서술문 (⚠️ 필수 생성!)**: 아래 상세 지침에 따라 각 PH 변수를 생성하세요:
+   - **PH4_원시자료서술문**: RAW14 원시자료에서 추출. 형식: "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 N명의 환자에서 M건의 이상사례가 확인되었으며, SOC별로 분석한 결과... (200-400자)"
+   - **PH5_원시자료서술문2**: RAW14 원시자료에서 추출. 표7 참조 문구 포함. 형식: "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 N건이며..."
+   - **PH6_개별증례분석문**: RAW12/13/14/15 LineListing 통합 분석. 형식: "개별 증례 분석 결과, 중대한 이상사례 N건 중 인과관계가 '관련있음' 또는 '가능함'으로 평가된 사례는 M건이다..."
+   - **PH7_새로분석된의뢰의시험**: RAW8/RAW17에서 추출. 해당 없으면: "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다."
+   - **PH7_.1_새로분석된비중재시험**: RAW17에서 NIS 시험 정보 추출. 해당 없으면: "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다."
+   - **PH8_시작또는진행중시험**: RAW8/RAW17에서 진행중인 시험 정보 추출. 해당 없으면: "본 보고기간 동안 안전성 문제를 검토하기 위한 새로운 시험이 없다."
+   - **PH8_.1_시작또는진행중인비중재시험**: RAW17에서 진행중인 NIS 정보 추출.
+   - **PH9_문헌에발표된안전성**: RAW9 문헌자료에서 안전성 관련 내용 요약. 해당 없으면: "본 보고기간 동안 문헌에 발표된 중요한 안전성 정보는 없다."
+   - **PH10_유효성관련정보**: RAW12-16 + MedDRA SMQ(lack of efficacy) 분석. 형식: "MedDRA SMQ(lack of efficacy)를 적용하여 분석한 결과, 유효성 결여 관련 사례는 N건이다..."
+   - **PH11_총괄평가문**: 전체 문서 기반 종합 안전성 평가. 형식: "보고기간 동안 수집된 안전성 정보 평가결과, (1) 신규 안전성 우려사항 발견 여부, (2) 허가사항 변경 필요 여부, (3) 추가 조치 필요 여부 등을 기술..."
+   - **PH12_결론**: 유익성-위해성 균형 평가 결론. 형식: "본 보고기간([CS3]~[CS4]) 동안 수집된 안전성 정보를 분석한 결과, 현재까지 알려진 유익성-위해성 프로파일에 영향을 미치는 새로운 안전성 우려사항은 확인되지 않았다..."
 3. **GENERATED 항목 (⚠️ 필수 생성 - 모두 반드시 생성해야 함!)**: 아래 형식에 맞게 생성하세요.
    - CS9_목차: 마크다운 목록 형식으로 섹션 목차 (예: "1. 서론\\n2. 전세계 판매허가 현황\\n3. 안전성 조치..." 형식, 00~14번 섹션 포함)
    - CS10_표목차: 마크다운 목록 형식으로 표 목록 (예: "표 1. 전세계 허가현황\\n표 2. 연도별 판매량\\n표 3. 연평균 환자노출..." 형식)
@@ -4019,9 +4316,12 @@ ${allMarkdowns.substring(0, 60000)}
    - CS19_.2_시판후판매연도: 판매 데이터가 있는 연도 목록 (예: "2020, 2021, 2022, 2023, 2024")
    - CS19_.3_시판후판매연도별판매량: 연도별 판매량 (예: "2020: 1000, 2021: 1500, 2022: 2000")
    - CS19_.4_시판후판매량합계: **⚠️ 반드시 연도별 판매량을 모두 합산하여 계산!** (예: 1000+1500+2000=4500 → "4500")
-9. **CS22, CS23 환자노출 계산**:
-   - CS22_연평균판매량: **⚠️ CS19_.4_시판후판매량합계 ÷ 연도 수로 계산!** (예: 4500÷3=1500 → "1500")
-   - CS23_연평균환자노출: **⚠️ CS22_연평균판매량 ÷ CS21_환자1명당사용량으로 계산!** (예: 1500÷600=2.5 → "2.5", 또는 CS21이 없으면 CS22÷30으로 계산)
+9. **CS22, CS23 환자노출 계산** (정확한 공식):
+   - CS22_연평균판매량: **⚠️ 공식: (CS19_.4 / 기간일수) × 365**
+     - 기간일수 = CS19_.1_시판후노출count종료날짜 - CS19_시판후노출count시작날짜
+     - 예: 2020-01-01 ~ 2024-12-31 (1826일), 합계 4500 → (4500/1826)×365 = 899
+   - CS23_연평균환자노출: **⚠️ 공식: CS22_연평균판매량 ÷ CS21_환자1명당사용량**
+     - 예: CS22=899, CS21=600 → 899÷600 ≈ 1.5 (약 1.5명)
 10. **CS33, CS34 이상사례 보고 건수** (LineListing 마크다운 표에서 행 수 카운트):
    - CS33_신속보고총사례수: **⚠️ 아래 순서로 계산:**
      1. RAW12 (국외신속보고LineListing) 마크다운 표에서 데이터 행 수를 센다 (헤더 "|---|" 다음 행부터)
@@ -4062,7 +4362,17 @@ ${allMarkdowns.substring(0, 60000)}
     "CS35_신속정기원시총사례수": "60",
     "CS37_중대하지않은총사례수": "52",
     "CS57_참고문헌리스트": "1. 참고문헌1\\n2. 참고문헌2",
-    "PH4_원시자료서술문": "생성된 서술문..."
+    "PH4_원시자료서술문": "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 15명의 환자에서 23건의 이상사례가 확인되었으며...",
+    "PH5_원시자료서술문2": "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 5건이며...",
+    "PH6_개별증례분석문": "개별 증례 분석 결과, 중대한 이상사례 8건 중 인과관계가 '관련있음' 또는 '가능함'으로 평가된 사례는 3건이다...",
+    "PH7_새로분석된의뢰의시험": "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다.",
+    "PH7_.1_새로분석된비중재시험": "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다.",
+    "PH8_시작또는진행중시험": "본 보고기간 동안 안전성 문제를 검토하기 위하여 특별히 계획되었거나 실행된 새로운 시험이 없어 해당사항이 없다.",
+    "PH8_.1_시작또는진행중인비중재시험": "해당사항 없음.",
+    "PH9_문헌에발표된안전성": "본 보고기간 동안 문헌에 발표된 중요한 안전성 정보는 없다.",
+    "PH10_유효성관련정보": "MedDRA SMQ(lack of efficacy)를 적용하여 분석한 결과, 유효성 결여 관련 사례는 2건으로 확인되었으나...",
+    "PH11_총괄평가문": "보고기간 동안 수집된 안전성 정보 평가결과, 신규 안전성 우려사항은 발견되지 않았으며, 현재 허가사항 변경이 필요한 사항은 없다...",
+    "PH12_결론": "본 보고기간(2024-01-01~2024-12-31) 동안 수집된 안전성 정보를 분석한 결과, 현재까지 알려진 유익성-위해성 프로파일에 영향을 미치는 새로운 안전성 우려사항은 확인되지 않았다..."
   },
   "corrections": {
     "CS5_국내허가일자": {"old": "잘못된값", "new": "수정값", "reason": "이유"}
@@ -4077,7 +4387,15 @@ ${allMarkdowns.substring(0, 60000)}
     "CS33_신속보고총사례수": 0.95,
     "CS34_정기보고총사례수": 0.95,
     "CS36_중대한총사례수": 0.9,
-    "PH4_원시자료서술문": 0.8
+    "PH4_원시자료서술문": 0.85,
+    "PH5_원시자료서술문2": 0.85,
+    "PH6_개별증례분석문": 0.8,
+    "PH7_새로분석된의뢰의시험": 0.9,
+    "PH8_시작또는진행중시험": 0.9,
+    "PH9_문헌에발표된안전성": 0.85,
+    "PH10_유효성관련정보": 0.8,
+    "PH11_총괄평가문": 0.85,
+    "PH12_결론": 0.85
   }
 }
 \`\`\`
@@ -4093,7 +4411,7 @@ ${allMarkdowns.substring(0, 60000)}
                     provider: 'google',
                     model: 'gemini-2.0-flash',
                     temperature: 0.2,
-                    maxTokens: 8192
+                    maxTokens: 16384  // PH 서술문 포함하여 증가
                 });
 
                 if (!response?.text) {
@@ -4162,8 +4480,17 @@ ${allMarkdowns.substring(0, 60000)}
                 // 8. 결과 병합
                 const enhancedData = [...regexExtractedData];
 
-                // GENERATED 항목 목록 (placeholder 체크 우회 대상 - 이 항목들은 LLM이 반드시 생성해야 함)
-                const generatedVarIds = ['CS9_목차', 'CS10_표목차', 'CS11_별첨목차', 'CS12_약어표', 'CS17_.6_허가현황서술문', 'CS57_참고문헌리스트'];
+                // GENERATED/LLM 생성 항목 목록 (placeholder 체크 우회 대상 - 이 항목들은 LLM이 반드시 생성)
+                const generatedVarIds = [
+                    // CS GENERATED 항목
+                    'CS9_목차', 'CS10_표목차', 'CS11_별첨목차', 'CS12_약어표', 'CS17_.6_허가현황서술문', 'CS57_참고문헌리스트',
+                    // PH 서술문 항목 (모두 LLM 생성)
+                    'PH4_원시자료서술문', 'PH5_원시자료서술문2', 'PH6_개별증례분석문',
+                    'PH7_새로분석된의뢰의시험', 'PH7_.1_새로분석된비중재시험',
+                    'PH8_시작또는진행중시험', 'PH8_.1_시작또는진행중인비중재시험',
+                    'PH9_문헌에발표된안전성', 'PH10_유효성관련정보',
+                    'PH11_총괄평가문', 'PH12_결론'
+                ];
 
                 // 8-1. 새로 추출된 데이터 추가 (GENERATED 포함)
                 if (llmResult.extracted) {
@@ -4661,6 +4988,414 @@ ${allMarkdowns.substring(0, 60000)}
                     resolve(true);
                 };
             });
+        }
+
+        // ========================================
+        // PH 데이터 LLM 생성
+        // ========================================
+
+        /**
+         * PH 데이터 생성을 위한 RAW 의존성 매핑
+         */
+        const PH_RAW_DEPENDENCIES = {
+            'PH4_원시자료서술문': {
+                rawIds: ['RAW14'],
+                requiredCS: ['CS28_원시총환자수', 'CS29_원시총이상사례수', 'CS30_원시중대한사례수'],
+                requiredTables: ['표7_원시자료내역'],
+                instruction: `[표7_원시자료내역]을 간단하게 요약해서 기술함.
+예시1은 원시자료 내역이 있는 경우임.
+예시2는 원시자료 내역이 없는경우임. 그리고 원시자료 내역이 없는 경우, 근거자료(원시자료 신청내역·결과 등) 포함해야함.`,
+                examples: [
+                    '본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 [CS28_원시총환자수]명의 환자에서 [CS29_원시총사례수]건의 이상사례가 확인되었으며, 이 중 중대한 이상사례는 [CS30_원시중대한사례수]건이었다. 상세 정보는 별첨 3에 제시하였다.',
+                    '원시자료를 [CS31_원시자료신청일]에 신청하였으며, 결과를 확인하였을 때 본보고기간 동안의 원시자료 내역은 없었다.'
+                ]
+            },
+            'PH5_원시자료서술문2': {
+                rawIds: ['RAW14'],
+                requiredCS: ['CS28_원시총환자수', 'CS29_원시총이상사례수', 'CS2_회사명'],
+                requiredTables: ['표7_원시자료내역'],
+                instruction: `[표7_원시자료내역]을 간단하게 요약해서 기술함. 표7을 참조하여 세부내역을 설명.`,
+                examples: [
+                    '본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 [CS28_원시총환자수]명의 환자에서 [CS29_원시총이상사례수]건의 이상사례가 확인되었으며, 세부내역은 다음 표 7에 제시 하였다. [CS2_회사명](주)가 KIDS로 보고한 사례는 제외하였다.',
+                    '원시자료를 [CS31_원시자료신청일]에 신청하였으며, 결과를 확인하였을 때 본보고기간 동안의 원시자료 내역은 없었다.'
+                ]
+            },
+            'PH6_개별증례분석문': {
+                rawIds: ['RAW19', 'RAW12', 'RAW13', 'RAW14', 'RAW15'],
+                requiredCS: [],
+                requiredTables: ['표9_SOC별건수'],
+                instruction: `생성된 [표9_SOC별건수]의 정보를 기준으로 서술해 나가되, 서술에 필요한 추가적인 데이터는 [RAW19_통합LineListing]에서 추출해서 적는다.
+해당 케이스의 병용약물 정보나 과거력이나 환자 나이나 상세한 설명이 담긴 Narrative(AE detail)등의 정보를 가지고 쓴다.
+환자가 회복되었는지 아닌지도 컬럼 AE_ing에서 찾아서 쓸수있다. 사망건의 경우 부검여부도 LineListing에서 찾아쓸 수 있다.
+많이 보고된 PT가 뭔지에 따라서 서술스타일이 달라지게 된다.`,
+                examples: []
+            },
+            'PH7_새로분석된의뢰의시험': {
+                rawIds: ['RAW8', 'RAW17', 'RAW10'],
+                requiredCS: ['CS0_성분명', 'CS1_브랜드명'],
+                requiredTables: [],
+                instruction: `종료된(or분석완료된) 회사가 의뢰한 임상시험과, 회사가 알고 있는 IIT를 기술해야 한다.
+[RAW8_임상노출데이터]에서 보고기간 동안에 종료된(or 분석이 완료된) 품목허가권자(회사)가 의뢰한 임상시험이 있는지 확인.
+IIT정보는[RAW17_IIT/NIS트래커]에서 찾는다. 해당 트래커에서 NIS가 아니고 IIT인 스터디를 찾는다.`,
+                examples: [
+                    '본 보고기간 동안 "[CS1_브랜드명]([CS0_성분명])"과 관련된 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다.'
+                ]
+            },
+            'PH7.1_새로분석된비중재시험': {
+                rawIds: ['RAW17', 'RAW11'],
+                requiredCS: [],
+                requiredTables: [],
+                instruction: `RAW데이터에서 보고기간 동안에 종료된(or 분석이 완료된) 품목허가권자(회사)가 의뢰한 비중재적 연구가 있는지 확인한다. (IIT는 제외 NIS만 포함)
+있다면, 비중재 연구의 시험번호, 제목, 진행상황(종료됨 or 진행중)을 기술하고, 이에서 발견된 안전성 데이터를 요약한다.`,
+                examples: []
+            },
+            'PH8_시작또는진행중시험': {
+                rawIds: ['RAW8', 'RAW17', 'RAW10'],
+                requiredCS: ['CS0_성분명', 'CS1_브랜드명'],
+                requiredTables: [],
+                instruction: `보고기간동안 시작되었거나 진행중인 회사가 의뢰한 임상시험과, 회사가 알고 있는 IIT를 기술해야 한다.
+[RAW8_임상노출데이터]에서 보고기간동안 시작되었거나 진행중인 품목허가권자(회사)가 의뢰한 임상시험이 있는지 확인.
+진행중인지 종료인지는 [RAW17_IIT/NIS트래커]에서 스터디시작날짜와 스터디종료날짜를 기준으로 판단.`,
+                examples: [
+                    '본 보고기간 동안 "[CS1_브랜드명]([CS0_성분명])"과 관련된 안전성 문제를 검토하기 위하여 특별히 계획되었거나 실행된 새로운 시험이 없어 해당사항이 없다.'
+                ]
+            },
+            'PH8.1_시작또는진행중인비중재시험': {
+                rawIds: ['RAW17'],
+                requiredCS: [],
+                requiredTables: [],
+                instruction: `RAW데이터에서 보고기간 동안에 시작된 또는 진행 중인 품목허가권자(회사)가 의뢰한 비중재연구가 있는지 확인한다. (IIT는 제외 NIS만 포함)
+있다면, 비중재 연구의 시험번호, 제목, 진행상황을 기술하고, 이에서 발견된 안전성 데이터를 요약한다.`,
+                examples: []
+            },
+            'PH9_문헌에발표된안전성': {
+                rawIds: ['RAW9'],
+                requiredCS: ['CS53_문헌DB'],
+                requiredTables: [],
+                instruction: `[RAW9_문헌자료]에 있는 문헌제목, 저자, 출판년도, 회사의 comment, abstract, 제목, 목적, 시험방법, 시험결과, 결론을 추출하여 분석한다.
+어떤문헌DB를 참고해서 검색을 했는지도 기재해야 한다. 어떤 문헌DB를 참고해서 검색했는지는 [CS53_문헌DB]에서 가져온다.`,
+                examples: []
+            },
+            'PH10_유효성관련정보': {
+                rawIds: ['RAW19', 'RAW16'],
+                requiredCS: ['CS0_성분명', 'CS1_브랜드명'],
+                requiredTables: [],
+                instruction: `RAW19_통합LineListing을 가지고 유효성과 관련된 특정 event들을 찾는다.
+[RAW16_MedDRA_SMQ_lack_of_efficacy]에 나와있는 Lack of efficacy에 해당하는 PT리스트를 기준으로 특정 event를 찾는다.
+RAW19_통합LineListing내에 [RAW16_MedDRA_SMQ_lack_of_efficacy]에 나와있는 PT에 포함되는 PT를 가진 event만 골라낸다.`,
+                examples: [
+                    '본 보고기간 동안의 데이터에 대해 MedDRA SMQ(lack of efficacy)가 관련 사례를 식별하는 데 적용되었다. 검토결과 "[CS1_브랜드명]([CS0_성분명])"과 관련되어, 유효성이 없어 치명적인 결과를 초래하는 사례는 없었다.'
+                ]
+            },
+            'PH11_총괄평가문': {
+                rawIds: ['GENERATED'],  // 전체 문서 기반
+                requiredCS: ['CS0_성분명', 'CS1_브랜드명'],
+                requiredTables: [],
+                instruction: `생성된 문서 전반을 평가함. 보고기간 동안 수집된 안전성 정보 평가결과를 종합적으로 기술.
+중대한 이상사례 검토 결과, 중대하지 않은 이상사례 검토 결과, 문헌 검토 결과 등을 포함.
+유익성-위해성 프로파일에 부정적인 영향을 미칠 만한 새로운 유효성 및 안전성 정보가 있었는지 평가.`,
+                examples: [
+                    '보고기간 동안 수집된 안전성 정보 평가결과는 다음과 같다.\n\n중대한 이상사례 검토 결과 위해성 프로파일에 반영이 필요한 정보는 없었다.\n중대하지 않은 이상사례 검토 결과, 허가사항에 반영되지 않은 이상사례는 유의미한 안전성 정보로 판단하기에 충분한 정보를 가지고 있지 않았다.\n문헌 검토 결과, "[CS1_브랜드명]([CS0_성분명])" 주성분과 관련한 논문에서 기존에 알려진 안전성 정보와 다른 양상을 보이거나 새로운 유효성 및 안전성 정보를 포함하는 발표된 연구 결과가 없었다.\n\n본 보고기간 동안, "[CS1_브랜드명]([CS0_성분명])"의 유익성-위해성 프로파일에 부정적인 영향을 미칠 만한 새로운 유효성 및 안전성 정보가 확인된 것은 없다. 시판 후 보고에서 수집된 자료는 기존에 알려진 안전성 프로파일과 일치하였다.'
+                ]
+            },
+            'PH12_결론': {
+                rawIds: ['GENERATED'],  // 전체 문서 기반
+                requiredCS: ['CS0_성분명', 'CS1_브랜드명', 'CS3_보고시작날짜', 'CS4_보고종료날짜'],
+                requiredTables: [],
+                instruction: `생성된 문서 전반에서 결론의견을 작성함.
+보고기간 동안 수집된 안전성 정보를 분석 평가한 결과를 종합하여 결론을 도출.
+유익성-위해성 균형이 긍정적임을 확인하는 내용 포함.`,
+                examples: [
+                    '본 보고기간([CS3_보고시작날짜] ~[CS4_보고종료날짜]) 동안 수집된 "[CS1_브랜드명]([CS0_성분명])"의 안전성 정보를 분석 평가한 결과, 기존에 알려진 안전성 프로파일과 일치하였으며, 유익성-위해성 균형은 긍정적이다.'
+                ]
+            }
+        };
+
+        /**
+         * RAW ID로 마크다운 필터링
+         */
+        function getMarkdownsByRawIds(rawIds, convertedMarkdowns, uploadedFiles) {
+            const result = {};
+            const filesArray = uploadedFiles || JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+
+            for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                // uploadedFiles에서 해당 파일의 RAW ID 찾기
+                const fileInfo = filesArray.find(f => f.name === fileName || f.fileName === fileName);
+                const fileRawId = fileInfo?.rawId || fileInfo?.assignedRawId || '';
+
+                // RAW ID 매칭 확인 (RAW12 -> RAW12 매칭, RAW1.1 -> RAW1 매칭 등)
+                const matches = rawIds.some(rawId => {
+                    if (fileRawId === rawId) return true;
+                    if (fileRawId.startsWith(rawId + '.')) return true;  // RAW1.1 matches RAW1
+                    if (rawId.includes('.') && fileRawId === rawId.split('.')[0]) return true;
+                    return false;
+                });
+
+                if (matches) {
+                    result[fileName] = { content, rawId: fileRawId };
+                }
+            }
+            return result;
+        }
+
+        /**
+         * CS 데이터에서 플레이스홀더 치환
+         */
+        function replacePlaceholders(text, csData) {
+            if (!text || !csData) return text;
+
+            let result = text;
+            for (const [key, value] of Object.entries(csData)) {
+                if (value && value !== 'DATA_NOT_FOUND') {
+                    const placeholder = `[${key}]`;
+                    result = result.split(placeholder).join(value);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * PH 그룹별 프롬프트 생성
+         */
+        function buildPHPrompt(phIds, rawMarkdowns, csData, tableData, previousPH = {}) {
+            const phDefs = phIds.map(id => PH_RAW_DEPENDENCIES[id]).filter(Boolean);
+            if (phDefs.length === 0) return null;
+
+            // CS 데이터 텍스트
+            const csDataText = Object.entries(csData || {})
+                .filter(([k, v]) => v && v !== 'DATA_NOT_FOUND')
+                .map(([k, v]) => `- ${k}: ${String(v).substring(0, 200)}`)
+                .join('\n');
+
+            // 테이블 데이터 텍스트
+            const tableDataText = Object.entries(tableData || {})
+                .filter(([k, v]) => v && v !== 'DATA_NOT_FOUND')
+                .map(([k, v]) => `- ${k}: ${String(v).substring(0, 500)}`)
+                .join('\n');
+
+            // RAW 마크다운 텍스트
+            const rawMarkdownText = Object.entries(rawMarkdowns)
+                .map(([fileName, data]) => `### ${fileName} (${data.rawId || 'Unknown'})\n${data.content?.substring(0, 15000) || ''}`)
+                .join('\n\n---\n\n');
+
+            // 이전 PH 데이터 (PH11, PH12용)
+            const previousPHText = Object.entries(previousPH || {})
+                .filter(([k, v]) => v && v !== 'DATA_NOT_FOUND')
+                .map(([k, v]) => `- ${k}: ${String(v).substring(0, 1000)}`)
+                .join('\n');
+
+            // 생성 대상 PH 정의
+            const phDefinitions = phIds.map(id => {
+                const def = PH_RAW_DEPENDENCIES[id];
+                if (!def) return '';
+
+                const examplesText = def.examples?.length > 0
+                    ? `\n**예시**:\n${def.examples.map((ex, i) => `예시${i + 1}: ${ex}`).join('\n')}`
+                    : '';
+
+                return `### ${id}
+**지침**: ${def.instruction}
+${examplesText}`;
+            }).join('\n\n');
+
+            return `# PH (서술문) 데이터 생성 요청
+
+당신은 한국 PSUR(정기적안전성업데이트보고서) 작성 전문가입니다.
+제공된 RAW 데이터와 CS(공통섹션) 데이터를 분석하여 PH(서술문) 데이터를 생성해주세요.
+
+## 제품 정보 (CS 데이터)
+${csDataText || '(CS 데이터 없음)'}
+
+## 관련 테이블 데이터
+${tableDataText || '(테이블 데이터 없음)'}
+
+${previousPHText ? `## 이전 생성된 PH 데이터\n${previousPHText}\n` : ''}
+
+## RAW 원시 데이터
+${rawMarkdownText || '(RAW 데이터 없음)'}
+
+## 생성 대상 PH 변수
+${phDefinitions}
+
+## 출력 규칙
+1. CS 플레이스홀더([CS0_성분명] 등)는 위 CS 데이터 값으로 치환하여 실제 값을 넣어주세요.
+2. 데이터가 없는 경우 "해당사항 없다" 또는 "확인되지 않았다" 형식으로 작성하세요.
+3. 한국어로 전문적인 약물감시(Pharmacovigilance) 용어를 사용하세요.
+4. 반드시 아래 JSON 형식으로만 응답하세요.
+
+## 출력 형식
+\`\`\`json
+{
+${phIds.map(id => `  "${id}": "생성된 서술문..."`).join(',\n')}
+}
+\`\`\`
+
+중요: 반드시 위 JSON 형식으로만 응답하세요. 추가 설명 없이 JSON만 출력하세요.`;
+        }
+
+        /**
+         * LLM 응답에서 PH JSON 파싱
+         */
+        function parsePHResponse(response) {
+            if (!response) return {};
+
+            try {
+                // response가 객체인 경우 text 속성 추출
+                let responseText = response;
+                if (typeof response === 'object' && response !== null) {
+                    responseText = response.text || response.content || JSON.stringify(response);
+                }
+
+                if (!responseText || typeof responseText !== 'string') {
+                    console.warn('[parsePHResponse] 유효한 응답 텍스트 없음:', response);
+                    return {};
+                }
+
+                // JSON 블록 추출
+                let jsonStr = responseText;
+                const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+                if (jsonMatch) {
+                    jsonStr = jsonMatch[1].trim();
+                }
+
+                // JSON 파싱
+                const parsed = JSON.parse(jsonStr);
+
+                // DATA_NOT_FOUND 필터링
+                const result = {};
+                for (const [key, value] of Object.entries(parsed)) {
+                    if (value && value !== 'DATA_NOT_FOUND' && String(value).trim() !== '') {
+                        result[key] = value;
+                    }
+                }
+                console.log('[parsePHResponse] 파싱 완료:', Object.keys(result));
+                return result;
+            } catch (e) {
+                console.error('[parsePHResponse] JSON 파싱 실패:', e, '원본:', response);
+                return {};
+            }
+        }
+
+        /**
+         * PH 데이터 LLM 생성 메인 함수
+         * @param {Object} convertedMarkdowns - RAW ID별 마크다운 콘텐츠
+         * @param {Object} csData - 추출된 CS 데이터
+         * @param {Object} tableData - 추출된 테이블 데이터
+         * @param {Function} progressCallback - 진행 상황 콜백
+         */
+        async function generatePHData(convertedMarkdowns, csData, tableData, progressCallback) {
+            console.log('[generatePHData] PH 데이터 생성 시작');
+
+            const apiKey = localStorage.getItem('GOOGLE_API_KEY');
+            if (!apiKey) {
+                console.warn('[generatePHData] API 키 없음 - 빈 PH 데이터 반환');
+                return {};
+            }
+
+            const uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            const phData = {};
+
+            // Phase 1: RAW 기반 PH 생성 (PH4-PH10)
+            const phase1Groups = [
+                ['PH4_원시자료서술문', 'PH5_원시자료서술문2'],
+                ['PH6_개별증례분석문'],
+                ['PH7_새로분석된의뢰의시험', 'PH7.1_새로분석된비중재시험'],
+                ['PH8_시작또는진행중시험', 'PH8.1_시작또는진행중인비중재시험'],
+                ['PH9_문헌에발표된안전성'],
+                ['PH10_유효성관련정보']
+            ];
+
+            let completedGroups = 0;
+            const totalGroups = phase1Groups.length + 1;  // +1 for Phase 2
+
+            for (const phGroup of phase1Groups) {
+                try {
+                    // 필요한 RAW ID 수집
+                    const requiredRawIds = new Set();
+                    phGroup.forEach(phId => {
+                        const def = PH_RAW_DEPENDENCIES[phId];
+                        if (def?.rawIds) {
+                            def.rawIds.forEach(id => {
+                                if (id !== 'GENERATED') requiredRawIds.add(id);
+                            });
+                        }
+                    });
+
+                    // RAW 마크다운 필터링
+                    const requiredRawIdsArr = Array.from(requiredRawIds);
+                    console.log(`[generatePHData] ${phGroup.join(', ')} 필요 RAW IDs:`, requiredRawIdsArr);
+
+                    const rawMarkdowns = getMarkdownsByRawIds(
+                        requiredRawIdsArr,
+                        convertedMarkdowns,
+                        uploadedFiles
+                    );
+                    console.log(`[generatePHData] ${phGroup.join(', ')} 매칭된 마크다운:`, Object.keys(rawMarkdowns));
+
+                    // RAW 데이터가 있는 경우에만 생성
+                    if (Object.keys(rawMarkdowns).length > 0 || requiredRawIds.size === 0) {
+                        const prompt = buildPHPrompt(phGroup, rawMarkdowns, csData, tableData);
+
+                        if (prompt) {
+                            if (progressCallback) {
+                                progressCallback(`PH 생성 중: ${phGroup.join(', ')}`);
+                            }
+
+                            const response = await window.multiLLMClient?.generate(prompt, {
+                                provider: 'google',
+                                model: 'gemini-2.5-flash',
+                                maxTokens: 4096
+                            });
+
+                            const parsed = parsePHResponse(response);
+                            Object.assign(phData, parsed);
+                            console.log(`[generatePHData] ${phGroup.join(', ')} 생성 완료:`, Object.keys(parsed));
+                        }
+                    } else {
+                        console.log(`[generatePHData] ${phGroup.join(', ')} - RAW 데이터 없음, 건너뜀`);
+                    }
+                } catch (error) {
+                    console.error(`[generatePHData] ${phGroup.join(', ')} 생성 오류:`, error);
+                }
+
+                completedGroups++;
+                if (progressCallback) {
+                    progressCallback(`PH 생성 진행: ${completedGroups}/${totalGroups}`);
+                }
+            }
+
+            // Phase 2: 종합 평가 (PH11, PH12) - 이전 PH 데이터 참조
+            try {
+                if (progressCallback) {
+                    progressCallback('PH 생성 중: 종합평가 및 결론');
+                }
+
+                const summaryPhIds = ['PH11_총괄평가문', 'PH12_결론'];
+                const summaryPrompt = buildPHPrompt(
+                    summaryPhIds,
+                    {},  // RAW 마크다운 불필요
+                    csData,
+                    tableData,
+                    phData  // 이전 PH 데이터 전달
+                );
+
+                if (summaryPrompt) {
+                    const response = await window.multiLLMClient?.generate(summaryPrompt, {
+                        provider: 'google',
+                        model: 'gemini-2.5-flash',
+                        maxTokens: 4096
+                    });
+
+                    const parsed = parsePHResponse(response);
+                    Object.assign(phData, parsed);
+                    console.log('[generatePHData] PH11, PH12 생성 완료:', Object.keys(parsed));
+                }
+            } catch (error) {
+                console.error('[generatePHData] PH11, PH12 생성 오류:', error);
+            }
+
+            console.log('[generatePHData] PH 데이터 생성 완료. 총', Object.keys(phData).length, '개 변수');
+            return phData;
         }
 
         // ========================================

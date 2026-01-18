@@ -48,6 +48,12 @@
 
             const data = await response.json();
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const finishReason = data.candidates?.[0]?.finishReason;
+
+            // finishReason 로깅 (디버깅용)
+            if (finishReason && finishReason !== 'STOP') {
+                console.warn(`[LLMGemini] 생성 조기 종료. finishReason: ${finishReason}`);
+            }
 
             // Gemini는 usage 정보가 다름
             const inputTokens = data.usageMetadata?.promptTokenCount || 0;
@@ -61,7 +67,8 @@
                 model,
                 provider: 'google',
                 usage: { inputTokens, outputTokens },
-                cost
+                cost,
+                finishReason
             };
         }
 

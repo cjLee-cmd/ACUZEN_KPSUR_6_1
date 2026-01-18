@@ -382,6 +382,8 @@
                     validation_status: item.validation_status || 'Pending'
                 }));
 
+                console.log(`[bulkUpsertExtractedData] Upserting ${dataItems.length} items to extracted_data`);
+
                 const { data, error } = await this.core.client
                     .from('extracted_data')
                     .upsert(dataItems, {
@@ -390,14 +392,19 @@
                     })
                     .select();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Supabase upsert error:', error);
+                    console.error('❌ Error details - code:', error.code, 'message:', error.message);
+                    console.error('❌ First item sample:', JSON.stringify(dataItems[0], null, 2));
+                    throw error;
+                }
 
                 console.log(`✅ Bulk upserted ${data.length} extracted data items`);
                 return { success: true, data: data };
 
             } catch (error) {
-                console.error('❌ Bulk upsert extracted data failed:', error.message);
-                return { success: false, error: error.message };
+                console.error('❌ Bulk upsert extracted data failed:', error.message || error);
+                return { success: false, error: error.message || String(error) };
             }
         }
     }

@@ -27,16 +27,21 @@
             await this.core.init();
 
             try {
+                // DB 스키마에 맞는 필드명 사용 (001_initial_schema.sql 참조)
+                const inputTokens = data.inputTokens || data.input_tokens || 0;
+                const outputTokens = data.outputTokens || data.output_tokens || 0;
+
                 const dialogData = {
                     report_id: reportId,
-                    model: data.model,
-                    prompt_type: data.promptType || data.prompt_type || 'generation',
-                    input_tokens: data.inputTokens || data.input_tokens || 0,
-                    output_tokens: data.outputTokens || data.output_tokens || 0,
-                    cost_usd: data.costUsd || data.cost_usd || 0,
-                    request_summary: data.requestSummary || data.request_summary || null,
-                    response_summary: data.responseSummary || data.response_summary || null,
-                    duration_ms: data.durationMs || data.duration_ms || 0
+                    stage: data.stage || data.promptType || data.prompt_type || 'generation',
+                    model_name: data.model_name || data.model,
+                    user_message: data.user_message || data.requestSummary || data.request_summary || null,
+                    assistant_message: data.assistant_message || data.responseSummary || data.response_summary || null,
+                    input_tokens: inputTokens,
+                    output_tokens: outputTokens,
+                    total_tokens: inputTokens + outputTokens,
+                    estimated_cost_usd: data.estimated_cost_usd || data.costUsd || data.cost_usd || 0,
+                    actual_duration_ms: data.actual_duration_ms || data.durationMs || data.duration_ms || 0
                 };
 
                 const { data: result, error } = await this.core.client
@@ -47,7 +52,7 @@
 
                 if (error) throw error;
 
-                console.log(`✅ LLM dialog logged: ${dialogData.model}`);
+                console.log(`✅ LLM dialog logged: ${dialogData.model_name}`);
                 return { success: true, dialog: result };
 
             } catch (error) {

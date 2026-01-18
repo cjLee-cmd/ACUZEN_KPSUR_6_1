@@ -55,9 +55,75 @@
         }
 
         /**
+         * 토큰 수 추정 (한글 기준: ~2자당 1토큰, 영문 기준: ~4자당 1토큰)
+         */
+        estimateTokens(text) {
+            if (!text) return 0;
+            const koreanChars = (text.match(/[가-힣]/g) || []).length;
+            const otherChars = text.length - koreanChars;
+            return Math.ceil(koreanChars / 2 + otherChars / 4);
+        }
+
+        /**
+         * LLM 호출 로그 저장
+         */
+        async logLLMDialog(prompt, response, options = {}) {
+            const reportId = this.getReportId();
+            if (!reportId) {
+                console.warn('[PSURCore] No reportId for LLM logging');
+                return;
+            }
+
+            const {
+                stage = 'psur_generate',
+                sectionId = null,
+                sectionName = null
+            } = options;
+
+            const inputTokens = this.estimateTokens(prompt);
+            const outputTokens = this.estimateTokens(response);
+
+            // Gemini 3 Flash 가격: $0.10/1M input, $0.40/1M output (추정)
+            const estimatedCost = (inputTokens * 0.0000001) + (outputTokens * 0.0000004);
+
+            // DB 스키마에 맞는 필드만 전송 (dialog_type, metadata 필드 제거)
+            const dialogData = {
+                stage: sectionId ? `${stage}_section_${sectionId}` : stage,
+                model_name: this.model,
+                user_message: prompt.substring(0, 10000), // 최대 10000자 저장
+                assistant_message: response.substring(0, 50000), // 최대 50000자 저장
+                input_tokens: inputTokens,
+                output_tokens: outputTokens,
+                total_tokens: inputTokens + outputTokens,
+                estimated_cost_usd: estimatedCost
+            };
+
+            try {
+                if (window.supabaseClient && window.supabaseClient.createLLMDialog) {
+                    const result = await window.supabaseClient.createLLMDialog(reportId, dialogData);
+                    if (result.success) {
+                        console.log(`[PSURCore] LLM dialog logged: ${stage}/${sectionId || 'full'}`);
+                    } else {
+                        console.warn('[PSURCore] LLM dialog log failed:', result.error);
+                    }
+                }
+            } catch (error) {
+                console.warn('[PSURCore] LLM logging error:', error);
+            }
+        }
+
+        /**
          * Gemini API 호출
          */
-        async callGeminiAPI(prompt, maxTokens = 4096) {
+        async callGeminiAPI(prompt, options = {}) {
+            const {
+                maxTokens = 4096,
+                stage = 'psur_generate',
+                sectionId = null,
+                sectionName = null,
+                skipLogging = false
+            } = typeof options === 'number' ? { maxTokens: options } : options;
+
             const url = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
 
             const requestBody = {
@@ -90,7 +156,14 @@
                 const data = await response.json();
 
                 if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-                    return data.candidates[0].content.parts[0].text;
+                    const responseText = data.candidates[0].content.parts[0].text;
+
+                    // LLM 호출 로그 저장 (비동기, 오류 시에도 계속 진행)
+                    if (!skipLogging) {
+                        this.logLLMDialog(prompt, responseText, { stage, sectionId, sectionName });
+                    }
+
+                    return responseText;
                 }
 
                 throw new Error('유효한 응답을 받지 못했습니다.');
@@ -178,7 +251,12 @@
 
             try {
                 const startTime = Date.now();
-                let responseText = await this.callGeminiAPI(prompt, 65536);
+                let responseText = await this.callGeminiAPI(prompt, {
+                    maxTokens: 65536,
+                    stage: 'psur_full_report',
+                    sectionId: null,
+                    sectionName: 'Full PSUR Report'
+                });
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
                 // 후처리: '~습니다'체 → '~이다'체 변환
@@ -224,7 +302,12 @@
                 combinedData, userInput, template, previousSections
             );
 
-            return await this.callGeminiAPI(prompt, 4096);
+            return await this.callGeminiAPI(prompt, {
+                maxTokens: 4096,
+                stage: 'psur_section',
+                sectionId: sectionId,
+                sectionName: sectionName
+            });
         }
 
         /**

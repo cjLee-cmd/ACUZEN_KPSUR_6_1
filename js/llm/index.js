@@ -157,7 +157,7 @@
             }
 
             result.duration = ((Date.now() - startTime) / 1000).toFixed(2);
-            this.base.logDialog(prompt, result);
+            this.base.logDialog(prompt, result, { stage: options.stage || 'llm_generate' });
 
             return result;
         }
@@ -185,7 +185,7 @@
             }
 
             result.duration = ((Date.now() - startTime) / 1000).toFixed(2);
-            this.base.logDialog(prompt, result);
+            this.base.logDialog(prompt, result, { stage: options.stage || 'llm_stream' });
 
             return result;
         }
@@ -217,6 +217,14 @@
                 }
 
                 result.latency = Date.now() - startTime;
+                result.duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                // 로깅: 마지막 사용자 메시지를 프롬프트로 사용
+                const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+                this.base.logDialog(lastUserMsg?.content || systemPrompt, result, {
+                    stage: options.stage || 'llm_history'
+                });
+
                 return result;
 
             } catch (error) {
