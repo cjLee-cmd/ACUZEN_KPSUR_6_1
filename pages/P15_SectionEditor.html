@@ -342,8 +342,8 @@
 
         .editable-content table {
             border-collapse: collapse;
-            width: 100%;
-            min-width: 500px;
+            width: max-content;
+            min-width: 100%;
             border-radius: var(--radius-md);
         }
 
@@ -351,12 +351,18 @@
             border: 1px solid var(--glass-border);
             padding: 0.625rem;
             text-align: left;
+            white-space: nowrap;
         }
 
         .editable-content th {
             background: rgba(31, 78, 140, 0.1);
             font-weight: 600;
             color: var(--color-primary);
+        }
+
+        /* 테이블 가로 스크롤 지원 */
+        .editable-content {
+            overflow-x: auto;
         }
 
         /* Page Title in Header */
