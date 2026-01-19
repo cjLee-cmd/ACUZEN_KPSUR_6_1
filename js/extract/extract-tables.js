@@ -98,15 +98,15 @@
         '표9_SOC별건수': {
             rawIds: ['RAW19'],
             legacyRawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],  // 하위 호환용
-            description: 'SOC별 이상사례 건수 표 (중대/비중대)',
-            columns: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
+            description: 'SOC별 이상사례 건수 표 (중대/비중대, 허가사항 반영여부 및 판단근거 포함)',
+            columns: ['SOC', 'PT', '중대함(건)', '중대하지않음(건)', '총누적(건)', '허가사항반영여부', '허가사항반영여부판단근거'],
             type: 'A',
             columnMapping: {
                 'SOC': 'k-MedDRA SOC_v28.1',
                 'PT': 'k-MedDRA PT_v28.1',
                 '중대성': 'Seriousness'
             },
-            guideline: 'RAW19 통합LineListing에서 SOC/PT별로 피벗 테이블 생성. 중대/비중대 건수 집계 후 비율 계산.',
+            guideline: 'RAW19 통합LineListing에서 SOC/PT별로 피벗 테이블 생성. 중대/비중대 건수 집계. 각 PT에 대해 허가사항(사용상의주의사항) 반영 여부를 "기반영" 또는 "미반영"으로 표시하고, 판단근거(예: 최신첨부문서의 사용상의주의사항 내 기재 여부)를 작성.',
             examples: ['별도 워드 문서 예시 참고']
         }
     };
