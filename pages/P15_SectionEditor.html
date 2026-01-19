@@ -2438,6 +2438,14 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
                     editor.sections[currentSectionId] = updatedSection;
                 }
 
+                // DB 저장 (Supabase)
+                const dbSaved = await editor.saveSection(currentSectionId);
+                if (dbSaved) {
+                    console.log(`[regenerateSection] DB 저장 완료: ${currentSectionId}`);
+                } else {
+                    console.warn(`[regenerateSection] DB 저장 실패: ${currentSectionId}`);
+                }
+
                 // UI 갱신
                 loadSectionContent();
                 renderSectionList();
