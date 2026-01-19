@@ -8,7 +8,7 @@
 (function() {
     'use strict';
 
-    // Table 정의 - extractData.md 명세서 기반 (6개)
+    // Table 정의 - 데이터명세서_한국PSUR_master 기반 (7개)
     // 표 데이터는 RAW 데이터에서 추출하여 가공
     const TABLE_DEFINITIONS = {
         // === 시판후 노출 관련 표 (RAW3) ===
@@ -16,40 +16,98 @@
             rawIds: ['RAW3'],
             description: '연도별 판매량 표',
             columns: ['연도', '판매량', '단위'],
-            dependencies: ['CS19_시판후노출count시작날짜', 'CS19_.1_시판후노출count종료날짜']
+            dependencies: ['CS19_시판후노출count시작날짜', 'CS19.1_시판후노출count종료날짜'],
+            guideline: '[CS19_시판후노출count시작날짜]와 [CS19.1_시판후노출count종료날짜]를 고려해서 표의 맨상단 가로행 연도 결정. 예: 2020년 6월1일~2025년 4월30일이면, 가로행은 총 6칸(총합계 제외)이고 연도는 2020년(6월~12월), 2021년, 2022년, 2023년, 2024년, 2025년(1월~4월)로 표기.',
+            examples: ['별도 워드 문서 예시 참고']
         },
         '표3_연평균환자노출': {
             rawIds: ['RAW3', 'RAW1.1', 'RAW2.1'],
             description: '연 평균 환자 노출 추정표',
             columns: ['항목', '수치', '비고'],
-            dependencies: ['표2_연도별판매량', 'CS20_1일사용량', 'CS21_환자1명당사용량']
+            dependencies: ['표2_연도별판매량', 'CS20_1일사용량', 'CS21_환자1명당사용량'],
+            guideline: 'DDD(Defined Daily Dose)가 없는 경우: 1) 엑셀에서 기간별 월별 데이터를 국가별로 추출하여 월합 계산, 2) 기간별(연도별) 총합 계산, 3) 전체기간 판매량 총합을 총개월수로 나눈 후 12를 곱해 연평균판매량 계산, 4) 연평균판매량을 환자1명당연간사용량으로 나눠 연평균환자노출 계산.',
+            examples: ['별도 워드 문서 예시 참고']
         },
 
-        // === 이상사례 보고 내역 표 ===
+        // === 이상사례 보고 내역 표 (RAW19 통합LineListing 사용) ===
         '표5_신속보고내역': {
-            rawIds: ['RAW12', 'RAW13'],
+            rawIds: ['RAW19'],
+            legacyRawIds: ['RAW12', 'RAW13'],  // 하위 호환용
             description: '신속보고 이상사례 내역 표',
             columns: ['보고일자', '관리번호', '이상사례명', '비고'],
-            note: '국외신속보고 + 국내신속보고 LineListing 합침'
+            filterColumn: '원시/신속/정기',
+            filterValue: '신속',
+            columnMapping: {
+                '보고일자': 'Report_Date',
+                '관리번호': 'Report_Number',
+                '이상사례명': 'k-MedDRA PT_v28.1',
+                '중대성': 'Seriousness'
+            },
+            guideline: 'RAW19 통합LineListing에서 "원시/신속/정기" 컬럼이 "신속"인 행만 필터링하여 추출.',
+            examples: ['별도 워드 문서 예시 참고']
         },
         '표6_정기보고내역': {
-            rawIds: ['RAW15'],
+            rawIds: ['RAW19'],
+            legacyRawIds: ['RAW15'],  // 하위 호환용
             description: '정기보고 이상사례 내역 표',
-            columns: ['보고일자', '관리번호', '이상사례명', '비고']
+            columns: ['보고일자', '관리번호', '이상사례명', '비고'],
+            filterColumn: '원시/신속/정기',
+            filterValue: '정기',
+            columnMapping: {
+                '보고일자': 'Report_Date',
+                '관리번호': 'Report_Number',
+                '이상사례명': 'k-MedDRA PT_v28.1',
+                '중대성': 'Seriousness'
+            },
+            guideline: 'RAW19 통합LineListing에서 "원시/신속/정기" 컬럼이 "정기"인 행만 필터링하여 추출.',
+            examples: ['별도 워드 문서 예시 참고']
         },
         '표7_원시자료내역': {
-            rawIds: ['RAW14'],
+            rawIds: ['RAW19'],
+            legacyRawIds: ['RAW14'],  // 하위 호환용
             description: '원시자료(KIDS) 이상사례 내역 표',
-            columns: ['보고일자', '관리번호', '이상사례명', '비고']
+            columns: ['보고일자', '관리번호', '이상사례명', '비고'],
+            filterColumn: '원시/신속/정기',
+            filterValue: '원시',
+            columnMapping: {
+                '보고일자': 'Report_Date',
+                '관리번호': 'Report_Number',
+                '이상사례명': 'k-MedDRA PT_v28.1',
+                '중대성': 'Seriousness'
+            },
+            guideline: 'RAW19 통합LineListing에서 "원시/신속/정기" 컬럼이 "원시"인 행만 필터링하여 추출.',
+            examples: ['별도 워드 문서 예시 참고']
         },
 
-        // === SOC별 분석 표 ===
+        // === 이상사례 건수 요약 표 (RAW19 사용) ===
+        '표8_모든이상사례건수': {
+            rawIds: ['RAW19'],
+            legacyRawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],  // 하위 호환용
+            description: '모든 이상사례 건수 요약 표 (중대/비중대)',
+            columns: ['구분', '중대한(건)', '중대하지않은(건)', '총건수'],
+            type: 'A',
+            columnMapping: {
+                '중대성': 'Seriousness',
+                '보고유형': '원시/신속/정기'
+            },
+            guideline: 'RAW19 통합LineListing 전체 데이터에서 Seriousness 컬럼 기준으로 중대/비중대 건수 집계. "예"=중대, "아니오"=비중대.',
+            examples: ['별도 워드 문서 예시 참고']
+        },
+
+        // === SOC별 분석 표 (RAW19 사용) ===
         '표9_SOC별건수': {
-            rawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],
+            rawIds: ['RAW19'],
+            legacyRawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],  // 하위 호환용
             description: 'SOC별 이상사례 건수 표 (중대/비중대)',
             columns: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
-            type: 'A',  // 모든 LineListing 합쳐서 피벗 분석 필요
-            note: 'MedDRA SOC/PT 기준으로 피벗테이블 형태'
+            type: 'A',
+            columnMapping: {
+                'SOC': 'k-MedDRA SOC_v28.1',
+                'PT': 'k-MedDRA PT_v28.1',
+                '중대성': 'Seriousness'
+            },
+            guideline: 'RAW19 통합LineListing에서 SOC/PT별로 피벗 테이블 생성. 중대/비중대 건수 집계 후 비율 계산.',
+            examples: ['별도 워드 문서 예시 참고']
         }
     };
 
@@ -294,27 +352,36 @@
         buildPrompt(markdownContent, rawId) {
             const definitions = this.getRelevantDefinitions(rawId, TABLE_DEFINITIONS);
 
+            const tableInfo = Object.entries(definitions).map(([k, v]) => {
+                let info = `- ${k}: ${v.description}`;
+                info += `\n  컬럼: ${v.columns.join(', ')}`;
+                if (v.guideline) {
+                    info += `\n  지침: ${v.guideline.substring(0, 200)}...`;
+                }
+                return info;
+            }).join('\n');
+
             return `다음 문서에서 표(Table) 데이터를 추출하세요.
 
 ## 문서 (${rawId})
 ${markdownContent.substring(0, 25000)}
 
 ## 추출 대상 표
-${Object.entries(definitions).map(([k, v]) => `- ${k}: ${v.description}`).join('\n')}
+${tableInfo}
 
 ## 출력 형식
 \`\`\`json
 {
-  "표1_전세계허가현황": {
-    "headers": ["국가", "허가일자", "제품명"],
+  "표명": {
+    "headers": ["컬럼1", "컬럼2", "컬럼3"],
     "rows": [
-      {"국가": "한국", "허가일자": "2020-01-01", "제품명": "XXX"}
+      {"컬럼1": "값1", "컬럼2": "값2", "컬럼3": "값3"}
     ]
   }
 }
 \`\`\`
 
-표가 없는 경우 해당 키에 DATA_NOT_FOUND를 반환하세요.`;
+지침을 참고하여 표를 추출하세요. 표가 없는 경우 해당 키에 DATA_NOT_FOUND를 반환하세요.`;
         }
 
         /**

@@ -2,8 +2,8 @@
  * ╔════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                            ║
  * ║  RAW ID DETECTOR MODULE                                                    ║
- * ║  Version: 2.1.0                                                            ║
- * ║  Last Modified: 2026-01-13                                                 ║
+ * ║  Version: 2.2.0                                                            ║
+ * ║  Last Modified: 2026-01-19                                                 ║
  * ║                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════╣
  * ║                                                                            ║
@@ -19,12 +19,13 @@
  * ║  - 2026-01-08: Initial creation (v1.0.0)                                   ║
  * ║  - 2026-01-12: Add ZONE_RAW_ID_MAPPING, STEP3_RAW_ID_OPTIONS (v2.0.0)      ║
  * ║  - 2026-01-13: Add standalone '첨부문서' pattern, seal module (v2.1.0)     ║
+ * ║  - 2026-01-19: Add RAW10, RAW11, RAW14, RAW15, RAW19 patterns (v2.2.0)     ║
  * ║                                                                            ║
  * ╚════════════════════════════════════════════════════════════════════════════╝
  *
  * @fileoverview RAW ID Detection Module
  * @module RawIdDetector
- * @version 2.1.0
+ * @version 2.2.0
  * @readonly
  * @sealed
  */
@@ -35,7 +36,7 @@
     // ========================================
     // 모듈 버전 및 봉인 상태
     // ========================================
-    const MODULE_VERSION = '2.1.0';
+    const MODULE_VERSION = '2.2.0';
 
     // 이미 봉인된 경우 재초기화 방지
     if (global.RawIdDetector && global.RawIdDetector._sealed) {
@@ -67,11 +68,16 @@
         'RAW15': { pattern: /RAW15[_\s-]|Raw15[_\s-]/i, description: '정기보고LineListing' },
         'RAW16': { pattern: /RAW16[_\s-]/i, description: 'MedDRA_SMQ_lack_of_efficacy' },
         'RAW17': { pattern: /RAW17[_\s-]/i, description: 'IIT및NIS트래커' },
+        'RAW19': { pattern: /RAW19[_\s-]|통합.*LineListing/i, description: '통합LineListing' },
+
+        // 임상시험 안전성 데이터
+        'RAW10': { pattern: /RAW10[_\s-]|임상시험.*안전성|임상.*안전성.*데이터/i, description: '임상시험안전성데이터' },
+        'RAW11': { pattern: /RAW11[_\s-]|추가.*임상.*안전성/i, description: '추가임상안전성데이터' },
 
         // Word 문서
-        'RAW5': { pattern: /RAW5[_\s-]/i, description: '안전성조치허가팀메일' },
+        'RAW5': { pattern: /RAW5[_\s-]|규제.*당국.*안전성|허가.*팀.*메일/i, description: '안전성조치허가팀메일' },
         'RAW6': { pattern: /RAW6[_\s-]/i, description: '안전성조치허가팀메일_취합본' },
-        'RAW7': { pattern: /RAW7[_\s-]/i, description: '안전성정보변경' },
+        'RAW7': { pattern: /RAW7[_\s-]|비교자료|변경내용.*상세.*비교|안전성.*정보.*변경/i, description: '안전성정보변경' },
         'RAW8': { pattern: /RAW8[_\s-]/i, description: '임상노출데이터' }
     });
 
@@ -85,73 +91,87 @@
         changeHistory: ['RAW5', 'RAW6', 'RAW7'],                  // 안전성 변경 이력
         // Step 2 - 임상 자료
         sponsored: ['RAW8'],                                       // 임상노출데이터
-        iitnis: ['RAW17'],                                         // IIT/NIS 트래커
-        // Step 3 - Line Listing
-        lineListing_domestic: ['RAW13'],                          // 국내 신속보고
-        lineListing_foreign: ['RAW12'],                           // 국외 신속보고
-        lineListing_raw: ['RAW14'],                               // 원시자료
-        lineListing_periodic: ['RAW15']                           // 정기보고
+        iitnis: ['RAW17', 'RAW10', 'RAW11'],                       // IIT/NIS 트래커 + 임상시험안전성
+        // Step 3 - 기타 자료 (LineListing 포함, 자동 인식)
+        step3_all: ['RAW3', 'RAW4', 'RAW5', 'RAW6', 'RAW7', 'RAW9', 'RAW10', 'RAW11',
+                    'RAW14', 'RAW15', 'RAW16', 'RAW19']            // 모든 기타 자료
     });
 
     // ========================================
     // Step 3 기타자료 RAW ID 옵션 (드롭다운용)
     // ========================================
     const STEP3_RAW_ID_OPTIONS = Object.freeze([
-        { value: 'RAW2.3', label: 'RAW2.3 - 사용상의주의사항' },
-        { value: 'RAW2.4', label: 'RAW2.4 - 보고기간시작시점효능효과' },
-        { value: 'RAW2.5', label: 'RAW2.5 - 보고기간시작시점용법용량' },
-        { value: 'RAW2.6', label: 'RAW2.6 - 보고시작시점사용상의주의사항' },
-        { value: 'RAW3', label: 'RAW3 - 시판후 판매 데이터' },
+        { value: 'RAW3', label: 'RAW3 - 시판후 판매 데이터 (Distribution)' },
         { value: 'RAW4', label: 'RAW4 - 허가현황' },
-        { value: 'RAW5', label: 'RAW5 - 안전성조치허가팀메일' },
+        { value: 'RAW5', label: 'RAW5 - 안전성조치/규제당국메일' },
         { value: 'RAW6', label: 'RAW6 - 안전성조치허가팀메일_취합본' },
+        { value: 'RAW7', label: 'RAW7 - 안전성정보변경/비교자료' },
         { value: 'RAW9', label: 'RAW9 - 문헌자료' },
-        { value: 'RAW16', label: 'RAW16 - MedDRA SMQ' }
+        { value: 'RAW10', label: 'RAW10 - 임상시험안전성데이터' },
+        { value: 'RAW11', label: 'RAW11 - 추가임상안전성데이터' },
+        { value: 'RAW14', label: 'RAW14 - 원시자료LineListing' },
+        { value: 'RAW15', label: 'RAW15 - 정기보고LineListing' },
+        { value: 'RAW16', label: 'RAW16 - MedDRA SMQ' },
+        { value: 'RAW19', label: 'RAW19 - 통합LineListing' }
     ]);
 
     // ========================================
     // 상세 패턴 매칭 (한글/영문 키워드 포함)
     // ========================================
     const DETAILED_PATTERNS = [
-        // RAW1.x - 첨부문서 (구체적 버전 먼저)
+        // ⚠️ RAW7 - 비교자료/변경내용 (최우선 - RAW2.x보다 먼저 체크해야 함)
+        { pattern: /raw7|변경내용.*상세.*비교|비교자료|안전성.*정보.*변경/i, rawId: 'RAW7' },
+
+        // RAW1.x - 첨부문서 (연도 기반 구분)
+        // 과거 연도(2018-2023): RAW1.2 (보고기간 시작시점)
         { pattern: /raw1\.?2|보고.*기간.*시작.*시점.*첨부|시작.*시점.*첨부/i, rawId: 'RAW1.2' },
+        { pattern: /(사용상.*주의|주의사항).*(201[0-9]|202[0-3])년/i, rawId: 'RAW1.2' },
+        // 최신 연도(2024-2026): RAW1.1 (최신 첨부문서)
         { pattern: /raw1\.?1|최신.*첨부|첨부문서/i, rawId: 'RAW1.1' },
+        { pattern: /(사용상.*주의|주의사항).*(202[4-6])년/i, rawId: 'RAW1.1' },
 
         // RAW2.x - 허가정보 (구체적 버전 먼저)
         { pattern: /raw2\.?6|보고.*시작.*시점.*사용상|시작.*시점.*주의/i, rawId: 'RAW2.6' },
         { pattern: /raw2\.?5|보고.*기간.*시작.*시점.*용법|시작.*시점.*용법/i, rawId: 'RAW2.5' },
         { pattern: /raw2\.?4|보고.*기간.*시작.*시점.*효능|시작.*시점.*효능/i, rawId: 'RAW2.4' },
-        { pattern: /raw2\.?3|사용상.*주의|주의사항/i, rawId: 'RAW2.3' },
+        { pattern: /raw2\.?3|사용상.*주의|주의사항(?!.*시작)/i, rawId: 'RAW2.3' },
         { pattern: /raw2\.?2|효능.*효과/i, rawId: 'RAW2.2' },
         { pattern: /raw2\.?1|용법.*용량/i, rawId: 'RAW2.1' },
 
-        // RAW5-7 - 안전성 관련 (구체적인 패턴 먼저)
-        { pattern: /raw7|안전성.*정보.*변경/i, rawId: 'RAW7' },
+        // RAW5-6 - 안전성 관련
         { pattern: /raw6|취합본|취합/i, rawId: 'RAW6' },
-        { pattern: /raw5|안전성.*조치.*메일|허가.*팀.*메일/i, rawId: 'RAW5' },
+        { pattern: /raw5|안전성.*조치.*메일|허가.*팀.*메일|규제.*당국.*안전성/i, rawId: 'RAW5' },
 
         // RAW8, RAW17 - 임상자료
-        { pattern: /raw17|iit|nis|트래커/i, rawId: 'RAW17' },
+        { pattern: /raw17|iit.*nis|nis.*iit|트래커.*완성/i, rawId: 'RAW17' },
         { pattern: /raw8|임상.*노출|clinical.*exposure/i, rawId: 'RAW8' },
 
-        // RAW12-15 - Line Listing
-        { pattern: /raw15|정기.*보고/i, rawId: 'RAW15' },
-        { pattern: /raw14|원시.*자료/i, rawId: 'RAW14' },
+        // RAW10, RAW11 - 임상시험 안전성 데이터
+        { pattern: /raw10|임상시험.*안전성|임상.*안전성.*데이터/i, rawId: 'RAW10' },
+        { pattern: /raw11|추가.*임상.*안전성/i, rawId: 'RAW11' },
+
+        // RAW19 - 통합 LineListing (RAW14, RAW15보다 먼저 체크)
+        { pattern: /raw19|통합.*linelisting|통합linelisting/i, rawId: 'RAW19' },
+
+        // RAW14, RAW15 - Line Listing (개별)
+        { pattern: /raw15|정기.*보고.*linelisting|정기보고linelisting/i, rawId: 'RAW15' },
+        { pattern: /raw14|원시.*자료.*linelisting|원시자료linelisting/i, rawId: 'RAW14' },
         { pattern: /raw13|국내.*신속/i, rawId: 'RAW13' },
         { pattern: /raw12|국외.*신속/i, rawId: 'RAW12' },
 
         // 기타
         { pattern: /raw16|meddra|smq|lack.*of.*efficacy/i, rawId: 'RAW16' },
-        { pattern: /raw9|문헌|literature/i, rawId: 'RAW9' },
+        { pattern: /raw9|문헌.*자료|문헌.*완성|literature/i, rawId: 'RAW9' },
         { pattern: /raw4|허가.*현황|license/i, rawId: 'RAW4' },
-        { pattern: /raw3|sales|판매/i, rawId: 'RAW3' }
+        { pattern: /raw3|distribution.*tracker|sales|판매/i, rawId: 'RAW3' }
     ];
 
-    // RAW ID 우선순위 (소수점 있는 것 먼저)
+    // RAW ID 우선순위 (소수점 있는 것 먼저, RAW19 통합LineListing 우선)
     const PRIORITY_ORDER = [
         'RAW1.1', 'RAW1.2',
         'RAW2.1', 'RAW2.2', 'RAW2.3', 'RAW2.4', 'RAW2.5', 'RAW2.6',
-        'RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16', 'RAW17',
+        'RAW19',  // 통합 LineListing 우선 체크
+        'RAW10', 'RAW11', 'RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16', 'RAW17',
         'RAW3', 'RAW4', 'RAW5', 'RAW6', 'RAW7', 'RAW8', 'RAW9'
     ];
 

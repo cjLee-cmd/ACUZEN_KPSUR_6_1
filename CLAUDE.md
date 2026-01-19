@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Quick Reference
+
+| Item | Value |
+|------|-------|
+| Local server | `python3 -m http.server 8000` |
+| Access URL | http://localhost:8000 |
+| Master login | `main@main.com` / `1111` |
+| E2E test command | `/e2e-test` |
+| Test data path | `02_relateDocs/00_fromKSJ/5차테스트/학습데이터세트예시/학습데이터_raw_20260118/` |
+
+---
+
 ## Project Overview
 
 **KPSUR AGENT** - Korean pharmaceutical PSUR (Periodic Safety Update Report) automation system for MFDS (식품의약품안전처) regulatory compliance.
@@ -70,7 +82,7 @@ python3 -m http.server 8000
 │                                                                       │
 │  ✅ 반드시 /e2e-test command 실행                                     │
 │  ✅ 사양 문서 먼저 읽기: 03_Test/01_Context/TestSequence_Login_to_Stage3.md │
-│  ✅ 파일 수 요구사항: Step1=6, Step2=2, Step3=17, 총합=25개           │
+│  ✅ 파일 수 요구사항: Step1=8, Step2=2, Step3=27, 총합=37개           │
 │  ❌ 파일 수 미달 시 진행 금지                                          │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -124,18 +136,21 @@ file-io-core.js             - File/Blob, MIME 타입 감지
 
 ### 5-Stage Workflow (js/config.js)
 ```
-Stage 1: P13_NewReport         → User inputs (CS0-CS24)
+Stage 1: P13_NewReport         → User inputs (CS0-CS24 기본 정보)
 Stage 2: P14_UnifiedProcessing → File upload + MD convert + Data extraction (3-step wizard)
-Stage 3: P15_SectionEditor     → Section editing (15 sections)
+Stage 3: P15_SectionEditor     → Section editing (15 sections, CS/PH/Table 뷰어)
 Stage 4: P19_QC                → Quality validation
 Stage 5: P20_Output            → Word document generation
+
+Note: P18_Review는 Stage 3의 일부로 레거시 지원됨
 ```
 
 ### Stage 2 File Upload Wizard (3 Steps)
 ```
-Step 1: 제품정보 문서 (RAW1.x, RAW2.x, RAW7) - 8개 파일
+Step 1: 제품정보 문서 (RAW1.x, RAW2.1-2.2, RAW7) - 8개 파일
 Step 2: 임상 자료 (RAW8, RAW17) - 2개 파일
-Step 3: 기타 자료 (RAW3-6, RAW9, RAW12-16) - 20개 파일
+Step 3: 기타 자료 (RAW2.3-2.6, RAW3-6, RAW9-19 등) - 27개 파일
+총합: 37개 파일 (테스트 기준)
 ```
 
 ### Module Layers
@@ -321,32 +336,46 @@ await supabaseClient.createLLMDialog(reportId, {
 
 ## Page Structure
 
-**Active Pages**:
-- P01-P05: Auth (Login, Signup, Password, SystemCheck)
-- P10-P13: Dashboard, ReportList, ReportDetail, NewReport
-- P14_UnifiedProcessing: Unified processing (3-step wizard)
-- P15_SectionEditor: Section editing interface
-- P18_Review, P19_QC, P20_Output: Final stages
-- P30_UserManagement, P90_SystemTest, P91_Settings: Admin
+| Stage | Page | Purpose |
+|-------|------|---------|
+| Auth | P01-P05 | Login, Signup, Password, SystemCheck |
+| Dashboard | P10-P12 | Dashboard, ReportList, ReportDetail |
+| Stage 1 | P13_NewReport | User inputs (CS0-CS24 기본 정보) |
+| Stage 2 | P14_UnifiedProcessing | File upload + MD convert + Extract (3-step wizard) |
+| Stage 2.5 | P16_LineListingAnalysis | Line Listing 분석 (optional) |
+| **Stage 3** | **P15_SectionEditor** | **Primary: Section editing, CS/PH/Table viewer, data verification** |
+| Stage 3 | P18_Review | Legacy (subset of P15 functionality) |
+| Stage 4 | P19_QC | Quality validation |
+| Stage 5 | P20_Output | Word document generation |
+| Admin | P30, P90-P91 | UserManagement, SystemTest, Settings |
+
+> **Note**: P15_SectionEditor is the primary Stage 3 page for data verification. E2E tests reference this page for CS/PH/Table data validation.
 
 ## PSUR Report Sections (15개)
-| 번호 | 섹션명 | Template File |
-|------|--------|---------------|
-| 00 | 표지 | 02_Templates/00_표지.md |
-| 01 | 목차 | 02_Templates/01_목차.md |
-| 02 | 약어설명 | 02_Templates/02_약어설명.md |
-| 03 | 서론 | 02_Templates/03_서론.md |
-| 04 | 전세계판매허가현황 | 02_Templates/04_전세계판매허가현황.md |
-| 05 | 안전성조치 | 02_Templates/05_안전성조치.md |
-| 06 | 안전성정보참고정보변경 | 02_Templates/06_안전성정보참고정보변경.md |
-| 07 | 환자노출 | 02_Templates/07_환자노출.md |
-| 08 | 개별증례병력 | 02_Templates/08_개별증례병력.md |
-| 09 | 시험 | 02_Templates/09_시험.md |
-| 10 | 기타정보 | 02_Templates/10_기타정보.md |
-| 11 | 종합적인안전성평가 | 02_Templates/11_종합적인안전성평가.md |
-| 12 | 결론 | 02_Templates/12_결론.md |
-| 13 | 참고문헌 | 02_Templates/13_참고문헌.md |
-| 14 | 별첨 | 02_Templates/14_별첨.md |
+
+> Templates: `02_relateDocs/02_Templates/{nn}_{섹션명}.md`
+> Examples: `02_relateDocs/03_Examples/{nn}_{섹션명}.md`
+> Prompts: `01_Context/sectionPrompt/{nn}_{섹션명}.md`
+
+| 번호 | 섹션명 | Required RAW | Optional RAW |
+|------|--------|--------------|--------------|
+| 00 | 표지 | - | - |
+| 01 | 목차 | - | - |
+| 02 | 약어설명 | - | - |
+| 03 | 서론 | - | RAW1.1, RAW2.1, RAW2.2 |
+| 04 | 전세계판매허가현황 | RAW4 | - |
+| 05 | 안전성조치 | RAW7 | RAW5, RAW6 |
+| 06 | 안전성정보참고정보변경 | - | RAW7, RAW2.3, RAW2.6 |
+| 07 | 환자노출 | RAW3 | - |
+| 08 | 개별증례병력 | RAW14 | RAW12, RAW13, RAW15 |
+| 09 | 시험 | - | RAW8, RAW17 |
+| 10 | 기타정보 | - | RAW9 |
+| 11 | 종합적인안전성평가 | - | - |
+| 12 | 결론 | - | - |
+| 13 | 참고문헌 | - | RAW9 |
+| 14 | 별첨 | - | - |
+
+> Full section-to-RAW dependencies: See `CONFIG.SECTION_DATA_DEPENDENCIES` in `js/config.js`
 
 ---
 
@@ -399,4 +428,6 @@ SELECT variable_id, data_value, source_raw_id FROM extracted_data WHERE report_i
 | E2E 테스트 시퀀스 | `03_Test/01_Context/TestSequence_Login_to_Stage3.md` |
 | RAW ID 정의 | `01_Context/02_RAW_ID_ExtractContext.md` |
 | DB 스키마 | `02_relateDocs/DATABASE_SCHEMA.md` |
-| 테스트 데이터 | `02_relateDocs/00_fromKSJ/5차테스트/` (5차테스트데이터세트 + 학습데이터세트예시) |
+| 테스트 데이터 | `02_relateDocs/00_fromKSJ/5차테스트/학습데이터세트예시/학습데이터_raw_20260118/` |
+| 섹션별 프롬프트 | `01_Context/sectionPrompt/` (00_표지.md ~ 14_별첨.md) |
+| 템플릿 예시 | `02_relateDocs/02_Templates/`, `02_relateDocs/03_Examples/` |

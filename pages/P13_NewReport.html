@@ -864,7 +864,7 @@
                                         <div class="auto-filled-item">
                                             <span class="auto-filled-label">CS3_보고시작날짜</span>
                                             <span class="auto-filled-value" id="af_cs3">-</span>
-                                            <span style="font-size: 10px; color: var(--app-text-normal);">(CS4 - CS24
+                                            <span style="font-size: 10px; color: var(--app-text-normal);">(CS4 - 보고주기
                                                 자동계산)</span>
                                         </div>
                                         <div class="auto-filled-item">
@@ -931,7 +931,7 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label class="form-label">
-                                            보고주기 (CS24) <span class="required">*</span>
+                                            보고주기 <span class="required">*</span>
                                         </label>
                                         <select class="form-select" id="report_period" required
                                             onchange="updateReportDates()">
@@ -940,16 +940,16 @@
                                             <option value="3">3년</option>
                                             <option value="1">1년</option>
                                         </select>
-                                        <div class="form-help">보고 기간을 선택하세요. (CS3 = CS4 - CS24)</div>
+                                        <div class="form-help">보고 기간을 선택하세요. (CS3 = CS4 - 보고주기)</div>
                                     </div>
 
                                     <div class="form-group">
                                         <label class="form-label">
                                             유효기간 (CS13) <span class="required">*</span>
                                         </label>
-                                        <input type="text" class="form-input" id="submitter" placeholder="예: 36개월"
+                                        <input type="date" class="form-input" id="expiry_date"
                                             required>
-                                        <div class="form-help">의약품 유효기간</div>
+                                        <div class="form-help">의약품 유효기간 만료일 (예: 2026-12-31)</div>
                                     </div>
                                 </div>
 
@@ -1436,7 +1436,7 @@
                     author_name: document.getElementById('author_name').value,
                     author_position: document.getElementById('author_position').value,
                     report_period: document.getElementById('report_period').value,
-                    submitter: document.getElementById('submitter').value,
+                    expiry_date: document.getElementById('expiry_date').value,
                     description: document.getElementById('report_description').value,
                     // 추가 필드
                     meddra_version: document.getElementById('meddra_version')?.value || '',
@@ -1486,9 +1486,11 @@
                     CS5_국내허가일자: selectedDrug.approval_date,
                     CS6_보고서제출일: formData.first_approval_date,
                     CS7_버전넘버: formData.first_approval_country,
-                    CS13_유효기간: formData.submitter,
-                    CS24_보고주기: formData.report_period,
-                    // 추가 필드 (MedDRA버전, 원시자료신청일, 문헌DB)
+                    CS13_유효기간: formData.expiry_date ? formatDateToKorean(formData.expiry_date) : '',
+                    // 보고주기 (계산용 메타 데이터 + CS24_보고주기)
+                    reportPeriod: formData.report_period,
+                    CS24_보고주기: formData.report_period ? `${formData.report_period}년` : '',
+                    // CS24_MedDRA버전넘버 (별도 변수)
                     CS24_MedDRA버전넘버: formData.meddra_version || '',
                     CS31_원시자료신청일: formData.raw_data_request_date || '',
                     CS53_문헌DB: formData.literature_db || '',
@@ -1695,6 +1697,16 @@
             hintDisplay.textContent = modelInfo[modelSelect.value] || '';
         }
 
+        // 날짜를 한글 형식으로 변환 (YYYY-MM-DD → YYYY년 MM월 DD일)
+        function formatDateToKorean(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}년 ${month}월 ${day}일`;
+        }
+
         // LLM 설정 데이터 가져오기
         function getLLMSettings() {
             const model = document.getElementById('llm_model').value;
@@ -1704,21 +1716,21 @@
             };
         }
 
-        // CS3 = CS4 - CS24 계산 함수
+        // CS3 = CS4 - 보고주기 계산 함수 (보고주기는 CS 번호 아님)
         function updateReportDates() {
             const cs4Input = document.getElementById('af_cs4');
-            const cs24Select = document.getElementById('report_period');
+            const periodSelect = document.getElementById('report_period');
             const cs3Display = document.getElementById('af_cs3');
 
-            if (!cs4Input || !cs24Select || !cs3Display) return;
+            if (!cs4Input || !periodSelect || !cs3Display) return;
 
             const cs4Value = cs4Input.value;
-            const cs24Value = parseInt(cs24Select.value) || 5; // 기본 5년
+            const periodValue = parseInt(periodSelect.value) || 5; // 기본 5년
 
             if (cs4Value) {
                 const cs4Date = new Date(cs4Value);
                 const cs3Date = new Date(cs4Date);
-                cs3Date.setFullYear(cs3Date.getFullYear() - cs24Value);
+                cs3Date.setFullYear(cs3Date.getFullYear() - periodValue);
                 cs3Date.setDate(cs3Date.getDate() + 1); // 시작일은 종료일 - N년 + 1일
 
                 const cs3Formatted = cs3Date.toISOString().split('T')[0];

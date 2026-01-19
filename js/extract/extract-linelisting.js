@@ -17,7 +17,15 @@
         RAW12: { name: '국외신속보고LineListing', type: 'expedited', region: 'foreign' },
         RAW13: { name: '국내신속보고LineListing', type: 'expedited', region: 'domestic' },
         RAW14: { name: '원시자료LineListing', type: 'raw', region: 'all' },
-        RAW15: { name: '정기보고LineListing', type: 'periodic', region: 'all' }
+        RAW15: { name: '정기보고LineListing', type: 'periodic', region: 'all' },
+        RAW19: { name: '통합LineListing', type: 'unified', region: 'all' }  // 통합 LineListing
+    };
+
+    // RAW19 보고서 유형 필터링 매핑
+    const RAW19_REPORT_TYPE_FILTER = {
+        '원시': 'raw',
+        '신속': 'expedited',
+        '정기': 'periodic'
     };
 
     // 시트명 정의 (원본 linelisting_SW와 동일)
@@ -66,10 +74,65 @@
         }
 
         /**
-         * Line Listing RAW ID인지 확인
+         * Line Listing RAW ID인지 확인 (RAW19 통합 LineListing 포함)
          */
         isLineListingRawId(rawId) {
-            return ['RAW12', 'RAW13', 'RAW14', 'RAW15'].includes(rawId);
+            return ['RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW19'].includes(rawId);
+        }
+
+        /**
+         * RAW19 통합 LineListing인지 확인
+         */
+        isUnifiedLineListing(rawId) {
+            return rawId === 'RAW19';
+        }
+
+        /**
+         * RAW19 데이터에서 보고서 유형별 필터링
+         * @param {Array} data - RAW19 전체 데이터
+         * @param {string} reportType - '원시', '신속', '정기'
+         * @returns {Array} 필터링된 데이터
+         */
+        filterRAW19ByReportType(data, reportType) {
+            if (!data || !Array.isArray(data)) return [];
+            return data.filter(row => row['원시/신속/정기'] === reportType);
+        }
+
+        /**
+         * RAW19 데이터를 레거시 RAW12-15 형식으로 변환
+         * @param {Array} data - RAW19 전체 데이터
+         * @returns {Object} { RAW12: [...], RAW13: [...], RAW14: [...], RAW15: [...] }
+         */
+        splitRAW19ToLegacy(data) {
+            if (!data || !Array.isArray(data)) {
+                return { RAW12: [], RAW13: [], RAW14: [], RAW15: [] };
+            }
+
+            const result = {
+                RAW12: [], // 국외 신속
+                RAW13: [], // 국내 신속
+                RAW14: [], // 원시
+                RAW15: []  // 정기
+            };
+
+            data.forEach(row => {
+                const reportType = row['원시/신속/정기'];
+                const region = row['국내외'] || row['Region'] || '';
+
+                if (reportType === '신속') {
+                    if (region === '국외' || region.toLowerCase() === 'foreign') {
+                        result.RAW12.push(row);
+                    } else {
+                        result.RAW13.push(row);
+                    }
+                } else if (reportType === '원시') {
+                    result.RAW14.push(row);
+                } else if (reportType === '정기') {
+                    result.RAW15.push(row);
+                }
+            });
+
+            return result;
         }
 
         /**
@@ -408,7 +471,7 @@
             processedData.forEach(item => {
                 const soc = item.SOC || 'Unknown';
                 const pt = item['E.i.3.2c'] || item['E.i.3.2d'] || item['이상사례·약물이상반응 MedDRA명'] || item['PT'] || 'Unknown';
-                const isSerious = item.Seriousness === 'Yes';
+                const isSerious = item.Seriousness === 'Yes' || item.Seriousness === '예' || item.Seriousness === 'Y';
                 const causality = item['인과성평가'] || '';
                 const isADR = ['Certain', 'Probable', 'Possible'].some(c => causality.includes(c));
 
@@ -682,8 +745,9 @@
             };
 
             this.processedData.forEach(row => {
-                // Seriousness 카운트
-                if (row.Seriousness === 'Yes') {
+                // Seriousness 카운트 (한글/영문 모두 지원)
+                const isSeriousRow = row.Seriousness === 'Yes' || row.Seriousness === '예' || row.Seriousness === 'Y';
+                if (isSeriousRow) {
                     this.statistics.seriousYes++;
                 } else {
                     this.statistics.seriousNo++;
@@ -695,7 +759,7 @@
                     this.statistics.bySOC[soc] = { total: 0, serious: 0, nonSerious: 0 };
                 }
                 this.statistics.bySOC[soc].total++;
-                if (row.Seriousness === 'Yes') {
+                if (isSeriousRow) {
                     this.statistics.bySOC[soc].serious++;
                 } else {
                     this.statistics.bySOC[soc].nonSerious++;
@@ -1117,7 +1181,7 @@
                 const soc = row.SOC || 'Unknown';
                 const pt = row['E.i.3.2c'] || row['E.i.3.2d'] || row['__EMPTY_2'] ||
                            row['이상사례·약물이상반응 MedDRA명(영문)'] || row['PT'] || row['MedDRA명(영문)'] || 'Unknown PT';
-                const isSerious = row.Seriousness === 'Yes';
+                const isSerious = row.Seriousness === 'Yes' || row.Seriousness === '예' || row.Seriousness === 'Y';
                 const causality = row['인과성평가'] || row.Causality || '';
                 const causalityLower = causality.toLowerCase();
                 const isADR = causalityLower.includes('certain') ||
@@ -1412,7 +1476,7 @@
             // 바디
             html += '<tbody>';
             previewData.forEach(row => {
-                const isSerious = row.Seriousness === 'Yes';
+                const isSerious = row.Seriousness === 'Yes' || row.Seriousness === '예' || row.Seriousness === 'Y';
                 const rowClass = isSerious ? 'serious-yes' : '';
                 html += `<tr class="${rowClass}">`;
                 headers.forEach(key => {
@@ -1497,7 +1561,7 @@
 
                 // CS25_.4: 신속비고 (요약)
                 const totalCases = this.processedData.length;
-                const seriousCases = this.processedData.filter(d => d.Seriousness === 'Yes').length;
+                const seriousCases = this.processedData.filter(d => d.Seriousness === 'Yes' || d.Seriousness === '예' || d.Seriousness === 'Y').length;
                 csValues['CS25_.4_신속비고'] = `총 ${totalCases}건 (중대: ${seriousCases}건)`;
 
                 console.log(`[LineListingExtractor] ${rawId} → CS25 추출 완료:`, {
@@ -1874,7 +1938,7 @@ ${causString}
             let seriousYes = 0, seriousNo = 0, certainProbable = 0;
 
             for (const row of processedData) {
-                if (row.Seriousness === 'Yes') seriousYes++;
+                if (row.Seriousness === 'Yes' || row.Seriousness === '예' || row.Seriousness === 'Y') seriousYes++;
                 else seriousNo++;
 
                 const causality = (row['인과성평가'] || row.Causality || '').toLowerCase();

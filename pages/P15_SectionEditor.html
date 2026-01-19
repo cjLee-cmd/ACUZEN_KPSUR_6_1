@@ -1403,32 +1403,36 @@
                 <button class="modal-close" onclick="closeLineListingModal()">&times;</button>
             </div>
             <div class="modal-body" style="flex-direction: column;">
-                <!-- 요약 카드 -->
+                <!-- 요약 카드 (RAW19 통합) -->
                 <div class="line-listing-summary" id="lineListingSummary">
                     <div class="summary-card">
-                        <div class="label">신속보고 (RAW12+13)</div>
+                        <div class="label">신속보고</div>
                         <div class="value" id="summaryExpedited">0</div>
                     </div>
                     <div class="summary-card">
-                        <div class="label">정기보고 (RAW15)</div>
+                        <div class="label">정기보고</div>
                         <div class="value" id="summaryPeriodic">0</div>
                     </div>
                     <div class="summary-card">
-                        <div class="label">원시자료 (RAW14)</div>
+                        <div class="label">원시자료</div>
                         <div class="value" id="summaryRaw">0</div>
                     </div>
                     <div class="summary-card serious">
                         <div class="label">중대한 이상사례</div>
                         <div class="value" id="summarySerious">0</div>
                     </div>
+                    <div class="summary-card" style="background: #e3f2fd;">
+                        <div class="label">전체 (RAW19)</div>
+                        <div class="value" id="summaryTotal">0</div>
+                    </div>
                 </div>
 
-                <!-- 탭 -->
+                <!-- 필터 (RAW19 통합 - 원시/신속/정기 선택) -->
                 <div class="line-listing-tabs">
-                    <button class="tab-btn active" data-raw="RAW12" onclick="renderLineListingTab('RAW12')">RAW12 국외신속 (<span id="countRAW12">0</span>)</button>
-                    <button class="tab-btn" data-raw="RAW13" onclick="renderLineListingTab('RAW13')">RAW13 국내신속 (<span id="countRAW13">0</span>)</button>
-                    <button class="tab-btn" data-raw="RAW14" onclick="renderLineListingTab('RAW14')">RAW14 원시자료 (<span id="countRAW14">0</span>)</button>
-                    <button class="tab-btn" data-raw="RAW15" onclick="renderLineListingTab('RAW15')">RAW15 정기보고 (<span id="countRAW15">0</span>)</button>
+                    <button class="tab-btn active" data-filter="all" onclick="filterLineListingByType('all')">전체 (<span id="countAll">0</span>)</button>
+                    <button class="tab-btn" data-filter="신속" onclick="filterLineListingByType('신속')">신속보고 (<span id="countExpedited">0</span>)</button>
+                    <button class="tab-btn" data-filter="정기" onclick="filterLineListingByType('정기')">정기보고 (<span id="countPeriodic">0</span>)</button>
+                    <button class="tab-btn" data-filter="원시" onclick="filterLineListingByType('원시')">원시자료 (<span id="countRaw">0</span>)</button>
                 </div>
 
                 <!-- 테이블 컨텐츠 -->
@@ -1502,7 +1506,12 @@
             },
             seriousnessYesValues: ['예', '○', 'Yes', 'Y', 'yes', 'TRUE', 'true', '1'],
             sections: { basicInfo: '기본정보+환자정보', adverseEvent: '이상사례' },
-            rawIdMapping: { expedited: ['RAW12', 'RAW13'], periodic: ['RAW15'], raw: ['RAW14'] }
+            rawIdMapping: {
+                expedited: ['RAW12', 'RAW13'],  // Legacy
+                periodic: ['RAW15'],             // Legacy
+                raw: ['RAW14'],                  // Legacy
+                unified: ['RAW19']               // 통합 LineListing (RAW19)
+            }
         };
 
         // LineListing 마크다운 파싱 (P14와 동일)
@@ -1982,6 +1991,191 @@
         }
 
         /**
+         * 섹션별 필요 데이터 매핑 (CS, PH, Table)
+         */
+        const SECTION_DATA_MAP = {
+            '00': { cs: ['CS0_성분명', 'CS1_브랜드명', 'CS2_회사명', 'CS4_보고종료날짜'], ph: [], tables: [] },
+            '02': { cs: ['CS12_약어표'], ph: [], tables: [] },
+            '03': { cs: ['CS0_성분명', 'CS1_브랜드명', 'CS3_보고시작날짜', 'CS4_보고종료날짜', 'CS5_국내허가일자'], ph: [], tables: [] },
+            '04': { cs: ['CS17_전세계허가현황표'], ph: [], tables: [] },
+            '05': { cs: ['CS55_안전성조치서술문'], ph: [], tables: [] },
+            '06': { cs: ['CS56_참고정보의변경서술문', 'CS56_별첨2참고정보변경표'], ph: [], tables: [] },
+            '07': { cs: ['CS18_임상노출', 'CS19_시판후노출count시작날짜', 'CS20_1일사용량', 'CS21_환자1명당사용량'], ph: [], tables: ['표2_연도별판매량', '표3_연평균환자노출'] },
+            '08': {
+                cs: ['CS0_성분명', 'CS1_브랜드명', 'CS2_회사명', 'CS3_보고시작날짜', 'CS4_보고종료날짜',
+                     'CS24_MedDRA버전넘버', 'CS32_보고총사례수', 'CS33_신속보고총사례수', 'CS34_정기보고총사례수',
+                     'CS35_신속정기원시총사례수', 'CS36_중대한총사례수', 'CS37_중대하지않은총사례수', 'CS53_문헌DB',
+                     'CS28_원시총환자수', 'CS29_원시총이상사례수', 'CS30_원시중대한사례수'],
+                ph: ['PH4_원시자료서술문', 'PH5_원시자료서술문2', 'PH6_개별증례분석문'],
+                tables: ['표5_신속보고내역', '표6_정기보고내역', '표7_원시자료내역', '표8_모든이상사례건수', '표9_SOC별건수']
+            },
+            '09': { cs: [], ph: ['PH7_새로_분석된_의뢰의_시험', 'PH8_시작또는진행중시험'], tables: [] },
+            '10': { cs: ['CS53_문헌DB'], ph: ['PH9_문헌에발표된안전성', 'PH10_유효성관련정보'], tables: [] },
+            '11': { cs: [], ph: ['PH11_총괄평가문'], tables: ['표8_모든이상사례건수'] },
+            '12': { cs: ['CS0_성분명', 'CS1_브랜드명', 'CS3_보고시작날짜', 'CS4_보고종료날짜'], ph: ['PH12_결론'], tables: [] },
+            '13': { cs: ['CS57_참고문헌리스트'], ph: [], tables: [] },
+            '14': { cs: ['CS58_별첨1허가사항', 'CS59_별첨3일람표'], ph: [], tables: [] }
+        };
+
+        /**
+         * 섹션별 추출 데이터 로드
+         * @param {string} sectionId - 섹션 ID
+         * @returns {string} 추출 데이터 컨텍스트 문자열
+         */
+        async function loadExtractedDataForSection(sectionId) {
+            const dataMap = SECTION_DATA_MAP[sectionId];
+            if (!dataMap) return '';
+
+            let context = '';
+            const reportId = getReportId();
+
+            // 추출 데이터 로드 (DB 우선, localStorage 폴백)
+            let allExtractedData = [];
+
+            // DB에서 로드 시도
+            if (reportId && !reportId.startsWith('local_') && window.supabaseClient) {
+                try {
+                    const result = await window.supabaseClient.getExtractedDataByReport(reportId);
+                    if (result.success && result.data && result.data.length > 0) {
+                        allExtractedData = result.data;
+                    }
+                } catch (e) {
+                    console.warn('[loadExtractedDataForSection] DB 로드 실패:', e);
+                }
+            }
+
+            // localStorage 폴백
+            if (allExtractedData.length === 0) {
+                try {
+                    const storedData = localStorage.getItem('extractedData');
+                    if (storedData) {
+                        const parsed = JSON.parse(storedData);
+                        // 객체 형식을 배열로 변환
+                        if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            Object.entries(parsed).forEach(([type, vars]) => {
+                                if (typeof vars === 'object') {
+                                    Object.entries(vars).forEach(([varId, value]) => {
+                                        allExtractedData.push({
+                                            data_type: type,
+                                            variable_id: varId,
+                                            data_value: value
+                                        });
+                                    });
+                                }
+                            });
+                        } else if (Array.isArray(parsed)) {
+                            allExtractedData = parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[loadExtractedDataForSection] localStorage 로드 실패:', e);
+                }
+            }
+
+            if (allExtractedData.length === 0) {
+                console.log(`[loadExtractedDataForSection] 섹션 ${sectionId}: 추출 데이터 없음`);
+                return '';
+            }
+
+            // CS 데이터 필터링 및 추가
+            const csData = allExtractedData.filter(item =>
+                item.data_type === 'CS' && dataMap.cs.some(id => item.variable_id.startsWith(id.split('_')[0]))
+            );
+            if (csData.length > 0) {
+                context += '\n### 추출된 CS 데이터\n';
+                csData.forEach(item => {
+                    const value = item.data_value || '';
+                    if (value && value !== 'PLACEHOLDER' && !value.includes('필요')) {
+                        context += `- **${item.variable_id}**: ${value.substring(0, 500)}\n`;
+                    }
+                });
+            }
+
+            // PH 데이터 필터링 및 추가
+            const phData = allExtractedData.filter(item =>
+                item.data_type === 'PH' && dataMap.ph.includes(item.variable_id)
+            );
+            if (phData.length > 0) {
+                context += '\n### 추출된 PH 데이터 (서술문)\n';
+                phData.forEach(item => {
+                    const value = item.data_value || '';
+                    if (value && value !== 'PLACEHOLDER' && !value.includes('필요')) {
+                        context += `\n#### ${item.variable_id}\n${value}\n`;
+                    }
+                });
+            }
+
+            // Table 데이터 필터링 및 마크다운 표로 변환
+            const tableData = allExtractedData.filter(item =>
+                item.data_type === 'Table' && dataMap.tables.includes(item.variable_id)
+            );
+            if (tableData.length > 0) {
+                context += '\n### 추출된 Table 데이터 (아래 표를 그대로 사용할 것)\n';
+                tableData.forEach(item => {
+                    context += `\n#### ${item.variable_id}\n`;
+                    const tableMarkdown = convertTableDataToMarkdown(item);
+                    context += tableMarkdown + '\n';
+                });
+            }
+
+            if (context) {
+                console.log(`[loadExtractedDataForSection] 섹션 ${sectionId}: CS ${csData.length}개, PH ${phData.length}개, Table ${tableData.length}개 로드`);
+                return '\n## 사전 추출된 데이터 (아래 데이터를 그대로 사용하세요)\n' + context;
+            }
+
+            return '';
+        }
+
+        /**
+         * Table 데이터를 마크다운 표로 변환
+         */
+        function convertTableDataToMarkdown(tableItem) {
+            try {
+                let tableData = tableItem.data_value;
+
+                // 문자열이면 JSON 파싱 시도
+                if (typeof tableData === 'string') {
+                    // 이미 마크다운 표 형식이면 그대로 반환
+                    if (tableData.includes('|') && tableData.includes('---')) {
+                        return tableData;
+                    }
+                    try {
+                        tableData = JSON.parse(tableData);
+                    } catch (e) {
+                        return tableData; // 파싱 실패 시 원본 반환
+                    }
+                }
+
+                // 객체 형식의 테이블 데이터 처리
+                if (tableData && typeof tableData === 'object') {
+                    const headers = tableData.headers;
+                    const rows = tableData.data || tableData.rows;
+
+                    if (headers && Array.isArray(headers) && rows && Array.isArray(rows)) {
+                        let markdown = '| ' + headers.join(' | ') + ' |\n';
+                        markdown += '| ' + headers.map(() => '---').join(' | ') + ' |\n';
+
+                        rows.forEach(row => {
+                            if (Array.isArray(row)) {
+                                markdown += '| ' + row.join(' | ') + ' |\n';
+                            } else if (typeof row === 'object') {
+                                const cells = headers.map(h => row[h] !== undefined ? row[h] : '');
+                                markdown += '| ' + cells.join(' | ') + ' |\n';
+                            }
+                        });
+
+                        return markdown;
+                    }
+                }
+
+                return JSON.stringify(tableData);
+            } catch (e) {
+                console.warn('[convertTableDataToMarkdown] 변환 실패:', e);
+                return String(tableItem.data_value || '');
+            }
+        }
+
+        /**
          * 섹션별 프롬프트 파일 로드
          * @param {string} sectionId - 섹션 ID (00-14)
          * @param {string} sectionName - 섹션 이름
@@ -2040,6 +2234,9 @@
                     // {{COMMON_RULES}} placeholder를 공통 규칙으로 치환
                     const combinedPrompt = sectionPromptContent.replace('{{COMMON_RULES}}', commonRules);
 
+                    // 4. 섹션별 추출 데이터 로드 및 포함
+                    const extractedDataContext = await loadExtractedDataForSection(sectionId);
+
                     // 실행 지시 추가
                     const finalPrompt = combinedPrompt + `
 
@@ -2049,11 +2246,14 @@
 
 위 템플릿과 지침에 따라 "${sectionId}. ${sectionName}" 섹션을 작성하세요.
 
+${extractedDataContext}
+
 **필수 사항**:
-1. 이전에 제공된 RAW 데이터만 사용한다
-2. 없는 데이터는 "[해당 데이터 없음]"으로 표시한다
-3. 마크다운 형식으로 출력한다 (코드블록으로 감싸지 않음)
-4. 모든 문장은 '~이다'체로 작성한다
+1. 위에 제공된 "추출 데이터"가 있으면 해당 데이터를 **그대로** 사용한다
+2. 특히 표(Table) 데이터는 이미 계산된 값이므로 수정 없이 마크다운 표로 삽입한다
+3. 없는 데이터는 "[해당 데이터 없음]"으로 표시한다
+4. 마크다운 형식으로 출력한다 (코드블록으로 감싸지 않음)
+5. 모든 문장은 '~이다'체로 작성한다
 
 지금 바로 "${sectionName}" 섹션 내용만 출력하세요.`;
 
@@ -2919,22 +3119,23 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
         }
 
         // ========================================
-        // 라인리스팅 모달 기능
+        // 라인리스팅 모달 기능 (RAW19 통합)
         // ========================================
 
-        // 라인리스팅 데이터 저장소
+        // 라인리스팅 데이터 저장소 (RAW19 통합 구조)
         let lineListingData = {
-            RAW12: [],
-            RAW13: [],
-            RAW14: [],
-            RAW15: []
+            all: [],       // 전체 데이터
+            expedited: [], // 신속보고 (원시/신속/정기 = '신속')
+            periodic: [],  // 정기보고 (원시/신속/정기 = '정기')
+            raw: []        // 원시자료 (원시/신속/정기 = '원시')
         };
+        let currentFilter = 'all';
 
         // 모달 열기
         async function openLineListingModal() {
             await loadLineListingData();
             document.getElementById('lineListingModal').classList.add('show');
-            renderLineListingTab('RAW12');
+            filterLineListingByType('all');
         }
 
         // 모달 닫기
@@ -2943,55 +3144,137 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             document.getElementById('lineListingModal').classList.remove('show');
         }
 
-        // 라인리스팅 데이터 로드
+        // RAW19 통합 라인리스팅 데이터 로드
         async function loadLineListingData() {
             try {
                 const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
 
-                // RAW12, 13, 14, 15 마크다운 파싱
-                const rawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
-                let totalSerious = 0;
-
-                for (const rawId of rawIds) {
-                    lineListingData[rawId] = [];
-
-                    // 해당 RAW ID의 마크다운 찾기
-                    for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
-                        const upperFileName = fileName.toUpperCase();
-                        if (upperFileName.includes(rawId) || upperFileName.includes(rawId.toLowerCase())) {
-                            const parsed = parseMarkdownTable(content, rawId);
-                            lineListingData[rawId] = parsed.rows;
-                            totalSerious += parsed.seriousCount;
-                            break;
-                        }
+                // RAW19 마크다운 찾기 (통합 LineListing)
+                let raw19Content = null;
+                for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                    const upperFileName = fileName.toUpperCase();
+                    if (upperFileName.includes('RAW19') || upperFileName.includes('통합') && upperFileName.includes('LINELISTING')) {
+                        raw19Content = content;
+                        break;
                     }
                 }
 
+                // RAW19 데이터 파싱
+                let totalSerious = 0;
+                lineListingData.all = [];
+                lineListingData.expedited = [];
+                lineListingData.periodic = [];
+                lineListingData.raw = [];
+
+                if (raw19Content) {
+                    const parsed = parseMarkdownTable(raw19Content, 'RAW19');
+                    lineListingData.all = parsed.rows;
+                    totalSerious = parsed.seriousCount;
+
+                    // 원시/신속/정기 컬럼으로 필터링
+                    lineListingData.all.forEach(row => {
+                        const reportType = row['원시/신속/정기'] || row['reportType'] || '';
+                        if (reportType === '신속') {
+                            lineListingData.expedited.push(row);
+                        } else if (reportType === '정기') {
+                            lineListingData.periodic.push(row);
+                        } else if (reportType === '원시') {
+                            lineListingData.raw.push(row);
+                        }
+                    });
+                }
+
                 // 요약 업데이트
-                const expeditedCount = lineListingData.RAW12.length + lineListingData.RAW13.length;
-                const periodicCount = lineListingData.RAW15.length;
-                const rawCount = lineListingData.RAW14.length;
-                const totalCount = expeditedCount + periodicCount + rawCount;
+                const expeditedCount = lineListingData.expedited.length;
+                const periodicCount = lineListingData.periodic.length;
+                const rawCount = lineListingData.raw.length;
+                const totalCount = lineListingData.all.length;
 
                 document.getElementById('summaryExpedited').textContent = expeditedCount;
                 document.getElementById('summaryPeriodic').textContent = periodicCount;
                 document.getElementById('summaryRaw').textContent = rawCount;
                 document.getElementById('summarySerious').textContent = totalSerious;
+                document.getElementById('summaryTotal').textContent = totalCount;
 
-                // 탭 카운트 업데이트
-                document.getElementById('countRAW12').textContent = lineListingData.RAW12.length;
-                document.getElementById('countRAW13').textContent = lineListingData.RAW13.length;
-                document.getElementById('countRAW14').textContent = lineListingData.RAW14.length;
-                document.getElementById('countRAW15').textContent = lineListingData.RAW15.length;
+                // 필터 탭 카운트 업데이트
+                document.getElementById('countAll').textContent = totalCount;
+                document.getElementById('countExpedited').textContent = expeditedCount;
+                document.getElementById('countPeriodic').textContent = periodicCount;
+                document.getElementById('countRaw').textContent = rawCount;
 
                 // 버튼 카운트 업데이트
                 document.getElementById('lineListingCount').textContent = totalCount;
 
-                console.log('[P15] 라인리스팅 로드 완료:', { expeditedCount, periodicCount, rawCount, totalSerious });
+                console.log('[P15] RAW19 라인리스팅 로드 완료:', { totalCount, expeditedCount, periodicCount, rawCount, totalSerious });
 
             } catch (error) {
                 console.error('[P15] 라인리스팅 로드 실패:', error);
             }
+        }
+
+        // 보고서 유형별 필터링
+        function filterLineListingByType(filterType) {
+            currentFilter = filterType;
+
+            // 탭 버튼 활성화 상태 변경
+            document.querySelectorAll('.line-listing-tabs .tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filterType);
+            });
+
+            // 필터링된 데이터 가져오기
+            let filteredData;
+            switch (filterType) {
+                case '신속':
+                    filteredData = lineListingData.expedited;
+                    break;
+                case '정기':
+                    filteredData = lineListingData.periodic;
+                    break;
+                case '원시':
+                    filteredData = lineListingData.raw;
+                    break;
+                default:
+                    filteredData = lineListingData.all;
+            }
+
+            // 테이블 렌더링
+            renderLineListingTable(filteredData, filterType);
+        }
+
+        // 테이블 렌더링 (filterLineListingByType에서 호출)
+        function renderLineListingTable(data, filterType) {
+            const container = document.getElementById('lineListingContent');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="data-preview-empty">
+                        <p>${filterType === 'all' ? '라인리스팅' : filterType + ' 보고'} 데이터가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 테이블 헤더 생성
+            const headers = Object.keys(data[0]);
+            let html = '<table class="line-listing-table"><thead><tr>';
+            headers.forEach(h => {
+                html += `<th>${escapeHtml(h)}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // 테이블 데이터 생성
+            data.forEach(row => {
+                html += '<tr>';
+                headers.forEach(h => {
+                    const value = row[h] || '';
+                    const isSerious = h.toLowerCase().includes('seriousness') && value.toLowerCase() === 'yes';
+                    html += `<td class="${isSerious ? 'serious-cell' : ''}">${escapeHtml(String(value))}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
         }
 
         // 마크다운 테이블 파싱
@@ -3045,74 +3328,22 @@ ${commonRules || '## 필수 규칙\n1. 문체: 모든 문장은 "~이다"체로 
             return { rows, seriousCount, headers };
         }
 
-        // 탭 렌더링
-        function renderLineListingTab(rawId) {
-            // 탭 버튼 활성화
-            document.querySelectorAll('#lineListingModal .line-listing-tabs .tab-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.raw === rawId);
-            });
+        // [DEPRECATED] 기존 renderLineListingTab - filterLineListingByType으로 대체됨
+        // function renderLineListingTab(rawId) { ... }
 
-            const contentDiv = document.getElementById('lineListingContent');
-            const data = lineListingData[rawId];
-
-            if (!data || data.length === 0) {
-                contentDiv.innerHTML = `
-                    <div class="data-preview-empty">
-                        <p>${rawId} 라인리스팅 데이터가 없습니다.<br>P14에서 해당 파일을 업로드해주세요.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // 테이블 생성
-            const headers = Object.keys(data[0]).filter(h => !h.startsWith('_'));
-            let tableHtml = `
-                <div class="line-listing-table-container">
-                    <table class="line-listing-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                ${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            data.forEach((row, idx) => {
-                tableHtml += `<tr>`;
-                tableHtml += `<td>${idx + 1}</td>`;
-                headers.forEach(h => {
-                    const value = row[h] || '';
-                    const isSeriousCell = ['중대성', 'Serious', '심각성'].includes(h) && row._isSerious;
-                    tableHtml += `<td class="${isSeriousCell ? 'serious-yes' : ''}">${escapeHtml(value)}</td>`;
-                });
-                tableHtml += `</tr>`;
-            });
-
-            tableHtml += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-
-            contentDiv.innerHTML = tableHtml;
-        }
-
-        // 페이지 로드 시 라인리스팅 카운트 업데이트
+        // 페이지 로드 시 라인리스팅 카운트 업데이트 (RAW19 통합)
         async function initLineListingCount() {
             try {
                 const convertedMarkdowns = JSON.parse(localStorage.getItem('convertedMarkdowns') || '{}');
                 let totalCount = 0;
 
-                const rawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
-                for (const rawId of rawIds) {
-                    for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
-                        const upperFileName = fileName.toUpperCase();
-                        if (upperFileName.includes(rawId) || upperFileName.includes(rawId.toLowerCase())) {
-                            const parsed = parseMarkdownTable(content, rawId);
-                            totalCount += parsed.rows.length;
-                            break;
-                        }
+                // RAW19 통합 LineListing 찾기
+                for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
+                    const upperFileName = fileName.toUpperCase();
+                    if (upperFileName.includes('RAW19') || (upperFileName.includes('통합') && upperFileName.includes('LINELISTING'))) {
+                        const parsed = parseMarkdownTable(content, 'RAW19');
+                        totalCount = parsed.rows.length;
+                        break;
                     }
                 }
 

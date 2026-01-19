@@ -711,6 +711,81 @@ ${this.lineListingAnalysis.reportMarkdown}
     },
 
     /**
+     * extracted_data의 표 데이터를 프롬프트에 추가
+     * @param {string} combinedMarkdown - 통합된 마크다운
+     * @returns {Promise<string>} 표 데이터가 추가된 마크다운
+     */
+    async appendExtractedTables(combinedMarkdown) {
+        if (!this.reportId || !supabaseClient) {
+            console.warn('[PSURGenerator] reportId 또는 supabaseClient 없음 - 표 데이터 추가 스킵');
+            return combinedMarkdown;
+        }
+
+        try {
+            // extracted_data에서 Table 타입 데이터 조회
+            const { data: tableData, error } = await supabaseClient.client
+                .from('extracted_data')
+                .select('variable_id, data_value')
+                .eq('report_id', this.reportId)
+                .eq('data_type', 'Table');
+
+            if (error || !tableData || tableData.length === 0) {
+                console.log('[PSURGenerator] 추출된 표 데이터 없음');
+                return combinedMarkdown;
+            }
+
+            console.log(`[PSURGenerator] ${tableData.length}개 표 데이터 발견, 프롬프트에 추가`);
+
+            let tableSection = `
+
+---
+
+## [추출된 표 데이터 - 섹션 작성 시 이 데이터를 정확히 사용하세요]
+
+⚠️ **중요**: 아래 표 데이터는 원본 LineListing에서 정확하게 집계된 결과입니다.
+섹션 작성 시 이 데이터의 모든 행을 빠짐없이 포함하고, Total 값과 일치하도록 작성하세요.
+
+`;
+
+            for (const table of tableData) {
+                try {
+                    const parsed = JSON.parse(table.data_value);
+                    tableSection += `### ${table.variable_id}\n\n`;
+
+                    // 표 형식으로 변환
+                    if (parsed.headers && parsed.data) {
+                        // 헤더
+                        tableSection += '| ' + parsed.headers.join(' | ') + ' |\n';
+                        tableSection += '|' + parsed.headers.map(() => '---').join('|') + '|\n';
+
+                        // 데이터 행
+                        for (const row of parsed.data) {
+                            const cells = parsed.headers.map(h => {
+                                const val = row[h];
+                                return val !== undefined && val !== null ? String(val) : '-';
+                            });
+                            tableSection += '| ' + cells.join(' | ') + ' |\n';
+                        }
+                    }
+
+                    tableSection += '\n';
+                } catch (e) {
+                    console.warn(`[PSURGenerator] 표 파싱 실패: ${table.variable_id}`, e);
+                }
+            }
+
+            tableSection += `---
+
+`;
+
+            return combinedMarkdown + tableSection;
+        } catch (error) {
+            console.error('[PSURGenerator] 표 데이터 추가 실패:', error);
+            return combinedMarkdown;
+        }
+    },
+
+    /**
      * 전체 PSUR 보고서 생성 (단일 API 호출)
      * @param {Object} options - 생성 옵션
      * @param {Array} options.convertedMarkdowns - 변환된 마크다운 배열
@@ -770,6 +845,9 @@ ${this.lineListingAnalysis.reportMarkdown}
 
         // Line Listing 분석 결과 추가
         combinedMarkdown = this.appendLineListingToMarkdown(combinedMarkdown);
+
+        // extracted_data의 표 데이터 추가 (표9 등)
+        combinedMarkdown = await this.appendExtractedTables(combinedMarkdown);
 
         let prompt;
 

@@ -4183,12 +4183,25 @@
                 if (rows.length < 2) return null;
 
                 // 헤더와 데이터 분리
-                const headers = rows[0].split('|').map(h => h.trim()).filter(Boolean);
+                // 마크다운 테이블 형식: | A | B | C | → split('|') → ['', 'A', 'B', 'C', '']
+                // 앞뒤 빈 문자열만 제거하고 중간 빈 셀은 보존해야 함
+                const rawHeaders = rows[0].split('|').map(h => h.trim());
+                // 앞뒤 빈 문자열 제거 (파이프 구분자로 인한 것)
+                if (rawHeaders.length > 0 && rawHeaders[0] === '') rawHeaders.shift();
+                if (rawHeaders.length > 0 && rawHeaders[rawHeaders.length - 1] === '') rawHeaders.pop();
+                const headers = rawHeaders.filter(Boolean); // 헤더는 빈 값 없어야 함
+
                 const data = rows.slice(1).map(row => {
-                    const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+                    const rawCells = row.split('|').map(c => c.trim());
+                    // 앞뒤 빈 문자열만 제거 (파이프 구분자로 인한 것)
+                    if (rawCells.length > 0 && rawCells[0] === '') rawCells.shift();
+                    if (rawCells.length > 0 && rawCells[rawCells.length - 1] === '') rawCells.pop();
+                    // 중간 빈 셀은 보존! (filter(Boolean) 사용 금지)
+                    const cells = rawCells;
+
                     const rowObj = {};
                     headers.forEach((h, i) => {
-                        rowObj[h] = cells[i] || '';
+                        rowObj[h] = cells[i] !== undefined ? cells[i] : '';
                     });
                     return rowObj;
                 });
@@ -4701,42 +4714,85 @@
                 console.log('  - 데이터 행 수:', tableData.data?.length);
                 console.log('  - 헤더 목록:', tableData.headers);
 
-                // SOC/PT 컬럼 찾기 (정확한 매칭 우선, 부분 매칭 폴백)
-                const socColumns = ['k-MedDRA SOC_v28.1', 'SOC', 'MedDRA SOC', 'System Organ Class', 'k-MedDRA SOC'];
-                const ptColumns = ['k-MedDRA PT_v28.1', 'PT', 'MedDRA PT', 'Preferred Term', 'k-MedDRA PT'];
-                const seriousnessColumns = ['Seriousness', '중대성', 'Event Seriousness'];
+                // SOC/PT 컬럼 찾기 (정규화된 매칭 + 다단계 폴백)
+                // 헤더 정규화 함수 (공백/특수문자 처리)
+                const normalizeHeader = (h) => h.trim().replace(/\s+/g, ' ');
+                const normalizedHeaders = tableData.headers.map(normalizeHeader);
 
+                console.log('[extractSOCFromRAW19] 정규화된 헤더:', normalizedHeaders);
+
+                // 1단계: k-MedDRA SOC 패턴 우선 매칭 (버전 무관)
                 let socCol = null, ptCol = null, seriousnessCol = null;
 
-                // 정확한 매칭 시도
-                for (const col of socColumns) {
-                    if (tableData.headers.includes(col)) { socCol = col; break; }
-                }
-                for (const col of ptColumns) {
-                    if (tableData.headers.includes(col)) { ptCol = col; break; }
-                }
-                for (const col of seriousnessColumns) {
-                    if (tableData.headers.includes(col)) { seriousnessCol = col; break; }
+                // SOC 컬럼: k-MedDRA SOC 패턴 우선
+                const socIdx = normalizedHeaders.findIndex(h =>
+                    /k-MedDRA\s*SOC/i.test(h) || /MedDRA.*SOC/i.test(h)
+                );
+                if (socIdx >= 0) {
+                    socCol = tableData.headers[socIdx];
+                    console.log('[extractSOCFromRAW19] k-MedDRA SOC 패턴 매칭:', socCol);
                 }
 
-                // 부분 매칭 폴백 (SOC)
+                // PT 컬럼: k-MedDRA PT 패턴 우선
+                const ptIdx = normalizedHeaders.findIndex(h =>
+                    /k-MedDRA\s*PT/i.test(h) || /MedDRA.*PT/i.test(h)
+                );
+                if (ptIdx >= 0) {
+                    ptCol = tableData.headers[ptIdx];
+                    console.log('[extractSOCFromRAW19] k-MedDRA PT 패턴 매칭:', ptCol);
+                }
+
+                // Seriousness 컬럼
+                const seriousnessPatterns = ['Seriousness', '중대성', 'Event Seriousness'];
+                for (const pattern of seriousnessPatterns) {
+                    const idx = normalizedHeaders.findIndex(h =>
+                        h.toLowerCase() === pattern.toLowerCase() ||
+                        h.toLowerCase().includes(pattern.toLowerCase())
+                    );
+                    if (idx >= 0) {
+                        seriousnessCol = tableData.headers[idx];
+                        break;
+                    }
+                }
+
+                // 2단계: 정확한 문자열 매칭 폴백
+                if (!socCol) {
+                    const socColumns = ['k-MedDRA SOC_v28.1', 'SOC', 'MedDRA SOC', 'System Organ Class', 'k-MedDRA SOC'];
+                    for (const col of socColumns) {
+                        const idx = normalizedHeaders.findIndex(h => h === col || h.toLowerCase() === col.toLowerCase());
+                        if (idx >= 0) { socCol = tableData.headers[idx]; break; }
+                    }
+                }
+                if (!ptCol) {
+                    const ptColumns = ['k-MedDRA PT_v28.1', 'PT', 'MedDRA PT', 'Preferred Term', 'k-MedDRA PT'];
+                    for (const col of ptColumns) {
+                        const idx = normalizedHeaders.findIndex(h => h === col || h.toLowerCase() === col.toLowerCase());
+                        if (idx >= 0) { ptCol = tableData.headers[idx]; break; }
+                    }
+                }
+
+                // 3단계: 부분 매칭 폴백 (SOC) - SOURCE 제외
                 if (!socCol) {
                     console.log('[extractSOCFromRAW19] 정확한 SOC 컬럼 매칭 실패, 부분 매칭 시도...');
-                    socCol = tableData.headers.find(h =>
+                    const idx = normalizedHeaders.findIndex(h =>
                         h.toUpperCase().includes('SOC') &&
                         !h.toUpperCase().includes('SOURCE')
                     );
-                    if (socCol) {
+                    if (idx >= 0) {
+                        socCol = tableData.headers[idx];
                         console.log('[extractSOCFromRAW19] 부분 매칭으로 SOC 컬럼 발견:', socCol);
                     }
                 }
 
-                // 부분 매칭 폴백 (PT)
+                // 3단계: 부분 매칭 폴백 (PT)
                 if (!ptCol) {
-                    ptCol = tableData.headers.find(h =>
+                    const idx = normalizedHeaders.findIndex(h =>
                         h.toUpperCase().includes('PT') &&
-                        h.toUpperCase().includes('MEDDRA')
+                        (h.toUpperCase().includes('MEDDRA') || h.toUpperCase().includes('PREFERRED'))
                     );
+                    if (idx >= 0) {
+                        ptCol = tableData.headers[idx];
+                    }
                 }
 
                 console.log('[extractSOCFromRAW19] 컬럼 매핑 결과:');

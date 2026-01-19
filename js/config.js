@@ -82,9 +82,9 @@ const CONFIG = {
         },
         "08": {
             name: "개별증례병력",
-            required: ["RAW14"],
-            optional: ["RAW12", "RAW13", "RAW15"],
-            description: "이상사례 Line Listing (국내외 신속보고, 원시자료, 정기보고)"
+            required: ["RAW19"],
+            optional: [],
+            description: "이상사례 Line Listing (통합 LineListing - 원시/신속/정기 포함)"
         },
         "09": {
             name: "시험",
