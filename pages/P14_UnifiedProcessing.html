@@ -3474,7 +3474,37 @@
             }
 
             // ========================================
-            // 마크다운 문서 DB 저장 (P15 로드용)
+            // 1단계: source_documents DB 저장 (마크다운 저장의 선행 조건)
+            // ========================================
+            let sourceDocIdMap = {};  // fileName -> source_document_id 매핑
+            if (reportId && window.supabaseDocuments && typeof window.supabaseDocuments.bulkCreateSourceDocuments === 'function') {
+                try {
+                    const sourceDocsForDB = validatedFiles
+                        .filter(f => f.name)
+                        .map(f => ({
+                            fileName: f.name,
+                            rawId: f.assignedRawId || 'unknown',
+                            fileType: f.originalType || f.name.split('.').pop() || 'unknown',
+                            filePath: f.name
+                        }));
+
+                    const srcResult = await window.supabaseDocuments.bulkCreateSourceDocuments(reportId, sourceDocsForDB);
+                    if (srcResult.success && srcResult.documents) {
+                        // fileName -> source_document_id 매핑 생성
+                        srcResult.documents.forEach(doc => {
+                            sourceDocIdMap[doc.original_filename] = doc.id;
+                        });
+                        console.log(`✅ DB에 source_documents ${srcResult.documents.length}개 저장 완료`);
+                    } else {
+                        console.warn('⚠️ source_documents DB 저장 실패:', srcResult.error);
+                    }
+                } catch (srcError) {
+                    console.warn('⚠️ source_documents DB 저장 오류:', srcError);
+                }
+            }
+
+            // ========================================
+            // 2단계: 마크다운 문서 DB 저장 (P15 로드용)
             // ========================================
             if (reportId && window.supabaseDocuments && typeof window.supabaseDocuments.bulkSaveMarkdownDocuments === 'function') {
                 try {
@@ -3484,7 +3514,8 @@
                             fileName: f.name,
                             rawId: f.assignedRawId || 'unknown',
                             content: f.markdown,
-                            convertedBy: 'gemini-flash'
+                            convertedBy: 'gemini-flash',
+                            sourceDocId: sourceDocIdMap[f.name] || null  // source_document_id 매핑
                         }));
 
                     const mdResult = await window.supabaseDocuments.bulkSaveMarkdownDocuments(reportId, markdownsForDB);
