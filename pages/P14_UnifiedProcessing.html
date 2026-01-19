@@ -665,6 +665,229 @@
             border-color: rgba(80, 80, 80, 0.4);
             color: var(--text-primary);
         }
+
+        /* ========================================
+           데이터 일관성 검증 모달 스타일
+           ======================================== */
+        .validation-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .validation-modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .validation-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .validation-modal-header.has-warnings {
+            background: linear-gradient(135deg, #fff8e1, #fff3e0);
+        }
+
+        .validation-modal-header.has-errors {
+            background: linear-gradient(135deg, #ffebee, #fce4ec);
+        }
+
+        .validation-modal-header i {
+            font-size: 24px;
+        }
+
+        .validation-modal-header.has-warnings i {
+            color: #f57c00;
+        }
+
+        .validation-modal-header.has-errors i {
+            color: #d32f2f;
+        }
+
+        .validation-modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .validation-modal-body {
+            padding: 20px 24px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .validation-results {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .validation-item {
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .validation-warning {
+            background: #fff8e1;
+            border-color: #f57c00;
+        }
+
+        .validation-error {
+            background: #ffebee;
+            border-color: #d32f2f;
+        }
+
+        .validation-info {
+            background: #e3f2fd;
+            border-color: #1976d2;
+        }
+
+        .validation-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .validation-header i {
+            font-size: 16px;
+        }
+
+        .validation-warning .validation-header i {
+            color: #f57c00;
+        }
+
+        .validation-error .validation-header i {
+            color: #d32f2f;
+        }
+
+        .validation-info .validation-header i {
+            color: #1976d2;
+        }
+
+        .validation-header strong {
+            font-weight: 600;
+        }
+
+        .validation-rawid {
+            margin-left: auto;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .validation-item p {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .validation-item small {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .validation-suggestion {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .validation-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .validation-modal-footer button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-validation-cancel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-validation-proceed {
+            background: #f57c00;
+            border: none;
+            color: white;
+        }
+
+        .btn-validation-proceed:hover {
+            background: #ef6c00;
+        }
+
+        .validation-success {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            color: #2e7d32;
+        }
+
+        .validation-success i {
+            font-size: 24px;
+        }
+
+        /* 다크모드 */
+        [data-theme="dark"] .validation-modal {
+            background: var(--bg-primary);
+        }
+
+        [data-theme="dark"] .validation-modal-header.has-warnings {
+            background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 0.1));
+        }
+
+        [data-theme="dark"] .validation-warning {
+            background: rgba(255, 152, 0, 0.15);
+        }
+
+        [data-theme="dark"] .validation-error {
+            background: rgba(244, 67, 54, 0.15);
+        }
+
+        [data-theme="dark"] .validation-info {
+            background: rgba(33, 150, 243, 0.15);
+        }
+
+        [data-theme="dark"] .validation-suggestion {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
     </style>
 </head>
 
@@ -904,85 +1127,18 @@
                     </div>
 
                     <!-- ========================================
-                         Step 3: 라인리스팅 + 기타 자료
+                         Step 3: 기타 자료 (LineListing 포함)
                          ======================================== -->
                     <div class="step-content" id="step3">
-                        <!-- 라인리스팅 업로드 -->
-                        <div class="section-card" style="padding: 1rem; margin-bottom: 0.75rem;">
-                            <div class="section-header" style="margin-bottom: 0.25rem;">
-                                <span class="section-icon" style="font-size: 1.25rem;">[DATA]</span>
-                                <h2 class="section-title" style="font-size: 1rem;">Line Listing 자료</h2>
-                            </div>
-                            <p class="section-subtitle" style="margin-bottom: 0.5rem; font-size: 0.8rem;">이상사례 Line
-                                Listing 엑셀 파일을 업로드하세요</p>
-
-                            <div class="upload-zones visible" style="margin-top: 0.5rem; gap: 0.5rem;">
-                                <div class="upload-zone-row" style="gap: 0.5rem;">
-                                    <div class="upload-zone" style="padding: 0.75rem;">
-                                        <div class="upload-zone-label" style="margin-bottom: 0.5rem;">국내 신속보고 Line
-                                            Listing</div>
-                                        <button class="upload-btn" onclick="triggerFileInput('lineListing_domestic')"
-                                            style="padding: 0.5rem;">
-                                            파일 추가
-                                        </button>
-                                        <input type="file" id="lineListing_domestic_input" class="hidden-input" multiple
-                                            accept=".xlsx,.xls"
-                                            onchange="handleFileSelect('lineListing_domestic', this.files)">
-                                        <div class="zone-file-list" id="lineListing_domestic_files"></div>
-                                    </div>
-
-                                    <div class="upload-zone" style="padding: 0.75rem;">
-                                        <div class="upload-zone-label" style="margin-bottom: 0.5rem;">국외 신속보고 Line
-                                            Listing</div>
-                                        <button class="upload-btn" onclick="triggerFileInput('lineListing_foreign')"
-                                            style="padding: 0.5rem;">
-                                            파일 추가
-                                        </button>
-                                        <input type="file" id="lineListing_foreign_input" class="hidden-input" multiple
-                                            accept=".xlsx,.xls"
-                                            onchange="handleFileSelect('lineListing_foreign', this.files)">
-                                        <div class="zone-file-list" id="lineListing_foreign_files"></div>
-                                    </div>
-                                </div>
-
-                                <div class="upload-zone-row" style="gap: 0.5rem;">
-                                    <div class="upload-zone" style="padding: 0.75rem;">
-                                        <div class="upload-zone-label" style="margin-bottom: 0.5rem;">원시자료 Line Listing
-                                        </div>
-                                        <button class="upload-btn" onclick="triggerFileInput('lineListing_raw')"
-                                            style="padding: 0.5rem;">
-                                            파일 추가
-                                        </button>
-                                        <input type="file" id="lineListing_raw_input" class="hidden-input" multiple
-                                            accept=".xlsx,.xls"
-                                            onchange="handleFileSelect('lineListing_raw', this.files)">
-                                        <div class="zone-file-list" id="lineListing_raw_files"></div>
-                                    </div>
-
-                                    <div class="upload-zone" style="padding: 0.75rem;">
-                                        <div class="upload-zone-label" style="margin-bottom: 0.5rem;">정기보고 Line Listing
-                                        </div>
-                                        <button class="upload-btn" onclick="triggerFileInput('lineListing_periodic')"
-                                            style="padding: 0.5rem;">
-                                            파일 추가
-                                        </button>
-                                        <input type="file" id="lineListing_periodic_input" class="hidden-input" multiple
-                                            accept=".xlsx,.xls"
-                                            onchange="handleFileSelect('lineListing_periodic', this.files)">
-                                        <div class="zone-file-list" id="lineListing_periodic_files"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 기타 자료 업로드 -->
+                        <!-- 기타 자료 업로드 (LineListing 자동 인식) -->
                         <div class="section-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                             <div class="section-header" style="margin-bottom: 0.25rem;">
                                 <span class="section-icon" style="font-size: 1.25rem;">[FILES]</span>
                                 <h2 class="section-title" style="font-size: 1rem;">기타 자료 업로드</h2>
                             </div>
-                            <p class="section-subtitle" style="margin-bottom: 0.5rem; font-size: 0.8rem;">나머지 자료를 업로드하고
-                                RAW ID를 선택하세요</p>
+                            <p class="section-subtitle" style="margin-bottom: 0.5rem; font-size: 0.8rem;">
+                                LineListing, 문헌자료, 허가현황 등 모든 기타 자료를 업로드하세요 (RAW ID 자동 인식)
+                            </p>
 
                             <!-- 업로드 영역 -->
                             <div class="upload-zone" style="margin-bottom: 0.5rem; padding: 0.75rem;">
@@ -1087,6 +1243,7 @@
     <script src="../utils/sidebar.js"></script>
     <script src="../utils/user-menu.js"></script>
     <script src="../js/utils/raw-id-detector.js"></script>
+    <script src="../js/utils/data-consistency-validator.js"></script>
     <script src="../js/config.js"></script>
     <script src="../js/file-storage.js"></script>
     <!-- Supabase DB 모듈 (순서 중요) -->
@@ -1125,20 +1282,16 @@
         let currentStep = 1;
         const totalSteps = 3;
 
-        // 파일 저장소 (zone별) - Step 1, 2, 3
+        // 파일 저장소 (zone별) - Step 1, 2
+        // Step 3는 step3Files 배열로 관리 (LineListing 포함, RAW ID 자동 인식)
         const uploadedFiles = {
-            // Step 1
-            startPeriod: [],      // RAW1.2, RAW2.6
-            endPeriod: [],        // RAW1.1, RAW2.1~2.3
-            changeHistory: [],    // RAW5, RAW6, RAW7
-            // Step 2
-            sponsored: [],        // RAW8
-            iitnis: [],           // RAW17
-            // Step 3 - Line Listing
-            lineListing_domestic: [],   // RAW13 - 국내 신속보고
-            lineListing_foreign: [],    // RAW12 - 국외 신속보고
-            lineListing_raw: [],        // RAW14 - 원시자료
-            lineListing_periodic: []    // RAW15 - 정기보고
+            // Step 1 - 제품정보
+            startPeriod: [],      // 보고기간 시작시점 (사용상의주의사항, 용법용량, 효능효과)
+            endPeriod: [],        // 보고기간 종료시점 (사용상의주의사항, 용법용량, 효능효과)
+            changeHistory: [],    // 기타 자료 (변경이력)
+            // Step 2 - 임상자료
+            sponsored: [],        // Sponsored 임상 (RAW17)
+            iitnis: []            // 기타 임상 (RAW8, RAW10, RAW11)
         };
 
         // Step 3 파일 저장소 (드랍다운 선택 방식)
@@ -2406,70 +2559,6 @@
         }
 
         /**
-         * 파일 수 미달 경고 모달
-         * @param {Array<string>} issues - Step별 미달 현황 메시지
-         * @param {number} totalUploaded - 현재 업로드된 총 파일 수
-         * @param {number} requiredTotal - 필수 총 파일 수
-         * @returns {Promise<boolean>} - 계속 진행 여부
-         */
-        function showFileCountWarningModal(issues, totalUploaded, requiredTotal) {
-            return new Promise((resolve) => {
-                const issueList = issues.map(issue =>
-                    `<li style="margin-bottom: 8px;">${issue}</li>`
-                ).join('');
-
-                // 다크모드 감지
-                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                const modalBg = isDark ? '#1e1e1e' : 'white';
-                const modalBorder = isDark ? '#333' : '#e0e0e0';
-                const errorBg = isDark ? 'rgba(244, 67, 54, 0.15)' : '#ffebee';
-                const textMuted = isDark ? '#aaa' : '#666';
-
-                const html = `
-                    <div class="modal-overlay" id="fileCountWarningModal" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999;">
-                        <div class="modal-content" style="background: ${modalBg}; padding: 30px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; border: 1px solid ${modalBorder};">
-                            <h2 style="color: #f44336; margin-bottom: 20px;">⛔ 필수 파일 부족</h2>
-                            <div style="background: ${errorBg}; padding: 15px; border-left: 4px solid #f44336; margin-bottom: 15px; border-radius: 4px;">
-                                <p style="margin: 0 0 10px 0;">
-                                    <strong>필수 파일이 모두 업로드되지 않았습니다.</strong>
-                                </p>
-                                <p style="margin: 0; color: ${textMuted}; font-size: 14px;">
-                                    모든 필수 파일을 업로드해야 진행할 수 있습니다.<br>
-                                    아래 누락된 파일을 확인하고 추가로 업로드해 주세요.
-                                </p>
-                            </div>
-                            <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
-                                <strong style="color: #ef5350;">현재 상태:</strong>
-                                <p style="margin: 10px 0; font-size: 18px; font-weight: bold; color: #f44336;">
-                                    총 ${totalUploaded}개 / 필수 ${requiredTotal}개
-                                </p>
-                            </div>
-                            <div style="background: ${errorBg}; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                                <strong style="color: #ef5350;">Step별 미달 현황:</strong>
-                                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
-                                    ${issueList}
-                                </ul>
-                            </div>
-                            <div style="display: flex; justify-content: center;">
-                                <button id="fileCountCancelBtn" style="padding: 12px 30px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;">
-                                    확인 (파일 추가 업로드)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                document.body.insertAdjacentHTML('beforeend', html);
-
-                document.getElementById('fileCountCancelBtn').onclick = () => {
-                    document.getElementById('fileCountWarningModal').remove();
-                    console.log('⛔ 필수 파일 부족 - 파일 추가 업로드 필요');
-                    resolve(false);  // 항상 false 반환 - 진행 불가
-                };
-            });
-        }
-
-        /**
          * 업로드 실패 (fileSize === 0) 파일 감지 및 재업로드 팝업 표시
          */
         function showUploadFailedModal(failedFiles) {
@@ -2519,6 +2608,124 @@
                     document.getElementById('uploadFailedModal').remove();
                     resolve(true);
                 };
+            });
+        }
+
+        /**
+         * 데이터 일관성 검증 결과 모달
+         * @param {Object} validationResult - 검증 결과
+         * @returns {Promise<boolean>} - 계속 진행 여부
+         */
+        function showDataValidationModal(validationResult) {
+            return new Promise((resolve) => {
+                // 다크모드 감지
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+                const hasErrors = validationResult.errors && validationResult.errors.length > 0;
+                const hasWarnings = validationResult.warnings && validationResult.warnings.length > 0;
+
+                // 검증 항목 HTML 생성
+                let itemsHtml = '';
+
+                // 에러 항목
+                if (hasErrors) {
+                    validationResult.errors.forEach(error => {
+                        itemsHtml += `
+                            <div class="validation-item validation-error">
+                                <div class="validation-header">
+                                    <i class="fas fa-times-circle"></i>
+                                    <strong>${error.title || '오류'}</strong>
+                                    ${error.rawId ? `<span class="validation-rawid">${error.rawId}</span>` : ''}
+                                </div>
+                                <p>${error.message || ''}</p>
+                                ${error.details ? `<small>${error.details}</small>` : ''}
+                                ${error.suggestion ? `<div class="validation-suggestion">💡 ${error.suggestion}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+                // 경고 항목
+                if (hasWarnings) {
+                    validationResult.warnings.forEach(warning => {
+                        const isInfo = warning.severity === 'info';
+                        const className = isInfo ? 'validation-info' : 'validation-warning';
+                        const icon = isInfo ? 'info-circle' : 'exclamation-triangle';
+
+                        itemsHtml += `
+                            <div class="validation-item ${className}">
+                                <div class="validation-header">
+                                    <i class="fas fa-${icon}"></i>
+                                    <strong>${warning.title || '경고'}</strong>
+                                    ${warning.rawId ? `<span class="validation-rawid">${warning.rawId}</span>` : ''}
+                                </div>
+                                <p>${warning.message || ''}</p>
+                                ${warning.details ? `<small>${warning.details}</small>` : ''}
+                                ${warning.expected ? `<small>예상: ${warning.expected}</small>` : ''}
+                                ${warning.suggestion ? `<div class="validation-suggestion">💡 ${warning.suggestion}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+                const headerClass = hasErrors ? 'has-errors' : 'has-warnings';
+                const headerIcon = hasErrors ? 'times-circle' : 'exclamation-triangle';
+                const headerTitle = hasErrors ? '데이터 일관성 오류' : '데이터 일관성 경고';
+
+                const html = `
+                    <div class="validation-modal-overlay" id="dataValidationModal">
+                        <div class="validation-modal">
+                            <div class="validation-modal-header ${headerClass}">
+                                <i class="fas fa-${headerIcon}"></i>
+                                <h3>${headerTitle}</h3>
+                            </div>
+                            <div class="validation-modal-body">
+                                <p style="margin-bottom: 16px; color: var(--text-secondary);">
+                                    업로드된 RAW 파일과 사용자 입력 데이터 간에 불일치가 발견되었습니다.
+                                    테스트 데이터를 사용하는 경우 아래 경고를 확인하고 계속 진행할 수 있습니다.
+                                </p>
+                                <div class="validation-results">
+                                    ${itemsHtml}
+                                </div>
+                            </div>
+                            <div class="validation-modal-footer">
+                                <button class="btn-validation-cancel" id="validationCancelBtn">
+                                    취소
+                                </button>
+                                ${!hasErrors ? `
+                                    <button class="btn-validation-proceed" id="validationProceedBtn">
+                                        경고 확인 후 계속 진행
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.insertAdjacentHTML('beforeend', html);
+
+                document.getElementById('validationCancelBtn').onclick = () => {
+                    document.getElementById('dataValidationModal').remove();
+                    resolve(false);
+                };
+
+                const proceedBtn = document.getElementById('validationProceedBtn');
+                if (proceedBtn) {
+                    proceedBtn.onclick = () => {
+                        document.getElementById('dataValidationModal').remove();
+                        resolve(true);
+                    };
+                }
+
+                // ESC 키로 닫기
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape') {
+                        document.getElementById('dataValidationModal')?.remove();
+                        document.removeEventListener('keydown', handleEsc);
+                        resolve(false);
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
             });
         }
 
@@ -2614,38 +2821,8 @@
             const step2Files = allFiles.filter(f =>
                 f.zoneId === 'sponsored' || f.zoneId === 'iitnis'
             );
-            // Line Listing 파일 수 계산 (Step 3에 포함)
-            const lineListingCount = Object.keys(uploadedFiles)
-                .filter(zone => zone.startsWith('lineListing_'))
-                .reduce((sum, zone) => sum + uploadedFiles[zone].length, 0);
-            const step3FilesCount = step3Files.length + lineListingCount;
-
-            const REQUIRED_FILES = {
-                step1: 8,
-                step2: 2,
-                step3: 27,
-                total: 37
-            };
-
-            const fileCountIssues = [];
-            if (step1Files.length < REQUIRED_FILES.step1) {
-                fileCountIssues.push(`Step 1 (제품정보): ${step1Files.length}개 / 필수 ${REQUIRED_FILES.step1}개`);
-            }
-            if (step2Files.length < REQUIRED_FILES.step2) {
-                fileCountIssues.push(`Step 2 (임상자료): ${step2Files.length}개 / 필수 ${REQUIRED_FILES.step2}개`);
-            }
-            if (step3FilesCount < REQUIRED_FILES.step3) {
-                fileCountIssues.push(`Step 3 (기타자료): ${step3FilesCount}개 / 필수 ${REQUIRED_FILES.step3}개`);
-            }
-
-            if (fileCountIssues.length > 0) {
-                const totalUploaded = step1Files.length + step2Files.length + step3FilesCount;
-                const confirmProceed = await showFileCountWarningModal(fileCountIssues, totalUploaded, REQUIRED_FILES.total);
-                if (!confirmProceed) {
-                    console.log('⚠️ 파일 수 미달로 사용자가 진행 취소');
-                    return;
-                }
-            }
+            // Step 3 파일 수 계산 (LineListing 포함, 모두 step3Files에서 관리)
+            const step3FilesCount = step3Files.length;
 
             // UI 업데이트
             document.getElementById('nextBtn').disabled = true;
@@ -2805,8 +2982,8 @@
                 updateProcessingStep(5, 'completed', '완료');
                 if (window.llmProgressBar) window.llmProgressBar.completeStep(4).startStep(5);
 
-                // Step 6: Line Listing 분석 (RAW12-15)
-                const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+                // Step 6: Line Listing 분석 (RAW12-15, RAW19 통합)
+                const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW19'];
                 const hasLineListingFiles = convertedFiles.some(f => {
                     const rawId = f.assignedRawId || f.rawId || '';
                     return lineListingRawIds.includes(rawId);
@@ -3166,6 +3343,11 @@
                             // validation_status: DB CHECK 제약 조건에 맞게 매핑
                             const originalStatus = item[col] || 'Pending';
                             cleaned[col] = statusMap[originalStatus] || 'Pending';
+                        } else if (col === 'data_value') {
+                            // data_value: NULL 문자 및 제어 문자 제거 (PostgreSQL 호환)
+                            // PDF 텍스트 추출 시 발생하는 \u0000 등 제거
+                            const value = String(item[col] || '');
+                            cleaned[col] = value.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' ');
                         } else {
                             cleaned[col] = item[col];
                         }
@@ -3317,6 +3499,52 @@
             }
 
             // ========================================
+            // 데이터 일관성 검증 (사용자 입력 vs RAW 파일)
+            // ========================================
+            if (window.dataConsistencyValidator) {
+                try {
+                    // 사용자 입력 데이터 가져오기
+                    let userInputsForValidation = p14State?.user_inputs || {};
+                    if (reportId && window.supabaseClient) {
+                        const dbResult = await window.supabaseClient.getReportById(reportId);
+                        if (dbResult.success && dbResult.report?.user_inputs) {
+                            userInputsForValidation = { ...userInputsForValidation, ...dbResult.report.user_inputs };
+                        }
+                    }
+
+                    // 검증용 마크다운 파일 목록 준비
+                    const markdownFilesForValidation = validatedFiles.map(f => ({
+                        rawId: f.assignedRawId || f.rawId,
+                        filename: f.name,
+                        markdownContent: f.markdown || f.content || ''
+                    }));
+
+                    console.log('[DataConsistencyValidator] 검증 시작...');
+                    const validationResult = await window.dataConsistencyValidator.validate(
+                        userInputsForValidation,
+                        markdownFilesForValidation
+                    );
+
+                    // 경고 또는 오류가 있으면 모달 표시
+                    if (validationResult.hasWarnings || !validationResult.isValid) {
+                        const shouldProceed = await showDataValidationModal(validationResult);
+                        if (!shouldProceed) {
+                            console.log('[DataConsistencyValidator] 사용자가 처리 취소');
+                            document.getElementById('nextBtn').disabled = false;
+                            document.getElementById('nextBtn').textContent = '▶ LLM 분류 시작';
+                            if (window.llmProgressBar) window.llmProgressBar.hide();
+                            return;
+                        }
+                        console.log('[DataConsistencyValidator] 사용자가 경고 확인 후 계속 진행');
+                    } else {
+                        console.log('[DataConsistencyValidator] ✅ 데이터 일관성 검증 통과');
+                    }
+                } catch (validationError) {
+                    console.warn('[DataConsistencyValidator] 검증 중 오류 (계속 진행):', validationError);
+                }
+            }
+
+            // ========================================
             // extractedData 생성 및 저장 (P15 CS/PH/Table 뷰어용)
             // ========================================
             // P13에서 입력한 CS 데이터는 DB에 저장되어 있으므로 DB에서 최신 데이터 가져오기
@@ -3335,9 +3563,9 @@
             }
 
             // localStorage와 DB 데이터 병합 (DB 우선 - P13 입력값 포함)
+            // Note: p14State는 라인 3264에서 정의됨, currentReport는 이 스코프에서 미정의
             const mergedUserInputs = {
-                ...currentReport,
-                ...(currentReport.user_inputs || {}),
+                ...(p14State?.user_inputs || {}),
                 ...dbUserInputs  // DB 데이터 우선 (P13에서 입력한 CS 값)
             };
 
@@ -3552,15 +3780,15 @@
             }
 
             // ========================================
-            // 시판후판매 계산 CS 변수 선계산 (CS19_.4, CS22, CS23)
+            // 시판후판매 계산 CS 변수 선계산 (CS19.3, CS22, CS23)
             // LLM 호출 전에 userInputs 또는 RAW3에서 계산
             // ========================================
             console.log('📊 [시판후판매] 계산 CS 변수 선계산 시작...');
 
             // userInputs에서 CS19 관련 값 가져오기
             const cs19_start_val = userInputs?.['CS19_시판후노출count시작날짜'];
-            const cs19_1_end_val = userInputs?.['CS19_.1_시판후노출count종료날짜'];
-            const cs19_3_val = userInputs?.['CS19_.3_시판후판매연도별판매량'];
+            const cs19_1_end_val = userInputs?.['CS19.1_시판후노출count종료날짜'];
+            const cs19_3_val = userInputs?.['CS19.2_시판후판매연도별판매량'];
             const cs21_val = userInputs?.['CS21_환자1명당사용량'];
 
             // RAW3 마크다운에서 판매량 데이터 파싱 시도
@@ -3589,8 +3817,8 @@
                 }
             }
 
-            // CS19_.4_시판후판매량합계 계산
-            let cs19_4_calculated = null;
+            // CS19.3_시판후판매량합계 계산
+            let cs19_3_calculated = null;
             if (cs19_3_val) {
                 // userInputs에서 연도별 판매량 합산
                 const numbers = cs19_3_val.match(/[\d,]+(?:\.\d+)?/g) || [];
@@ -3599,31 +3827,31 @@
                     return sum + (isNaN(num) ? 0 : num);
                 }, 0);
                 if (salesSum > 0) {
-                    cs19_4_calculated = Math.round(salesSum);
-                    addIfNotExists('CS19_.4_시판후판매량합계', String(cs19_4_calculated), 'CALCULATED');
-                    console.log(`📐 CS19_.4 계산 (userInputs): ${cs19_3_val} → ${cs19_4_calculated}`);
+                    cs19_3_calculated = Math.round(salesSum);
+                    addIfNotExists('CS19.3_시판후판매량합계', String(cs19_3_calculated), 'CALCULATED');
+                    console.log(`📐 CS19.3 계산 (userInputs): ${cs19_3_val} → ${cs19_3_calculated}`);
                 }
             } else if (parsedSalesData) {
                 // RAW3 파싱 데이터에서 합산
                 const salesSum = parsedSalesData.reduce((sum, d) => sum + d.sales, 0);
                 if (salesSum > 0) {
-                    cs19_4_calculated = Math.round(salesSum);
-                    addIfNotExists('CS19_.4_시판후판매량합계', String(cs19_4_calculated), 'RAW3_Parsed');
-                    console.log(`📐 CS19_.4 계산 (RAW3): ${salesSum} → ${cs19_4_calculated}`);
+                    cs19_3_calculated = Math.round(salesSum);
+                    addIfNotExists('CS19.3_시판후판매량합계', String(cs19_3_calculated), 'RAW3_Parsed');
+                    console.log(`📐 CS19.3 계산 (RAW3): ${salesSum} → ${cs19_3_calculated}`);
                 }
             }
 
-            // CS22_연평균판매량 계산: (CS19_.4 / 기간일수) × 365
-            if (cs19_4_calculated && cs19_start_val && cs19_1_end_val) {
+            // CS22_연평균판매량 계산: (CS19.3 / 기간일수) × 365
+            if (cs19_3_calculated && cs19_start_val && cs19_1_end_val) {
                 try {
                     const startDate = new Date(cs19_start_val);
                     const endDate = new Date(cs19_1_end_val);
                     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
                     if (daysDiff > 0) {
-                        const annualAvg = Math.round((cs19_4_calculated / daysDiff) * 365);
+                        const annualAvg = Math.round((cs19_3_calculated / daysDiff) * 365);
                         addIfNotExists('CS22_연평균판매량', String(annualAvg), 'CALCULATED');
-                        console.log(`📐 CS22 계산: ${cs19_4_calculated} / ${daysDiff}일 × 365 = ${annualAvg}`);
+                        console.log(`📐 CS22 계산: ${cs19_3_calculated} / ${daysDiff}일 × 365 = ${annualAvg}`);
 
                         // CS23_연평균환자노출 계산: CS22 / CS21
                         if (cs21_val) {
@@ -3643,20 +3871,17 @@
             console.log('📊 [시판후판매] 계산 CS 변수 선계산 완료');
 
             // 정규식 패턴 정의 (하드코딩된 추출 패턴)
+            // NOTE: extractData.md에 정의된 CS 변수만 유지
             const CS_PATTERNS = {
-                'CS24_제형': [/【성\s*상】\s*([^\n【]+)/i, /(?:제형|Dosage\s*form)[:\s]*([^\n\r]+)/i],
-                'CS25_함량': [/(?:함량|Strength)[:\s]*([^\n\r]+)/i, /(\d+(?:\.\d+)?\s*(?:mg|g|ml|μg|mcg))/i],
-                'CS26_저장방법': [/【저장방법】\s*([^\n【]+)/i, /(?:저장방법|Storage)[:\s]*([^\n\r]+)/i],
-                'CS5_국내허가일자': [/한국[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*(\d{4}-\d{2}-\d{2})/i, /(?:국내\s*허가일|허가일자)[:\s]*(\d{4}[-./]\d{1,2}[-./]\d{1,2})/i],
-                'CS6_국내최초승인일자': [/(?:최초\s*승인일|First\s*approval)[:\s]*(\d{4}[-./]\d{1,2}[-./]\d{1,2})/i],
-                'CS7_IBD': [/(?:IBD|International\s*Birth\s*Date)[:\s]*(\d{4}[-./]\d{1,2}[-./]\d{1,2})/i]
+                'CS5_국내허가일자': [/한국[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*(\d{4}-\d{2}-\d{2})/i, /(?:국내\s*허가일|허가일자)[:\s]*(\d{4}[-./]\d{1,2}[-./]\d{1,2})/i]
             };
 
             // 전체 내용 추출 대상 (마크다운 전체를 값으로 사용)
-            const FULL_CONTENT_CS = ['CS15_효능효과', 'CS16_용법용량', 'CS27_사용상주의사항',
-                'CS56_.2_기존효능효과', 'CS56_.3_기존용법용량', 'CS56_.4_기존사용상의주의사항',
-                'CS56_.5_최신효능효과', 'CS56_.6_최신용법용량', 'CS56_.7_최신사용상의주의사항',
-                'CS58_.1_별첨1효능효과', 'CS58_.2_별첨1용법용량', 'CS58_.3_별첨1사용상의주의사항'];
+            // NOTE: CS27_사용상주의사항은 extractData.md에 없어서 제거됨
+            const FULL_CONTENT_CS = ['CS15_효능효과', 'CS16_용법용량',
+                'CS56.2_기존효능효과', 'CS56.3_기존용량용법', 'CS56.4_기존사용상의주의사항',
+                'CS56.5_최신효능효과', 'CS56.6_최신용량용법', 'CS56.7_최신사용상의주의사항',
+                'CS58.1_별첨1효능효과', 'CS58.2_별첨1용법용량', 'CS58.3_별첨1사용상의주의사항'];
 
             // CS_DEFINITIONS 기반 전체 추출
             if (window.CS_DEFINITIONS) {
@@ -3682,27 +3907,26 @@
                         return;
                     }
 
-                    // 2) calculated: 이미 처리된 것 외에 플레이스홀더
+                    // 2) calculated: defaultValue가 있으면 사용, 없으면 계산 필요 표시
                     if (source === 'calculated') {
-                        extractedData.push({
-                            data_type: 'CS',
-                            variable_id: csKey,
-                            data_value: `[${def.description}] - 계산 필요`,
-                            source_raw_id: 'CALCULATED',
-                            validation_status: 'Pending'
-                        });
-                        return;
-                    }
-
-                    // 3) generated: PSUR 생성 시 자동 생성
-                    if (source === 'generated') {
-                        extractedData.push({
-                            data_type: 'CS',
-                            variable_id: csKey,
-                            data_value: `[${def.description}] - PSUR 생성 시 자동 생성`,
-                            source_raw_id: 'GENERATED',
-                            validation_status: 'Pending'
-                        });
+                        // defaultValue가 정의되어 있으면 바로 사용 (목차, 약어표 등)
+                        if (def.defaultValue) {
+                            extractedData.push({
+                                data_type: 'CS',
+                                variable_id: csKey,
+                                data_value: def.defaultValue,
+                                source_raw_id: 'CALCULATED',
+                                validation_status: 'Validated'
+                            });
+                        } else {
+                            extractedData.push({
+                                data_type: 'CS',
+                                variable_id: csKey,
+                                data_value: `[${def.description}] - 계산 필요`,
+                                source_raw_id: 'CALCULATED',
+                                validation_status: 'Pending'
+                            });
+                        }
                         return;
                     }
 
@@ -3817,15 +4041,70 @@
                         let tableData = null;
                         let sourceRawId = availableRawIds[0];
 
+                        // RAW19 통합LineListing 사용 여부 확인
+                        const hasRAW19 = availableRawIds.includes('RAW19');
+
                         // 다중 소스 테이블 처리
                         if (tableKey === '표5_신속보고내역') {
-                            // RAW12 + RAW13 병합
-                            tableData = extractAndMergeLineListing(convertedFiles, availableRawIds, '신속보고');
-                            sourceRawId = availableRawIds.join('+');
+                            if (hasRAW19) {
+                                // RAW19 통합LineListing에서 신속보고 필터링
+                                tableData = extractFromRAW19(convertedFiles, '신속', def);
+                                sourceRawId = 'RAW19';
+                            } else {
+                                // Legacy: RAW12 + RAW13 병합
+                                tableData = extractAndMergeLineListing(convertedFiles, availableRawIds, '신속보고');
+                                sourceRawId = availableRawIds.join('+');
+                            }
+                        } else if (tableKey === '표6_정기보고내역') {
+                            if (hasRAW19) {
+                                // RAW19 통합LineListing에서 정기보고 필터링
+                                tableData = extractFromRAW19(convertedFiles, '정기', def);
+                                sourceRawId = 'RAW19';
+                            } else {
+                                // Legacy: 단일 소스 파싱
+                                const sourceFile = convertedFiles.find(f =>
+                                    (f.assignedRawId || f.rawId) === 'RAW15'
+                                );
+                                tableData = sourceFile && sourceFile.markdown
+                                    ? extractTableFromMarkdown(sourceFile.markdown, tableKey)
+                                    : null;
+                                sourceRawId = 'RAW15';
+                            }
+                        } else if (tableKey === '표7_원시자료내역') {
+                            if (hasRAW19) {
+                                // RAW19 통합LineListing에서 원시자료 필터링
+                                tableData = extractFromRAW19(convertedFiles, '원시', def);
+                                sourceRawId = 'RAW19';
+                            } else {
+                                // Legacy: 단일 소스 파싱
+                                const sourceFile = convertedFiles.find(f =>
+                                    (f.assignedRawId || f.rawId) === 'RAW14'
+                                );
+                                tableData = sourceFile && sourceFile.markdown
+                                    ? extractTableFromMarkdown(sourceFile.markdown, tableKey)
+                                    : null;
+                                sourceRawId = 'RAW14';
+                            }
+                        } else if (tableKey === '표8_모든이상사례건수') {
+                            if (hasRAW19) {
+                                // RAW19 통합LineListing에서 중대성 집계
+                                tableData = extractSeriousnessFromRAW19(convertedFiles);
+                                sourceRawId = 'RAW19';
+                            } else {
+                                // Legacy: RAW12 + RAW13 + RAW14 + RAW15 병합 후 중대성 집계
+                                tableData = extractAndSummarizeSeriousness(convertedFiles, availableRawIds);
+                                sourceRawId = availableRawIds.join('+');
+                            }
                         } else if (tableKey === '표9_SOC별건수') {
-                            // RAW12 + RAW13 + RAW14 + RAW15 병합 후 SOC 피벗 분석
-                            tableData = extractAndPivotSOC(convertedFiles, availableRawIds);
-                            sourceRawId = availableRawIds.join('+');
+                            if (hasRAW19) {
+                                // RAW19 통합LineListing에서 SOC 피벗 분석
+                                tableData = extractSOCFromRAW19(convertedFiles);
+                                sourceRawId = 'RAW19';
+                            } else {
+                                // Legacy: RAW12 + RAW13 + RAW14 + RAW15 병합 후 SOC 피벗 분석
+                                tableData = extractAndPivotSOC(convertedFiles, availableRawIds);
+                                sourceRawId = availableRawIds.join('+');
+                            }
                         } else if (tableKey === '표3_연평균환자노출') {
                             // 표3은 계산 기반 테이블 (표2 + CS20 + CS21 의존)
                             tableData = {
@@ -4117,6 +4396,439 @@
         }
 
         /**
+         * 표8_모든이상사례건수: RAW12-15 병합 후 중대성 집계
+         * 명세서: 모든 LineListing 병합 → 피벗 테이블 → 중대/비중대 집계
+         */
+        function extractAndSummarizeSeriousness(convertedFiles, rawIds) {
+            try {
+                // 1. 모든 LineListing 데이터 수집
+                let seriousCases = 0;
+                let nonSeriousCases = 0;
+                const sourceBreakdown = {};
+
+                rawIds.forEach(rawId => {
+                    const file = convertedFiles.find(f => (f.assignedRawId || f.rawId) === rawId);
+                    if (!file || !file.markdown) return;
+
+                    const tableData = extractTableFromMarkdown(file.markdown, `LineListing_${rawId}`);
+                    if (tableData && tableData.data) {
+                        let rawSerious = 0, rawNonSerious = 0;
+
+                        tableData.data.forEach(row => {
+                            // 중대성 판단 (다양한 컬럼명 지원)
+                            const seriousness = row['중대성'] || row['Seriousness'] ||
+                                               row['Event Seriousness'] || row['Case Seriousness'] ||
+                                               row['serious'] || '';
+
+                            // 중대한 경우 판단
+                            const isSerious =
+                                seriousness === '중대' ||
+                                seriousness === '중대함' ||
+                                seriousness === 'Serious' ||
+                                seriousness === 'Yes' ||
+                                seriousness === 'Y' ||
+                                seriousness === 'yes' ||
+                                seriousness === '1' ||
+                                seriousness.toLowerCase().includes('serious');
+
+                            if (isSerious) {
+                                seriousCases++;
+                                rawSerious++;
+                            } else {
+                                nonSeriousCases++;
+                                rawNonSerious++;
+                            }
+                        });
+
+                        sourceBreakdown[rawId] = {
+                            serious: rawSerious,
+                            nonSerious: rawNonSerious,
+                            total: rawSerious + rawNonSerious
+                        };
+                    }
+                });
+
+                const totalCases = seriousCases + nonSeriousCases;
+
+                // 2. 결과 테이블 생성
+                const rows = [
+                    {
+                        '구분': '전체 이상사례',
+                        '중대한(건)': seriousCases,
+                        '중대하지않은(건)': nonSeriousCases,
+                        '총건수': totalCases
+                    }
+                ];
+
+                // 소스별 상세 내역 추가 (선택적)
+                Object.entries(sourceBreakdown).forEach(([rawId, data]) => {
+                    const sourceName = rawId === 'RAW12' ? '국외신속보고' :
+                                      rawId === 'RAW13' ? '국내신속보고' :
+                                      rawId === 'RAW14' ? '원시자료' :
+                                      rawId === 'RAW15' ? '정기보고' : rawId;
+                    rows.push({
+                        '구분': `  - ${sourceName}`,
+                        '중대한(건)': data.serious,
+                        '중대하지않은(건)': data.nonSerious,
+                        '총건수': data.total
+                    });
+                });
+
+                console.log(`📊 모든이상사례건수 집계: 중대 ${seriousCases}건, 비중대 ${nonSeriousCases}건, 총 ${totalCases}건`);
+
+                return {
+                    headers: ['구분', '중대한(건)', '중대하지않은(건)', '총건수'],
+                    data: rows,
+                    rowCount: rows.length,
+                    summary: {
+                        serious: seriousCases,
+                        nonSerious: nonSeriousCases,
+                        total: totalCases
+                    },
+                    sourceBreakdown: sourceBreakdown,
+                    sources: rawIds
+                };
+            } catch (error) {
+                console.warn('모든이상사례건수 집계 실패:', error);
+                return null;
+            }
+        }
+
+        /**
+         * RAW19 통합LineListing에서 보고유형별 데이터 추출 (표5, 표6, 표7용)
+         * @param {Array} convertedFiles - 변환된 파일 목록
+         * @param {string} reportType - 보고유형 ('신속', '정기', '원시')
+         * @param {Object} def - 테이블 정의
+         * @returns {Object} 추출된 테이블 데이터
+         */
+        function extractFromRAW19(convertedFiles, reportType, def) {
+            try {
+                // RAW19 파일 찾기
+                const raw19File = convertedFiles.find(f =>
+                    (f.assignedRawId || f.rawId) === 'RAW19'
+                );
+                if (!raw19File || !raw19File.markdown) {
+                    console.warn(`RAW19 파일을 찾을 수 없습니다`);
+                    return null;
+                }
+
+                // 마크다운에서 테이블 파싱
+                const tableData = extractTableFromMarkdown(raw19File.markdown, 'RAW19_LineListing');
+                if (!tableData || !tableData.data || tableData.data.length === 0) {
+                    console.warn('RAW19에서 테이블 데이터를 추출할 수 없습니다');
+                    return null;
+                }
+
+                // 보고유형 컬럼명 확인 (다양한 형식 지원)
+                const typeColumnNames = ['원시/신속/정기', '보고유형', 'Report_Type', '유형'];
+                let typeColumn = null;
+                for (const name of typeColumnNames) {
+                    if (tableData.headers.includes(name)) {
+                        typeColumn = name;
+                        break;
+                    }
+                }
+
+                // 보고유형 컬럼이 없으면 전체 데이터 반환
+                if (!typeColumn) {
+                    console.warn('보고유형 컬럼을 찾을 수 없습니다. 전체 데이터 반환.');
+                    return tableData;
+                }
+
+                // 보고유형 필터링
+                const filteredRows = tableData.data.filter(row => {
+                    const value = row[typeColumn] || '';
+                    return value === reportType || value.includes(reportType);
+                });
+
+                // 출력 컬럼 매핑
+                const outputRows = filteredRows.map(row => ({
+                    '보고일자': row['Report_Date'] || row['보고일자'] || row['보고완료일자'] || '',
+                    '관리번호': row['Report_Number'] || row['관리번호'] || row['부서접수번호'] || '',
+                    '이상사례명': row['k-MedDRA PT_v28.1'] || row['AE_name'] || row['이상사례명'] || row['PT'] || '',
+                    '중대성': row['Seriousness'] || row['중대성'] || '',
+                    '비고': ''
+                }));
+
+                console.log(`📋 RAW19 ${reportType}보고 추출: ${outputRows.length}건`);
+
+                return {
+                    headers: ['보고일자', '관리번호', '이상사례명', '중대성', '비고'],
+                    data: outputRows,
+                    rowCount: outputRows.length,
+                    source: 'RAW19',
+                    reportType: reportType
+                };
+            } catch (error) {
+                console.warn(`RAW19 ${reportType}보고 추출 실패:`, error);
+                return null;
+            }
+        }
+
+        /**
+         * RAW19 통합LineListing에서 중대성 집계 (표8용)
+         * @param {Array} convertedFiles - 변환된 파일 목록
+         * @returns {Object} 중대성 집계 테이블
+         */
+        function extractSeriousnessFromRAW19(convertedFiles) {
+            try {
+                // RAW19 파일 찾기
+                const raw19File = convertedFiles.find(f =>
+                    (f.assignedRawId || f.rawId) === 'RAW19'
+                );
+                if (!raw19File || !raw19File.markdown) {
+                    console.warn('RAW19 파일을 찾을 수 없습니다');
+                    return null;
+                }
+
+                // 마크다운에서 테이블 파싱
+                const tableData = extractTableFromMarkdown(raw19File.markdown, 'RAW19_LineListing');
+                if (!tableData || !tableData.data || tableData.data.length === 0) {
+                    return null;
+                }
+
+                // 중대성 컬럼 찾기
+                const seriousnessColumns = ['Seriousness', '중대성', 'Event Seriousness', 'Case Seriousness'];
+                let seriousnessCol = null;
+                for (const col of seriousnessColumns) {
+                    if (tableData.headers.includes(col)) {
+                        seriousnessCol = col;
+                        break;
+                    }
+                }
+
+                // 보고유형 컬럼 찾기
+                const typeColumns = ['원시/신속/정기', '보고유형', 'Report_Type'];
+                let typeCol = null;
+                for (const col of typeColumns) {
+                    if (tableData.headers.includes(col)) {
+                        typeCol = col;
+                        break;
+                    }
+                }
+
+                // 중대성 집계
+                let seriousCases = 0;
+                let nonSeriousCases = 0;
+                const breakdown = { '신속': { serious: 0, nonSerious: 0 }, '정기': { serious: 0, nonSerious: 0 }, '원시': { serious: 0, nonSerious: 0 } };
+
+                tableData.data.forEach(row => {
+                    const seriousness = seriousnessCol ? (row[seriousnessCol] || '') : '';
+                    const reportType = typeCol ? (row[typeCol] || '') : '';
+
+                    // 중대 여부 판단 (예, Yes, Serious, 중대, 1 등)
+                    const isSerious =
+                        seriousness === '예' ||
+                        seriousness === 'Yes' ||
+                        seriousness === 'Y' ||
+                        seriousness === '중대' ||
+                        seriousness === '중대함' ||
+                        seriousness === 'Serious' ||
+                        seriousness === '1' ||
+                        seriousness.toLowerCase().includes('serious');
+
+                    if (isSerious) {
+                        seriousCases++;
+                        if (breakdown[reportType]) breakdown[reportType].serious++;
+                    } else {
+                        nonSeriousCases++;
+                        if (breakdown[reportType]) breakdown[reportType].nonSerious++;
+                    }
+                });
+
+                const totalCases = seriousCases + nonSeriousCases;
+
+                // 결과 테이블 생성
+                const rows = [
+                    { '구분': '전체 이상사례', '중대한(건)': seriousCases, '중대하지않은(건)': nonSeriousCases, '총건수': totalCases }
+                ];
+
+                // 보고유형별 상세
+                Object.entries(breakdown).forEach(([type, data]) => {
+                    if (data.serious > 0 || data.nonSerious > 0) {
+                        rows.push({
+                            '구분': `  - ${type}보고`,
+                            '중대한(건)': data.serious,
+                            '중대하지않은(건)': data.nonSerious,
+                            '총건수': data.serious + data.nonSerious
+                        });
+                    }
+                });
+
+                console.log(`📊 RAW19 중대성 집계: 중대 ${seriousCases}건, 비중대 ${nonSeriousCases}건, 총 ${totalCases}건`);
+
+                return {
+                    headers: ['구분', '중대한(건)', '중대하지않은(건)', '총건수'],
+                    data: rows,
+                    rowCount: rows.length,
+                    summary: { serious: seriousCases, nonSerious: nonSeriousCases, total: totalCases },
+                    source: 'RAW19'
+                };
+            } catch (error) {
+                console.warn('RAW19 중대성 집계 실패:', error);
+                return null;
+            }
+        }
+
+        /**
+         * RAW19 통합LineListing에서 SOC별 피벗 분석 (표9용)
+         * @param {Array} convertedFiles - 변환된 파일 목록
+         * @returns {Object} SOC별 피벗 테이블
+         */
+        function extractSOCFromRAW19(convertedFiles) {
+            try {
+                // RAW19 파일 찾기
+                const raw19File = convertedFiles.find(f =>
+                    (f.assignedRawId || f.rawId) === 'RAW19'
+                );
+                if (!raw19File || !raw19File.markdown) {
+                    console.warn('[extractSOCFromRAW19] RAW19 파일을 찾을 수 없습니다');
+                    return null;
+                }
+
+                console.log('[extractSOCFromRAW19] RAW19 마크다운 길이:', raw19File.markdown.length);
+
+                // 마크다운에서 테이블 파싱
+                const tableData = extractTableFromMarkdown(raw19File.markdown, 'RAW19_LineListing');
+                if (!tableData || !tableData.data || tableData.data.length === 0) {
+                    console.warn('[extractSOCFromRAW19] 테이블 파싱 실패 또는 데이터 없음');
+                    return null;
+                }
+
+                // 디버깅: 파싱된 테이블 정보 출력
+                console.log('[extractSOCFromRAW19] 파싱된 테이블:');
+                console.log('  - 헤더 수:', tableData.headers?.length);
+                console.log('  - 데이터 행 수:', tableData.data?.length);
+                console.log('  - 헤더 목록:', tableData.headers);
+
+                // SOC/PT 컬럼 찾기 (정확한 매칭 우선, 부분 매칭 폴백)
+                const socColumns = ['k-MedDRA SOC_v28.1', 'SOC', 'MedDRA SOC', 'System Organ Class', 'k-MedDRA SOC'];
+                const ptColumns = ['k-MedDRA PT_v28.1', 'PT', 'MedDRA PT', 'Preferred Term', 'k-MedDRA PT'];
+                const seriousnessColumns = ['Seriousness', '중대성', 'Event Seriousness'];
+
+                let socCol = null, ptCol = null, seriousnessCol = null;
+
+                // 정확한 매칭 시도
+                for (const col of socColumns) {
+                    if (tableData.headers.includes(col)) { socCol = col; break; }
+                }
+                for (const col of ptColumns) {
+                    if (tableData.headers.includes(col)) { ptCol = col; break; }
+                }
+                for (const col of seriousnessColumns) {
+                    if (tableData.headers.includes(col)) { seriousnessCol = col; break; }
+                }
+
+                // 부분 매칭 폴백 (SOC)
+                if (!socCol) {
+                    console.log('[extractSOCFromRAW19] 정확한 SOC 컬럼 매칭 실패, 부분 매칭 시도...');
+                    socCol = tableData.headers.find(h =>
+                        h.toUpperCase().includes('SOC') &&
+                        !h.toUpperCase().includes('SOURCE')
+                    );
+                    if (socCol) {
+                        console.log('[extractSOCFromRAW19] 부분 매칭으로 SOC 컬럼 발견:', socCol);
+                    }
+                }
+
+                // 부분 매칭 폴백 (PT)
+                if (!ptCol) {
+                    ptCol = tableData.headers.find(h =>
+                        h.toUpperCase().includes('PT') &&
+                        h.toUpperCase().includes('MEDDRA')
+                    );
+                }
+
+                console.log('[extractSOCFromRAW19] 컬럼 매핑 결과:');
+                console.log('  - SOC 컬럼:', socCol || '❌ 미발견');
+                console.log('  - PT 컬럼:', ptCol || '(선택사항)');
+                console.log('  - Seriousness 컬럼:', seriousnessCol || '(선택사항)');
+
+                if (!socCol) {
+                    console.warn('[extractSOCFromRAW19] SOC 컬럼을 찾을 수 없습니다. 헤더:', tableData.headers);
+                    return null;
+                }
+
+                // SOC별 집계
+                const socMap = {};
+                let totalSerious = 0, totalNonSerious = 0;
+
+                // 디버깅: 첫 3행 샘플 출력
+                console.log('[extractSOCFromRAW19] 첫 3행 샘플 데이터:');
+                tableData.data.slice(0, 3).forEach((row, i) => {
+                    console.log(`  행 ${i+1}: SOC="${row[socCol]}", PT="${ptCol ? row[ptCol] : 'N/A'}", Seriousness="${seriousnessCol ? row[seriousnessCol] : 'N/A'}"`);
+                });
+
+                tableData.data.forEach(row => {
+                    const soc = row[socCol] || '기타';
+                    const pt = ptCol ? (row[ptCol] || '') : '';
+                    const seriousness = seriousnessCol ? (row[seriousnessCol] || '') : '';
+
+                    const isSerious =
+                        seriousness === '예' ||
+                        seriousness === 'Yes' ||
+                        seriousness === 'Y' ||
+                        seriousness === '중대' ||
+                        seriousness.toLowerCase().includes('serious');
+
+                    if (!socMap[soc]) {
+                        socMap[soc] = { serious: 0, nonSerious: 0, pts: new Set() };
+                    }
+                    if (isSerious) {
+                        socMap[soc].serious++;
+                        totalSerious++;
+                    } else {
+                        socMap[soc].nonSerious++;
+                        totalNonSerious++;
+                    }
+                    if (pt) socMap[soc].pts.add(pt);
+                });
+
+                const totalCases = totalSerious + totalNonSerious;
+
+                // 결과 테이블 생성
+                const rows = [];
+                Object.entries(socMap)
+                    .sort((a, b) => (b[1].serious + b[1].nonSerious) - (a[1].serious + a[1].nonSerious))
+                    .forEach(([soc, data]) => {
+                        const total = data.serious + data.nonSerious;
+                        const ratio = totalCases > 0 ? ((total / totalCases) * 100).toFixed(1) : '0.0';
+                        rows.push({
+                            'SOC': soc,
+                            'PT': Array.from(data.pts).join(', ').substring(0, 100) + (data.pts.size > 3 ? '...' : ''),
+                            '중대한(건)': data.serious,
+                            '중대하지않은(건)': data.nonSerious,
+                            '총누적(건)': total,
+                            '비율(%)': ratio + '%'
+                        });
+                    });
+
+                // Total 행 추가
+                rows.push({
+                    'SOC': 'Total',
+                    'PT': '',
+                    '중대한(건)': totalSerious,
+                    '중대하지않은(건)': totalNonSerious,
+                    '총누적(건)': totalCases,
+                    '비율(%)': '100.0%'
+                });
+
+                console.log(`📊 RAW19 SOC 피벗: ${Object.keys(socMap).length}개 SOC, 총 ${totalCases}건`);
+
+                return {
+                    headers: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
+                    data: rows,
+                    rowCount: rows.length,
+                    summary: { socCount: Object.keys(socMap).length, serious: totalSerious, nonSerious: totalNonSerious, total: totalCases },
+                    source: 'RAW19'
+                };
+            } catch (error) {
+                console.warn('RAW19 SOC 피벗 실패:', error);
+                return null;
+            }
+        }
+
+        /**
          * 하이브리드 데이터 추출 - LLM 검증 및 보완 (싱글턴 모듈 연동)
          * @param {Array} regexExtractedData - Regex로 추출한 데이터
          * @param {Object} convertedMarkdowns - RAW 파일별 마크다운 내용
@@ -4168,33 +4880,33 @@
                         // Fallback: CS_DEFINITIONS 없을 경우 기본 목록
                         'CS15_효능효과', 'CS16_용법용량',
                         // CS17 허가현황 (RAW4)
-                        'CS17_전세계허가현황표', 'CS17_.1_허가국가', 'CS17_.2_허가일',
-                        'CS17_.3_허가품목명', 'CS17_.4_허가권자', 'CS17_.5_허가비고',
+                        'CS17_전세계허가현황표', 'CS17.1_허가국가', 'CS17.2_허가일',
+                        'CS17.3_허가품목명', 'CS17.4_허가권자', 'CS17.5_허가비고',
                         // CS18 임상노출 (RAW8)
                         'CS18_임상노출',
                         // CS19 시판후노출 (RAW3)
-                        'CS19_시판후노출count시작날짜', 'CS19_.1_시판후노출count종료날짜',
-                        'CS19_.2_시판후판매연도', 'CS19_.3_시판후판매연도별판매량',
+                        'CS19_시판후노출count시작날짜', 'CS19.1_시판후노출count종료날짜',
+                        'CS19.1_시판후판매연도', 'CS19.2_시판후판매연도별판매량',
                         // CS20-21 용량/환자 (RAW1.1, RAW2.1)
                         'CS20_1일사용량', 'CS21_환자1명당사용량',
                         // CS25 신속보고 (RAW12, RAW13)
-                        'CS25_.1_신속보고일자', 'CS25_.2_신속관리번호',
-                        'CS25_.3_신속이상사례명', 'CS25_.4_신속비고',
+                        'CS25.1_신속보고일자', 'CS25.2_신속관리번호',
+                        'CS25.3_신속이상사례명', 'CS25.4_신속비고',
                         // CS28-30 원시자료 (RAW14)
                         'CS28_원시총환자수', 'CS29_원시총이상사례수', 'CS30_원시중대한사례수',
                         // CS55 안전성조치 (RAW5, RAW6)
                         'CS55_안전성조치서술문',
                         // CS56 참고정보변경 (RAW7)
                         'CS56_참고정보의변경서술문', 'CS56_별첨2참고정보변경표',
-                        'CS56_.1_허가사항변경일', 'CS56_.2_기존효능효과', 'CS56_.3_기존용법용량',
-                        'CS56_.4_기존사용상의주의사항', 'CS56_.5_최신효능효과',
-                        'CS56_.6_최신용법용량', 'CS56_.7_최신사용상의주의사항',
+                        'CS56.1_허가사항변경일', 'CS56.2_기존효능효과', 'CS56.3_기존용량용법',
+                        'CS56.4_기존사용상의주의사항', 'CS56.5_최신효능효과',
+                        'CS56.6_최신용량용법', 'CS56.7_최신사용상의주의사항',
                         // CS58 별첨1 (RAW1.1, RAW2)
-                        'CS58_.1_별첨1효능효과', 'CS58_.2_별첨1용법용량', 'CS58_.3_별첨1사용상의주의사항',
+                        'CS58.1_별첨1효능효과', 'CS58.2_별첨1용법용량', 'CS58.3_별첨1사용상의주의사항',
                         // CS59 별첨3 일람표 (RAW12-15)
                         'CS59_별첨3_일람표',
                         // CALCULATED: RAW 데이터에서 계산 필요한 변수들
-                        'CS19_.4_시판후판매량합계',  // RAW3 판매량 합계
+                        'CS19.3_시판후판매량합계',  // RAW3 판매량 합계
                         'CS22_연평균판매량',         // 표2 연평균
                         'CS32_신속정기보고총사례수', // RAW12+13+15 합계
                         'CS33_신속보고총사례수',     // RAW12+13 합계
@@ -4347,7 +5059,7 @@
                     { id: 'CS10_표목차', description: '보고서에 포함된 표 목록 (표1~표9 등 표 제목 리스트)' },
                     { id: 'CS11_별첨목차', description: '별첨 문서 목록 (별첨1: 첨부문서, 별첨2: 변경대비표, 별첨3: 일람표 등)' },
                     { id: 'CS12_약어표', description: '문서에서 사용된 약어와 정의 목록을 표 형식으로 작성' },
-                    { id: 'CS17_.6_허가현황서술문', description: '전세계 허가 현황을 요약한 서술문 (어느 국가에서 언제 허가되었는지)' },
+                    { id: 'CS17.6_허가현황서술문', description: '전세계 허가 현황을 요약한 서술문 (어느 국가에서 언제 허가되었는지)' },
                     { id: 'CS57_참고문헌리스트', description: '문서에서 인용된 참고문헌 목록을 번호순으로 정리' }
                 ];
                 // placeholder 상태인 GENERATED 항목만 필터링 (기존 isPlaceholder 함수 사용)
@@ -4392,7 +5104,7 @@
                 // 누락된 CS 및 PH에서 필요한 RAW 파일 식별
                 const priorityRawIds = new Set();
                 missingCS.forEach(csKey => {
-                    const baseKey = csKey.split('_')[0] + '_' + csKey.split('_')[1]?.split('.')[0]; // CS17_.1 -> CS17
+                    const baseKey = csKey.split('_')[0] + '_' + csKey.split('_')[1]?.split('.')[0]; // CS17.1 -> CS17
                     const prefix = csKey.substring(0, 4); // CS17
                     Object.entries(CS_TO_RAW_PRIORITY).forEach(([csPrefix, rawIds]) => {
                         if (csKey.startsWith(csPrefix) || baseKey?.startsWith(csPrefix)) {
@@ -4475,8 +5187,8 @@ ${allMarkdowns.substring(0, 60000)}
    - **PH4_원시자료서술문**: RAW14 원시자료에서 추출. 형식: "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 N명의 환자에서 M건의 이상사례가 확인되었으며, SOC별로 분석한 결과... (200-400자)"
    - **PH5_원시자료서술문2**: RAW14 원시자료에서 추출. 표7 참조 문구 포함. 형식: "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 N건이며..."
    - **PH6_개별증례분석문**: RAW12/13/14/15 LineListing 통합 분석. 형식: "개별 증례 분석 결과, 중대한 이상사례 N건 중 인과관계가 '관련있음' 또는 '가능함'으로 평가된 사례는 M건이다..."
-   - **PH7_새로분석된의뢰의시험**: RAW8/RAW17에서 추출. 해당 없으면: "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다."
-   - **PH7_.1_새로분석된비중재시험**: RAW17에서 NIS 시험 정보 추출. 해당 없으면: "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다."
+   - **PH7_새로_분석된_의뢰의_시험**: RAW8/RAW17에서 추출. 해당 없으면: "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다."
+   - **PH7.1_새로분석된_비중재시험**: RAW17에서 NIS 시험 정보 추출. 해당 없으면: "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다."
    - **PH8_시작또는진행중시험**: RAW8/RAW17에서 진행중인 시험 정보 추출. 해당 없으면: "본 보고기간 동안 안전성 문제를 검토하기 위한 새로운 시험이 없다."
    - **PH8_.1_시작또는진행중인비중재시험**: RAW17에서 진행중인 NIS 정보 추출.
    - **PH9_문헌에발표된안전성**: RAW9 문헌자료에서 안전성 관련 내용 요약. 해당 없으면: "본 보고기간 동안 문헌에 발표된 중요한 안전성 정보는 없다."
@@ -4488,29 +5200,29 @@ ${allMarkdowns.substring(0, 60000)}
    - CS10_표목차: 마크다운 목록 형식으로 표 목록 (예: "표 1. 전세계 허가현황\\n표 2. 연도별 판매량\\n표 3. 연평균 환자노출..." 형식)
    - CS11_별첨목차: 마크다운 목록 형식으로 별첨 목록 (예: "별첨 1. 최신 첨부문서\\n별첨 2. 참고정보 변경 대비표\\n별첨 3. 이상사례 일람표")
    - CS12_약어표: 마크다운 표 형식으로 약어|정의 목록 (예: | 약어 | 정의 |\\n|---|---|\\n| PSUR | 정기 안전성 업데이트 보고서 |)
-   - **CS17_.6_허가현황서술문** (⚠️ 필수!): RAW4 허가현황 데이터를 기반으로 서술문 작성. 반드시 "본 의약품은 YYYY년 MM월 DD일 [국가]에서 최초 허가되었으며, 이후 [국가](YYYY-MM-DD), [국가](YYYY-MM-DD) 등에서 순차적으로 허가되었다." 형식으로 작성. CS17_.1~CS17_.5에서 추출한 정보를 활용하여 완전한 문장으로 생성!
+   - **CS17.6_허가현황서술문** (⚠️ 필수!): RAW4 허가현황 데이터를 기반으로 서술문 작성. 반드시 "본 의약품은 YYYY년 MM월 DD일 [국가]에서 최초 허가되었으며, 이후 [국가](YYYY-MM-DD), [국가](YYYY-MM-DD) 등에서 순차적으로 허가되었다." 형식으로 작성. CS17.1~CS17.5에서 추출한 정보를 활용하여 완전한 문장으로 생성!
    - **CS57_참고문헌리스트** (⚠️ 필수!): RAW9 문헌자료에서 참고문헌 목록 생성. 반드시 번호순 목록 형식 (예: "1. Smith J. et al. Drug Safety Study. J Pharm. 2024.\\n2. Lee K. et al. Clinical Trial Results. BMJ. 2023.")으로 작성. RAW9 데이터가 없으면 "해당 보고기간 내 참고문헌 없음"으로 작성!
 4. **검증**: Regex 추출 결과 중 명백히 틀린 값이 있으면 수정하세요.
 5. **CS17 허가현황 추출** (RAW4 허가현황 파일에서):
    - CS17_전세계허가현황표: 마크다운 표 형식 (| 국가 | 브랜드명 | 허가번호 | 허가상태 | 허가일 |)
-   - CS17_.1_허가국가: 허가된 국가 목록 (쉼표 구분, 예: "한국, 미국, EU, 일본")
-   - CS17_.2_허가일: 각 국가별 최초 허가일 (예: "한국: 2024-01-15, 미국: 2024-05-15")
-   - CS17_.3_허가품목명: 각 국가별 브랜드명 (예: "한국: 알츠정, 미국: Alzemed US")
-   - CS17_.4_허가권자: 품목허가권자/담당자 정보
-   - CS17_.5_허가비고: 허가 관련 특이사항 (조건부허가, 심사중 등)
+   - CS17.1_허가국가: 허가된 국가 목록 (쉼표 구분, 예: "한국, 미국, EU, 일본")
+   - CS17.2_허가일: 각 국가별 최초 허가일 (예: "한국: 2024-01-15, 미국: 2024-05-15")
+   - CS17.3_허가품목명: 각 국가별 브랜드명 (예: "한국: 알츠정, 미국: Alzemed US")
+   - CS17.4_허가권자: 품목허가권자/담당자 정보
+   - CS17.5_허가비고: 허가 관련 특이사항 (조건부허가, 심사중 등)
 6. **CS18 임상노출** (RAW8에서): 임상시험 노출 환자수, 기간 등
 7. **CS20, CS21 용량 정보** (RAW1.1 또는 RAW2.1 첨부문서에서 반드시 추출):
    - CS20_1일사용량: **⚠️ 용법용량 섹션에서 1일 권장 사용량 숫자만 추출!** (예: "20", "10" 등 숫자만, 단위 제외)
    - CS21_환자1명당사용량: **⚠️ 1일 사용량 × 30일 = 1개월분으로 계산!** (예: CS20이 20이면 → "600")
 8. **CS19 시판후노출** (RAW3에서):
    - CS19_시판후노출count시작날짜: 판매량 집계 시작일
-   - CS19_.1_시판후노출count종료날짜: 판매량 집계 종료일
-   - CS19_.2_시판후판매연도: 판매 데이터가 있는 연도 목록 (예: "2020, 2021, 2022, 2023, 2024")
-   - CS19_.3_시판후판매연도별판매량: 연도별 판매량 (예: "2020: 1000, 2021: 1500, 2022: 2000")
-   - CS19_.4_시판후판매량합계: **⚠️ 반드시 연도별 판매량을 모두 합산하여 계산!** (예: 1000+1500+2000=4500 → "4500")
+   - CS19.1_시판후노출count종료날짜: 판매량 집계 종료일
+   - CS19.1_시판후판매연도: 판매 데이터가 있는 연도 목록 (예: "2020, 2021, 2022, 2023, 2024")
+   - CS19.2_시판후판매연도별판매량: 연도별 판매량 (예: "2020: 1000, 2021: 1500, 2022: 2000")
+   - CS19.3_시판후판매량합계: **⚠️ 반드시 연도별 판매량을 모두 합산하여 계산!** (예: 1000+1500+2000=4500 → "4500")
 9. **CS22, CS23 환자노출 계산** (정확한 공식):
-   - CS22_연평균판매량: **⚠️ 공식: (CS19_.4 / 기간일수) × 365**
-     - 기간일수 = CS19_.1_시판후노출count종료날짜 - CS19_시판후노출count시작날짜
+   - CS22_연평균판매량: **⚠️ 공식: (CS19.3 / 기간일수) × 365**
+     - 기간일수 = CS19.1_시판후노출count종료날짜 - CS19_시판후노출count시작날짜
      - 예: 2020-01-01 ~ 2024-12-31 (1826일), 합계 4500 → (4500/1826)×365 = 899
    - CS23_연평균환자노출: **⚠️ 공식: CS22_연평균판매량 ÷ CS21_환자1명당사용량**
      - 예: CS22=899, CS21=600 → 899÷600 ≈ 1.5 (약 1.5명)
@@ -4537,12 +5249,12 @@ ${allMarkdowns.substring(0, 60000)}
     "CS0_성분명": "추출된 값",
     "CS12_약어표": "| 약어 | 정의 |\\n|---|---|\\n| PSUR | 정기 안전성 업데이트 보고서 |",
     "CS17_전세계허가현황표": "| 국가 | 브랜드명 | 허가번호 | 허가상태 | 허가일 |\\n|---|---|---|---|---|\\n| 한국 | 알츠정 | MFDS2024-001 | 허가완료 | 2024-01-15 |",
-    "CS17_.1_허가국가": "한국, 미국, EU, 일본, 호주, 캐나다",
-    "CS17_.2_허가일": "한국: 2024-01-15, 미국: 2024-05-15, EU: 2024-06-15, 일본: 2023-10-05",
-    "CS17_.3_허가품목명": "한국: 알츠정, 미국: Alzemed US, EU: Alzemed EU, 일본: Dnpil",
-    "CS17_.4_허가권자": "Kim J., Park M., Lee S., Choi Y.",
-    "CS17_.5_허가비고": "EU: 조건부허가에서 정규허가로 전환 완료, 일본: 알츠하이머 적응증 CRL 응답 준비중",
-    "CS17_.6_허가현황서술문": "본 의약품은 2023년 10월 5일 일본에서 최초 허가되었으며, 이후 한국(2024-01-15), 미국(2024-05-15), EU(2024-06-15) 등에서 순차적으로 허가되었다.",
+    "CS17.1_허가국가": "한국, 미국, EU, 일본, 호주, 캐나다",
+    "CS17.2_허가일": "한국: 2024-01-15, 미국: 2024-05-15, EU: 2024-06-15, 일본: 2023-10-05",
+    "CS17.3_허가품목명": "한국: 알츠정, 미국: Alzemed US, EU: Alzemed EU, 일본: Dnpil",
+    "CS17.4_허가권자": "Kim J., Park M., Lee S., Choi Y.",
+    "CS17.5_허가비고": "EU: 조건부허가에서 정규허가로 전환 완료, 일본: 알츠하이머 적응증 CRL 응답 준비중",
+    "CS17.6_허가현황서술문": "본 의약품은 2023년 10월 5일 일본에서 최초 허가되었으며, 이후 한국(2024-01-15), 미국(2024-05-15), EU(2024-06-15) 등에서 순차적으로 허가되었다.",
     "CS20_1일사용량": "20",
     "CS21_환자1명당사용량": "600",
     "CS22_연평균판매량": "4824121",
@@ -4557,8 +5269,8 @@ ${allMarkdowns.substring(0, 60000)}
     "PH4_원시자료서술문": "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 15명의 환자에서 23건의 이상사례가 확인되었으며...",
     "PH5_원시자료서술문2": "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 5건이며...",
     "PH6_개별증례분석문": "개별 증례 분석 결과, 중대한 이상사례 8건 중 인과관계가 '관련있음' 또는 '가능함'으로 평가된 사례는 3건이다...",
-    "PH7_새로분석된의뢰의시험": "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다.",
-    "PH7_.1_새로분석된비중재시험": "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다.",
+    "PH7_새로_분석된_의뢰의_시험": "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다.",
+    "PH7.1_새로분석된_비중재시험": "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다.",
     "PH8_시작또는진행중시험": "본 보고기간 동안 안전성 문제를 검토하기 위하여 특별히 계획되었거나 실행된 새로운 시험이 없어 해당사항이 없다.",
     "PH8_.1_시작또는진행중인비중재시험": "해당사항 없음.",
     "PH9_문헌에발표된안전성": "본 보고기간 동안 문헌에 발표된 중요한 안전성 정보는 없다.",
@@ -4573,7 +5285,7 @@ ${allMarkdowns.substring(0, 60000)}
     "CS0_성분명": 0.95,
     "CS12_약어표": 0.85,
     "CS17_전세계허가현황표": 0.9,
-    "CS17_.1_허가국가": 0.95,
+    "CS17.1_허가국가": 0.95,
     "CS20_1일사용량": 0.9,
     "CS21_환자1명당사용량": 0.9,
     "CS33_신속보고총사례수": 0.95,
@@ -4582,7 +5294,7 @@ ${allMarkdowns.substring(0, 60000)}
     "PH4_원시자료서술문": 0.85,
     "PH5_원시자료서술문2": 0.85,
     "PH6_개별증례분석문": 0.8,
-    "PH7_새로분석된의뢰의시험": 0.9,
+    "PH7_새로_분석된_의뢰의_시험": 0.9,
     "PH8_시작또는진행중시험": 0.9,
     "PH9_문헌에발표된안전성": 0.85,
     "PH10_유효성관련정보": 0.8,
@@ -4675,10 +5387,10 @@ ${allMarkdowns.substring(0, 60000)}
                 // GENERATED/LLM 생성 항목 목록 (placeholder 체크 우회 대상 - 이 항목들은 LLM이 반드시 생성)
                 const generatedVarIds = [
                     // CS GENERATED 항목
-                    'CS9_목차', 'CS10_표목차', 'CS11_별첨목차', 'CS12_약어표', 'CS17_.6_허가현황서술문', 'CS57_참고문헌리스트',
+                    'CS9_목차', 'CS10_표목차', 'CS11_별첨목차', 'CS12_약어표', 'CS17.6_허가현황서술문', 'CS57_참고문헌리스트',
                     // PH 서술문 항목 (모두 LLM 생성)
                     'PH4_원시자료서술문', 'PH5_원시자료서술문2', 'PH6_개별증례분석문',
-                    'PH7_새로분석된의뢰의시험', 'PH7_.1_새로분석된비중재시험',
+                    'PH7_새로_분석된_의뢰의_시험', 'PH7.1_새로분석된_비중재시험',
                     'PH8_시작또는진행중시험', 'PH8_.1_시작또는진행중인비중재시험',
                     'PH9_문헌에발표된안전성', 'PH10_유효성관련정보',
                     'PH11_총괄평가문', 'PH12_결론'
@@ -4738,10 +5450,10 @@ ${allMarkdowns.substring(0, 60000)}
                     if (!existing || isPlaceholder(existing.data_value)) {
                         let generatedValue = null;
 
-                        // CS17_.6_허가현황서술문: CS17_.1~CS17_.5 데이터 기반 서술문 생성
-                        if (varId === 'CS17_.6_허가현황서술문') {
-                            const cs17_1 = enhancedData.find(d => d.variable_id === 'CS17_.1_허가국가')?.data_value;
-                            const cs17_2 = enhancedData.find(d => d.variable_id === 'CS17_.2_허가일')?.data_value;
+                        // CS17.6_허가현황서술문: CS17.1~CS17.5 데이터 기반 서술문 생성
+                        if (varId === 'CS17.6_허가현황서술문') {
+                            const cs17_1 = enhancedData.find(d => d.variable_id === 'CS17.1_허가국가')?.data_value;
+                            const cs17_2 = enhancedData.find(d => d.variable_id === 'CS17.2_허가일')?.data_value;
                             if (cs17_1 && cs17_2 && !isPlaceholder(cs17_1) && !isPlaceholder(cs17_2)) {
                                 // 허가일에서 최초 허가 정보 추출
                                 const dates = cs17_2.split(',').map(d => d.trim());
@@ -5222,7 +5934,7 @@ ${allMarkdowns.substring(0, 60000)}
 많이 보고된 PT가 뭔지에 따라서 서술스타일이 달라지게 된다.`,
                 examples: []
             },
-            'PH7_새로분석된의뢰의시험': {
+            'PH7_새로_분석된_의뢰의_시험': {
                 rawIds: ['RAW8', 'RAW17', 'RAW10'],
                 requiredCS: ['CS0_성분명', 'CS1_브랜드명'],
                 requiredTables: [],
@@ -5233,7 +5945,7 @@ IIT정보는[RAW17_IIT/NIS트래커]에서 찾는다. 해당 트래커에서 NIS
                     '본 보고기간 동안 "[CS1_브랜드명]([CS0_성분명])"과 관련된 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다.'
                 ]
             },
-            'PH7.1_새로분석된비중재시험': {
+            'PH7.1_새로분석된_비중재시험': {
                 rawIds: ['RAW17', 'RAW11'],
                 requiredCS: [],
                 requiredTables: [],
@@ -5252,7 +5964,7 @@ IIT정보는[RAW17_IIT/NIS트래커]에서 찾는다. 해당 트래커에서 NIS
                     '본 보고기간 동안 "[CS1_브랜드명]([CS0_성분명])"과 관련된 안전성 문제를 검토하기 위하여 특별히 계획되었거나 실행된 새로운 시험이 없어 해당사항이 없다.'
                 ]
             },
-            'PH8.1_시작또는진행중인비중재시험': {
+            'PH8.1_시작또는진행중인_비중재시험': {
                 rawIds: ['RAW17'],
                 requiredCS: [],
                 requiredTables: [],
@@ -5491,8 +6203,8 @@ ${phIds.map(id => `  "${id}": "생성된 서술문..."`).join(',\n')}
             const phase1Groups = [
                 ['PH4_원시자료서술문', 'PH5_원시자료서술문2'],
                 ['PH6_개별증례분석문'],
-                ['PH7_새로분석된의뢰의시험', 'PH7.1_새로분석된비중재시험'],
-                ['PH8_시작또는진행중시험', 'PH8.1_시작또는진행중인비중재시험'],
+                ['PH7_새로_분석된_의뢰의_시험', 'PH7.1_새로분석된_비중재시험'],
+                ['PH8_시작또는진행중시험', 'PH8.1_시작또는진행중인_비중재시험'],
                 ['PH9_문헌에발표된안전성'],
                 ['PH10_유효성관련정보']
             ];
@@ -5664,9 +6376,24 @@ ${phIds.map(id => `  "${id}": "생성된 서술문..."`).join(',\n')}
                 // 3-1. 하이브리드 추출 데이터 로드 (사전 추출된 CS/PH/Table)
                 const extractedData = JSON.parse(localStorage.getItem('extractedData') || '[]');
                 const extractedDataSummary = {};
+
+                // 표 데이터는 전체 포함 (잘리면 안됨), 나머지는 적절히 제한
+                const TABLE_VARIABLE_PATTERNS = ['표2_', '표3_', '표5_', '표6_', '표7_', '표8_', '표9_'];
+                const isTableVariable = (varId) => TABLE_VARIABLE_PATTERNS.some(p => varId.startsWith(p));
+
                 extractedData.forEach(item => {
                     if (item.data_value && item.data_value !== 'DATA_NOT_FOUND') {
-                        extractedDataSummary[item.variable_id] = item.data_value.substring(0, 500);
+                        const varId = item.variable_id;
+                        if (isTableVariable(varId)) {
+                            // 표 데이터: 전체 포함 (최대 15000자 - 큰 표도 수용)
+                            extractedDataSummary[varId] = item.data_value.substring(0, 15000);
+                        } else if (varId.startsWith('PH')) {
+                            // PH 서술문: 2000자까지
+                            extractedDataSummary[varId] = item.data_value.substring(0, 2000);
+                        } else {
+                            // CS 변수 등: 500자
+                            extractedDataSummary[varId] = item.data_value.substring(0, 500);
+                        }
                     }
                 });
                 const extractedDataText = Object.entries(extractedDataSummary)
@@ -6007,13 +6734,32 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
             console.log(`📦 Storing ${dataArray.length} extracted items (CS: ${Object.keys(extractedData.CS || {}).length}, PH: ${Object.keys(extractedData.PH || {}).length}, Tables: ${Object.keys(extractedData.Tables || {}).length})`);
 
             // localStorage에 저장 (기존 데이터와 병합)
+            // ⚠️ Table 데이터는 Regex 추출 결과를 우선시 (LLM이 덮어쓰지 않도록)
             try {
                 const existing = JSON.parse(localStorage.getItem('extractedData') || '[]');
 
                 // 새 데이터로 기존 데이터 업데이트 (variable_id 기준)
                 const mergedMap = new Map();
                 existing.forEach(item => mergedMap.set(item.variable_id, item));
-                dataArray.forEach(item => mergedMap.set(item.variable_id, item));
+
+                // LLM 데이터 병합 시 Table은 기존 Regex 추출 결과 우선
+                dataArray.forEach(item => {
+                    const existingItem = mergedMap.get(item.variable_id);
+
+                    // Table 데이터인 경우: Regex로 이미 추출된 데이터가 있으면 덮어쓰지 않음
+                    if (item.data_type === 'Table' && existingItem) {
+                        const isExistingFromRegex = existingItem.source_raw_id &&
+                            !existingItem.source_raw_id.includes('LLM') &&
+                            existingItem.validation_status === 'Validated';
+
+                        if (isExistingFromRegex) {
+                            console.log(`⏭️ [Table 보존] ${item.variable_id}: Regex 추출 데이터 유지 (LLM 데이터 무시)`);
+                            return; // 기존 Regex 데이터 유지
+                        }
+                    }
+
+                    mergedMap.set(item.variable_id, item);
+                });
 
                 const merged = Array.from(mergedMap.values());
                 localStorage.setItem('extractedData', JSON.stringify(merged));
