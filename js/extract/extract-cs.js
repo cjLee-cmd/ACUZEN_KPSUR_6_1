@@ -288,20 +288,50 @@
             examples: ['4정', '2바이알']
         },
         'CS21_환자1명당사용량': {
-            rawIds: ['RAW1.1', 'RAW2.1'],
-            description: '환자당 사용량',
-            source: 'raw_data',
-            type: '용법용량단위',
-            guideline: '용법용량에 따라 환자 1명이 1년간 사용하는 양. 예: 1일 2정 × 365일 = 730정.',
-            examples: ['730정/년']
+            rawIds: ['RAW2.1'],
+            legacyRawIds: ['RAW1.1'],
+            description: '환자당 연간 사용량 (Vials/년)',
+            source: 'llm_calculated',
+            type: '숫자',
+            useLLM: true,
+            llmPrompt: `용법용량 문서를 분석하여 "환자 1명당 연간 사용량"을 계산하세요.
+
+분석 단계:
+1. 1회 투여량 확인 (예: 2mg, 50μL)
+2. 투여 빈도 확인 (예: 매월 1회, 2개월마다 1회)
+3. 연간 투여 횟수 계산
+4. 연간 사용량 = 연간 투여 횟수 (Vials/년)
+
+예시:
+- "첫 3개월 매월 1회, 이후 2개월마다 1회" → 첫해: 3 + 5 = 8회/년, 유지기: 6회/년
+- 평균 약 6-8회/년으로 추정
+
+출력 형식: 숫자만 반환 (예: 7)
+1 Vial = 1회 투여로 계산합니다.`,
+            guideline: '용법용량에 따라 환자 1명이 1년간 투여받는 횟수(Vials). 예: 연 6-8회 → 7',
+            examples: ['7', '6', '12']
         },
         'CS22_연평균판매량': {
-            rawIds: ['표2_연도별판매량'],
-            description: '연 평균 판매량',
-            source: 'calculated',
-            type: '용법용량단위',
-            guideline: 'DDD가 없는 경우: 전체기간판매량 ÷ 총개월수 × 12. 예: 30,015,165정 ÷ 59개월 × 12 = 6,104,779정/년.',
-            examples: ['6,104,779정/년']
+            rawIds: ['RAW3'],
+            description: '연 평균 판매량 (Vials/년)',
+            source: 'llm_calculated',
+            type: '숫자',
+            useLLM: true,
+            llmPrompt: `Distribution_Tracker에서 Korea 연평균 판매량을 계산하세요.
+
+## 계산 방법
+1. 각 연도 시트의 "Year Total" 행에서 Korea 값 추출
+2. 2021~2024년 Korea Year Total 합산 (0인 연도 제외)
+3. 연평균 = 합계 ÷ 연수
+
+## 데이터 위치
+각 연도별 시트 마지막 행 "Year Total | Korea값 | ..."
+
+## 중요
+- 설명이나 코드 없이 최종 연평균 숫자만 출력
+- 쉼표 없이 정수만 (예: 323102)`,
+            guideline: 'RAW3 Distribution_Tracker에서 보고기간 내 Korea 판매량 연평균. 숫자만.',
+            examples: ['323102', '500000']
         },
         'CS23_연평균환자노출': {
             rawIds: ['CS22_연평균판매량', 'CS21_환자1명당사용량'],
@@ -363,7 +393,8 @@
             source: 'raw_data',
             type: 'text',
             guideline: 'RAW19 통합 LineListing에서 신속보고 필터링 후 비고 추출.',
-            examples: []
+            examples: [],
+            defaultValue: '해당 없음'  // 비고 컬럼이 없는 경우 기본값
         },
 
         // === 원시자료 관련 (RAW19 통합 LineListing - 원시 필터) ===
@@ -409,17 +440,28 @@
             examples: ['2024년 11월 15일']
         },
 
-        // === 보고 건수 합계 (RAW19 통합 LineListing 사용) ===
+        // === 보고 건수 합계 (RAW19 통합 LineListing 사용) - LLM 추출 ===
         'CS32_신속정기보고총사례수': {
             rawIds: ['RAW19'],
             legacyRawIds: ['RAW12', 'RAW13', 'RAW15'],
             filterColumn: '원시/신속/정기',
-            filterValues: ['신속', '정기'],  // 복수 필터
+            filterValues: ['신속', '정기'],
             description: '신속+정기 총 사례수',
-            source: 'calculated',
+            source: 'llm_calculated',
             type: '숫자(정수)',
+            useLLM: true,
+            llmPrompt: `RAW19 통합 LineListing 데이터를 분석하여 "신속보고 + 정기보고" 합계 건수를 계산하세요.
+
+## 계산 방법
+1. "원시/신속/정기" 컬럼(또는 유사 컬럼: 보고유형, Report_Type, 유형)을 찾습니다.
+2. 해당 컬럼 값이 "신속" 또는 "정기"인 행의 개수를 셉니다.
+3. 두 값의 합계를 반환합니다.
+
+## 출력 형식
+- 숫자만 출력 (예: 27)
+- 단위나 텍스트 없이 정수만 반환`,
             guideline: 'RAW19 통합 LineListing에서 신속+정기 필터링 후 이상사례 count.',
-            examples: ['30건']
+            examples: ['27', '30', '0']
         },
         'CS33_신속보고총사례수': {
             rawIds: ['RAW19'],
@@ -427,10 +469,21 @@
             filterColumn: '원시/신속/정기',
             filterValue: '신속',
             description: '신속보고 총 사례수',
-            source: 'calculated',
+            source: 'llm_calculated',
             type: '숫자(정수)',
+            useLLM: true,
+            llmPrompt: `RAW19 통합 LineListing 데이터를 분석하여 "신속보고" 건수를 계산하세요.
+
+## 계산 방법
+1. "원시/신속/정기" 컬럼(또는 유사 컬럼: 보고유형, Report_Type, 유형)을 찾습니다.
+2. 해당 컬럼 값이 "신속"인 행의 개수를 셉니다.
+
+## 출력 형식
+- 숫자만 출력 (예: 3)
+- 단위나 텍스트 없이 정수만 반환
+- 해당 데이터가 없으면 0 반환`,
             guideline: 'RAW19 통합 LineListing에서 신속보고 필터링 후 event 개수 count.',
-            examples: ['40건']
+            examples: ['3', '10', '0']
         },
         'CS34_정기보고총사례수': {
             rawIds: ['RAW19'],
@@ -438,37 +491,82 @@
             filterColumn: '원시/신속/정기',
             filterValue: '정기',
             description: '정기보고 총 사례수',
-            source: 'calculated',
+            source: 'llm_calculated',
             type: '숫자(정수)',
+            useLLM: true,
+            llmPrompt: `RAW19 통합 LineListing 데이터를 분석하여 "정기보고" 건수를 계산하세요.
+
+## 계산 방법
+1. "원시/신속/정기" 컬럼(또는 유사 컬럼: 보고유형, Report_Type, 유형)을 찾습니다.
+2. 해당 컬럼 값이 "정기"인 행의 개수를 셉니다.
+
+## 출력 형식
+- 숫자만 출력 (예: 24)
+- 단위나 텍스트 없이 정수만 반환
+- 해당 데이터가 없으면 0 반환`,
             guideline: 'RAW19 통합 LineListing에서 정기보고 필터링 후 event 개수 count.',
-            examples: ['50건']
+            examples: ['24', '50', '0']
         },
         'CS35_신속정기원시총사례수': {
             rawIds: ['RAW19'],
             legacyRawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],
-            description: '전체 총 사례수',
-            source: 'calculated',
+            description: '전체 총 사례수 (신속+정기+원시)',
+            source: 'llm_calculated',
             type: '숫자(정수)',
+            useLLM: true,
+            llmPrompt: `RAW19 통합 LineListing 데이터를 분석하여 전체 이상사례 건수를 계산하세요.
+
+## 계산 방법
+1. 테이블의 모든 데이터 행 수를 셉니다 (헤더 제외).
+2. 또는 "원시/신속/정기" 컬럼의 "신속", "정기", "원시" 값을 가진 모든 행을 셉니다.
+
+## 출력 형식
+- 숫자만 출력 (예: 27)
+- 단위나 텍스트 없이 정수만 반환`,
             guideline: 'RAW19 통합 LineListing 전체 이상사례 count (원시+신속+정기 모두 포함).',
-            examples: ['60건']
+            examples: ['27', '60', '0']
         },
         'CS36_중대한총사례수': {
             rawIds: ['RAW19'],
             legacyRawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],
             description: '중대한 이상사례 총 건수',
-            source: 'calculated',
+            source: 'llm_calculated',
             type: '숫자(정수)',
+            useLLM: true,
+            llmPrompt: `RAW19 통합 LineListing 데이터를 분석하여 "중대한 이상사례" 건수를 계산하세요.
+
+## 계산 방법
+1. "Seriousness" 또는 "중대성" 컬럼을 찾습니다.
+2. 해당 컬럼 값이 다음 중 하나인 행의 개수를 셉니다:
+   - "예", "Yes", "Y", "중대함", "Serious", "1", "TRUE"
+
+## 출력 형식
+- 숫자만 출력 (예: 3)
+- 단위나 텍스트 없이 정수만 반환
+- 중대한 이상사례가 없으면 0 반환`,
             guideline: 'RAW19 통합 LineListing에서 Seriousness=Yes인 이상사례만 count.',
-            examples: ['60건']
+            examples: ['3', '10', '0']
         },
         'CS37_중대하지않은총사례수': {
             rawIds: ['RAW19'],
             legacyRawIds: ['RAW12', 'RAW13', 'RAW14', 'RAW15'],
             description: '중대하지 않은 이상사례 총 건수',
-            source: 'calculated',
+            source: 'llm_calculated',
             type: '숫자(정수)',
+            useLLM: true,
+            llmPrompt: `RAW19 통합 LineListing 데이터를 분석하여 "중대하지 않은 이상사례" 건수를 계산하세요.
+
+## 계산 방법
+1. "Seriousness" 또는 "중대성" 컬럼을 찾습니다.
+2. 해당 컬럼 값이 다음 중 하나인 행의 개수를 셉니다:
+   - "아니오", "No", "N", "비중대", "Non-serious", "0", "FALSE", "중대하지 않음"
+
+## 출력 형식
+- 숫자만 출력 (예: 24)
+- 단위나 텍스트 없이 정수만 반환
+- 중대하지 않은 이상사례가 없으면 0 반환`,
             guideline: 'RAW19 통합 LineListing에서 Seriousness=No인 이상사례만 count.',
-            examples: ['60건']
+            examples: ['24', '50', '0']
         },
 
         // === 문헌 DB (사용자 입력) ===
@@ -526,7 +624,7 @@
             examples: ['2022년 01월 06일', '2022년1월2일(용법용량 변경), 2024년1월2일(사용상의주의사항 변경)']
         },
         'CS56.2_기존효능효과': {
-            rawIds: ['RAW7', 'RAW1.2', 'RAW2.4'],
+            rawIds: ['RAW2.4', 'RAW1.2', 'RAW7'],  // RAW2.4(시작시점효능효과) 우선, RAW7은 fallback
             description: '보고시작시점 효능효과',
             source: 'raw_data',
             type: 'text',
@@ -534,7 +632,7 @@
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS56.3_기존용량용법': {
-            rawIds: ['RAW7', 'RAW1.2', 'RAW2.5'],
+            rawIds: ['RAW2.5', 'RAW1.2', 'RAW7'],  // RAW2.5(시작시점용법용량) 우선, RAW7은 fallback
             description: '보고시작시점 용량용법',
             source: 'raw_data',
             type: 'text',
@@ -542,7 +640,7 @@
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS56.4_기존사용상의주의사항': {
-            rawIds: ['RAW7', 'RAW1.2', 'RAW2.6'],
+            rawIds: ['RAW2.6', 'RAW1.2', 'RAW7'],  // RAW2.6(시작시점주의사항) 우선, RAW7은 fallback
             description: '보고시작시점 사용상의주의사항',
             source: 'raw_data',
             type: 'text',
@@ -550,7 +648,7 @@
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS56.5_최신효능효과': {
-            rawIds: ['RAW7', 'RAW1.1', 'RAW2.2'],
+            rawIds: ['RAW2.2', 'RAW1.1', 'RAW7'],  // RAW2.2(최신효능효과) 우선, RAW7은 fallback
             description: '보고종료시점 효능효과',
             source: 'raw_data',
             type: 'text',
@@ -558,7 +656,7 @@
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS56.6_최신용량용법': {
-            rawIds: ['RAW7', 'RAW1.1', 'RAW2.1'],
+            rawIds: ['RAW2.1', 'RAW1.1', 'RAW7'],  // RAW2.1(최신용법용량) 우선, RAW7은 fallback
             description: '보고종료시점 용량용법',
             source: 'raw_data',
             type: 'text',
@@ -566,7 +664,7 @@
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS56.7_최신사용상의주의사항': {
-            rawIds: ['RAW7', 'RAW1.1', 'RAW2.3'],
+            rawIds: ['RAW2.3', 'RAW1.1', 'RAW7'],  // RAW2.3(최신주의사항) 우선, RAW7은 fallback
             description: '보고종료시점 사용상의주의사항',
             source: 'raw_data',
             type: 'text',
@@ -587,29 +685,29 @@
             ]
         },
 
-        // === 별첨1 (RAW1.1, RAW2) ===
+        // === 별첨1 (RAW2.x 우선, RAW1.1은 fallback) ===
         'CS58.1_별첨1효능효과': {
-            rawIds: ['RAW1.1', 'RAW2.2'],
+            rawIds: ['RAW2.2', 'RAW1.1'],  // RAW2.2(효능효과) 우선, RAW1.1(통합문서)은 fallback
             description: '별첨1 효능효과 전문',
             source: 'raw_data',
             type: 'text_and_table',
-            guideline: '[RAW1.1_최신첨부문서]에서 효능효과 내용만 추출, 또는 [RAW2.2_효능효과] 그대로 기재. 보고기간종료날짜 기준 가장 최신의 허가사항 반영.',
+            guideline: '[RAW2.2_효능효과] 그대로 기재, 또는 [RAW1.1_최신첨부문서]에서 효능효과 내용만 추출. 보고기간종료날짜 기준 가장 최신의 허가사항 반영.',
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS58.2_별첨1용법용량': {
-            rawIds: ['RAW1.1', 'RAW2.1'],
+            rawIds: ['RAW2.1', 'RAW1.1'],  // RAW2.1(용법용량) 우선, RAW1.1(통합문서)은 fallback
             description: '별첨1 용법용량 전문',
             source: 'raw_data',
             type: 'text_table_image',
-            guideline: '[RAW1.1_최신첨부문서]에서 용법용량 내용만 추출, 또는 [RAW2.1_용법용량] 그대로 기재. 보고기간종료날짜 기준 가장 최신의 허가사항 반영.',
+            guideline: '[RAW2.1_용법용량] 그대로 기재, 또는 [RAW1.1_최신첨부문서]에서 용법용량 내용만 추출. 보고기간종료날짜 기준 가장 최신의 허가사항 반영.',
             examples: ['별도 워드 문서 예시 참고']
         },
         'CS58.3_별첨1사용상의주의사항': {
-            rawIds: ['RAW1.1', 'RAW2.3'],
+            rawIds: ['RAW2.3', 'RAW1.1'],  // RAW2.3(사용상의주의사항) 우선, RAW1.1(통합문서)은 fallback
             description: '별첨1 사용상의주의사항 전문',
             source: 'raw_data',
             type: 'text_table_image',
-            guideline: '[RAW1.1_최신첨부문서]에서 사용상의주의사항 내용만 추출, 또는 [RAW2.3_사용상의주의사항] 그대로 기재.',
+            guideline: '[RAW2.3_사용상의주의사항] 그대로 기재, 또는 [RAW1.1_최신첨부문서]에서 사용상의주의사항 내용만 추출.',
             examples: ['별도 워드 문서 예시 참고']
         },
 
@@ -642,8 +740,8 @@
             const definitions = csDefinitions || CS_DEFINITIONS;
 
             for (const file of markdownFiles) {
-                // 관련 RAW ID인지 확인
-                const relevantDefs = this.getRelevantDefinitions(file.rawId, definitions);
+                // 관련 RAW ID인지 확인 (legacyRawIds 폴백 지원)
+                const relevantDefs = this.getRelevantDefinitions(file.rawId, definitions, markdownFiles);
 
                 if (Object.keys(relevantDefs).length === 0) {
                     console.log(`[ExtractCS] Skipping ${file.rawId} - no CS definitions`);
@@ -667,19 +765,39 @@
         }
 
         /**
-         * 해당 RAW ID와 관련된 정의만 필터링
+         * 해당 RAW ID와 관련된 정의만 필터링 (legacyRawIds 폴백 지원)
          * 특수 rawId: USER_INPUT, CALCULATED, GENERATED는 파일 추출 대상에서 제외
+         * @param {string} rawId - 현재 처리 중인 RAW ID
+         * @param {Object} definitions - CS 정의 객체
+         * @param {Array} markdownFiles - 전체 마크다운 파일 목록 (폴백 확인용)
          */
-        getRelevantDefinitions(rawId, definitions) {
+        getRelevantDefinitions(rawId, definitions, markdownFiles = []) {
             const relevant = {};
             const specialSources = ['USER_INPUT', 'CALCULATED', 'GENERATED'];
+            const availableRawIds = new Set(markdownFiles.map(f => f.rawId));
 
             Object.entries(definitions).forEach(([key, def]) => {
                 if (def.rawIds) {
                     // 특수 소스가 아닌 실제 RAW ID와 매칭되는 항목만 필터링
                     const actualRawIds = def.rawIds.filter(id => !specialSources.includes(id));
+
+                    // 1. 기본 rawIds 매칭
                     if (actualRawIds.includes(rawId)) {
                         relevant[key] = def;
+                        return;
+                    }
+
+                    // 2. legacyRawIds 폴백: 기본 rawIds가 없고, legacyRawIds에 현재 rawId가 포함된 경우
+                    if (def.legacyRawIds && def.legacyRawIds.includes(rawId)) {
+                        // 기본 rawIds가 업로드되지 않은 경우에만 legacyRawIds 사용
+                        const primaryRawIdsAvailable = actualRawIds.some(id =>
+                            availableRawIds.has(id) || [...availableRawIds].some(a => a?.startsWith(id))
+                        );
+
+                        if (!primaryRawIdsAvailable) {
+                            console.log(`[ExtractCS] Using legacy fallback for ${key}: ${rawId} (primary: ${actualRawIds.join(', ')})`);
+                            relevant[key] = def;
+                        }
                     }
                 }
             });
@@ -723,6 +841,58 @@
                 ...Object.keys(this.getDefinitionsBySource('calculated')),
                 ...Object.keys(this.getDefinitionsBySource('generated'))
             ];
+        }
+
+        /**
+         * filterColumn 필드가 있는 정의 목록 반환
+         * @returns {Object} filterColumn이 정의된 변수들
+         */
+        getFilterableDefinitions() {
+            const filterable = {};
+            Object.entries(CS_DEFINITIONS).forEach(([key, def]) => {
+                if (def.filterColumn && def.filterValue) {
+                    filterable[key] = {
+                        filterColumn: def.filterColumn,
+                        filterValue: def.filterValue,
+                        rawIds: def.rawIds
+                    };
+                }
+            });
+            return filterable;
+        }
+
+        /**
+         * RAW19 필터링 대상 컬럼명 변형 목록
+         */
+        getFilterColumnVariants() {
+            return {
+                '원시/신속/정기': [
+                    '원시/신속/정기', '원시_신속_정기', '원시·신속·정기',
+                    '보고유형', '보고 유형', 'report_type', 'Report_Type', 'ReportType',
+                    '유형', 'Type', 'type', '구분'
+                ],
+                '중대성': [
+                    'Seriousness', '중대성', 'seriousness', 'Serious', 'serious'
+                ]
+            };
+        }
+
+        /**
+         * 테이블 데이터에서 filterColumn 매칭 컬럼 찾기
+         * @param {Array<string>} headers - 테이블 헤더 배열
+         * @param {string} filterColumn - 찾고자 하는 필터 컬럼명
+         * @returns {string|null} 매칭된 컬럼명 또는 null
+         */
+        findMatchingFilterColumn(headers, filterColumn) {
+            const variants = this.getFilterColumnVariants();
+            const possibleNames = variants[filterColumn] || [filterColumn];
+
+            for (const name of possibleNames) {
+                if (headers.includes(name)) {
+                    return name;
+                }
+            }
+            return null;
         }
 
         /**

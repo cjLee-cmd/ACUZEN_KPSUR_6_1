@@ -2,7 +2,7 @@
  * ╔════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                            ║
  * ║  RAW ID DETECTOR MODULE                                                    ║
- * ║  Version: 2.2.0                                                            ║
+ * ║  Version: 2.3.1                                                            ║
  * ║  Last Modified: 2026-01-19                                                 ║
  * ║                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════╣
@@ -20,12 +20,15 @@
  * ║  - 2026-01-12: Add ZONE_RAW_ID_MAPPING, STEP3_RAW_ID_OPTIONS (v2.0.0)      ║
  * ║  - 2026-01-13: Add standalone '첨부문서' pattern, seal module (v2.1.0)     ║
  * ║  - 2026-01-19: Add RAW10, RAW11, RAW14, RAW15, RAW19 patterns (v2.2.0)     ║
+ * ║  - 2026-01-19: Add '허가현황' keyword to RAW4 pattern (v2.3.1)           ║
+ * ║  - 2026-01-19: Add 한글 keywords to RAW1.x/RAW2.x patterns (v2.3.1)      ║
+ * ║  - 2026-01-19: Add Distribution Tracker keyword to RAW3 (v2.3.1)         ║
  * ║                                                                            ║
  * ╚════════════════════════════════════════════════════════════════════════════╝
  *
  * @fileoverview RAW ID Detection Module
  * @module RawIdDetector
- * @version 2.2.0
+ * @version 2.3.1
  * @readonly
  * @sealed
  */
@@ -36,7 +39,7 @@
     // ========================================
     // 모듈 버전 및 봉인 상태
     // ========================================
-    const MODULE_VERSION = '2.2.0';
+    const MODULE_VERSION = '2.3.1';
 
     // 이미 봉인된 경우 재초기화 방지
     if (global.RawIdDetector && global.RawIdDetector._sealed) {
@@ -48,19 +51,22 @@
     // RAW ID 정의 (CLAUDE.md 기준)
     // ========================================
     const RAW_ID_DEFINITIONS = Object.freeze({
-        // PDF 문서
-        'RAW1.1': { pattern: /RAW1\.1/i, description: '최신첨부문서' },
-        'RAW1.2': { pattern: /RAW1\.2/i, description: '보고기간시작시점첨부문서' },
-        'RAW2.1': { pattern: /RAW2\.1/i, description: '용법용량' },
-        'RAW2.2': { pattern: /RAW2\.2/i, description: '효능효과' },
-        'RAW2.3': { pattern: /RAW2\.3/i, description: '사용상의주의사항' },
-        'RAW2.4': { pattern: /RAW2\.4/i, description: '보고기간시작시점효능효과' },
-        'RAW2.5': { pattern: /RAW2\.5/i, description: '보고기간시작시점용법용량' },
-        'RAW2.6': { pattern: /RAW2\.6/i, description: '보고시작시점사용상의주의사항' },
+        // PDF 문서 - 개별 파일 키워드 기반 자동 감지
+        // RAW2.4~2.6: 보고기간 시작시점 (2018년 등 과거 연도)
+        'RAW2.4': { pattern: /RAW2\.4|시작시점.*효능|보고기간.*시작.*효능|효능.*201[0-8]/i, description: '보고기간시작시점효능효과' },
+        'RAW2.5': { pattern: /RAW2\.5|시작시점.*용법|보고기간.*시작.*용법|용법.*201[0-8]/i, description: '보고기간시작시점용법용량' },
+        'RAW2.6': { pattern: /RAW2\.6|시작시점.*사용상|주의사항.*201[0-8]|201[0-8]년.*주의사항/i, description: '보고시작시점사용상의주의사항' },
+        // RAW2.1~2.3: 보고기간 종료시점 (2020년 이후 최신)
+        'RAW2.1': { pattern: /RAW2\.1|용법용량/i, description: '용법용량' },
+        'RAW2.2': { pattern: /RAW2\.2|효능효과/i, description: '효능효과' },
+        'RAW2.3': { pattern: /RAW2\.3|주의사항.*20[2-9]\d|20[2-9]\d년.*주의사항/i, description: '사용상의주의사항' },
+        // RAW1.x: 통합 첨부문서
+        'RAW1.1': { pattern: /RAW1\.1|최신.*첨부문서|첨부문서.*최신/i, description: '최신첨부문서' },
+        'RAW1.2': { pattern: /RAW1\.2|시작시점.*첨부문서|첨부문서.*시작시점/i, description: '보고기간시작시점첨부문서' },
 
         // Excel 문서
-        'RAW3': { pattern: /RAW3[_\s-]/i, description: '시판후sales데이터' },
-        'RAW4': { pattern: /RAW4[_\s-]/i, description: '허가현황' },
+        'RAW3': { pattern: /RAW3[_\s-]|Distribution.*Tracker|판매.*데이터|sales.*data/i, description: '시판후sales데이터' },
+        'RAW4': { pattern: /RAW4[_\s-]|허가현황|허가.*Tracker|license.*status/i, description: '허가현황' },
         'RAW9': { pattern: /RAW9[_\s-]/i, description: '문헌자료' },
         'RAW12': { pattern: /RAW12[_\s-]|Raw12[_\s-]/i, description: '국외신속보고LineListing' },
         'RAW13': { pattern: /RAW13[_\s-]|Raw13[_\s-]/i, description: '국내신속보고LineListing' },
@@ -168,8 +174,12 @@
 
     // RAW ID 우선순위 (소수점 있는 것 먼저, RAW19 통합LineListing 우선)
     const PRIORITY_ORDER = [
+        // RAW2.4~2.6 먼저 체크 (시작시점 - 2018년 등 과거 연도 매칭)
+        'RAW2.4', 'RAW2.5', 'RAW2.6',
+        // RAW2.1~2.3 다음 체크 (종료시점 - 2020년 이후 또는 단순 키워드)
+        'RAW2.1', 'RAW2.2', 'RAW2.3',
+        // RAW1.x 마지막 (통합 첨부문서)
         'RAW1.1', 'RAW1.2',
-        'RAW2.1', 'RAW2.2', 'RAW2.3', 'RAW2.4', 'RAW2.5', 'RAW2.6',
         'RAW19',  // 통합 LineListing 우선 체크
         'RAW10', 'RAW11', 'RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16', 'RAW17',
         'RAW3', 'RAW4', 'RAW5', 'RAW6', 'RAW7', 'RAW8', 'RAW9'

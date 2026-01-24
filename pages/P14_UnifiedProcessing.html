@@ -1305,6 +1305,9 @@
             caseIdColumns: [
                 '부서접수번호',
                 '부서접수번호(KAERS 안전원관리번호)',
+                'Report_Number',  // RAW19 통합LineListing 관리번호
+                'report_number',
+                '관리번호',
                 'Unnamed: 1'  // 기본정보+환자정보 테이블의 2번째 컬럼
             ],
             // 중대성 판단 컬럼 (E.i.3.2a~f - ICH 국제 표준)
@@ -1468,13 +1471,21 @@
                 }
             };
 
-            // RAW ID별 마크다운 찾기
+            // RAW ID별 마크다운 찾기 (RawIdDetector 모듈 사용)
             const findMarkdownByRawId = (targetRawId) => {
                 for (const [fileName, content] of Object.entries(convertedMarkdowns)) {
-                    // 파일명에서 RAW ID 추출 (예: Raw12_xxx.md → RAW12)
+                    // 1. 기존 방식: 파일명에서 RAW ID 직접 추출 (예: Raw12_xxx.md → RAW12)
                     const match = fileName.match(/raw(\d+)/i);
                     if (match && `RAW${match[1]}` === targetRawId) {
                         return content;
+                    }
+
+                    // 2. RawIdDetector 모듈 사용: 한글 키워드 기반 탐지 (예: 통합LineListing → RAW19)
+                    if (window.RawIdDetector?.detectRawIdFromFilename) {
+                        const detectedRawId = window.RawIdDetector.detectRawIdFromFilename(fileName);
+                        if (detectedRawId === targetRawId) {
+                            return content;
+                        }
                     }
                 }
                 return null;
@@ -1608,6 +1619,165 @@
             stats.cs36 = allSeriousCaseIds.size;
             stats.details.seriousCaseIds = allSeriousCaseIds;
 
+            // ========================================
+            // RAW19 통합 LineListing 처리
+            // ========================================
+            const raw19Md = findMarkdownByRawId('RAW19');
+            if (raw19Md) {
+                console.log('📊 [RAW19] 통합 LineListing 처리 시작...');
+
+                // RAW19 전체 행 파싱 (기본정보+환자정보 섹션)
+                const raw19Rows = parseLineListingSection(raw19Md, config.sections.basicInfo);
+                console.log(`📊 [RAW19] 총 ${raw19Rows.length}개 행 발견`);
+
+                // '원시/신속/정기' 컬럼명 변형 (다양한 형태 대응)
+                const reportTypeColumns = [
+                    // 슬래시 변형
+                    '원시/신속/정기', '원시_신속_정기', '원시·신속·정기', '원시／신속／정기',
+                    '원시\\신속\\정기', '원시-신속-정기', '원시 신속 정기', '원시신속정기',
+                    // 한글 일반 표기
+                    '보고유형', '보고 유형', '보고_유형', '유형', '구분', '분류',
+                    '보고구분', '보고_구분', '자료유형', '자료구분', '데이터유형',
+                    // 영문 변형
+                    'report_type', 'Report_Type', 'ReportType', 'reportType',
+                    'Report Type', 'REPORT_TYPE', 'Type', 'type', 'TYPE',
+                    'data_type', 'DataType', 'dataType', 'Category', 'category',
+                    // LineListing 특화
+                    'LL_Type', 'LL_유형', 'LineListing_Type', 'Listing_Type',
+                    '원시_신속_정기_구분', '보고유형구분'
+                ];
+
+                // 보고유형 필터링 함수
+                const filterByReportType = (rows, targetType) => {
+                    return rows.filter(row => {
+                        for (const col of reportTypeColumns) {
+                            const value = row[col];
+                            if (value && value.includes(targetType)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    });
+                };
+
+                // 신속보고 (RAW19에서)
+                const raw19ExpeditedRows = filterByReportType(raw19Rows, '신속');
+                const raw19ExpeditedCases = new Set();
+                raw19ExpeditedRows.forEach(row => {
+                    for (const col of config.caseIdColumns) {
+                        if (row[col] && row[col].trim() !== '') {
+                            raw19ExpeditedCases.add(row[col].trim());
+                            break;
+                        }
+                    }
+                });
+
+                // 정기보고 (RAW19에서)
+                const raw19PeriodicRows = filterByReportType(raw19Rows, '정기');
+                const raw19PeriodicCases = new Set();
+                raw19PeriodicRows.forEach(row => {
+                    for (const col of config.caseIdColumns) {
+                        if (row[col] && row[col].trim() !== '') {
+                            raw19PeriodicCases.add(row[col].trim());
+                            break;
+                        }
+                    }
+                });
+
+                // 원시자료 (RAW19에서)
+                const raw19RawRows = filterByReportType(raw19Rows, '원시');
+                const raw19RawCases = new Set();
+                const raw19RawPatients = new Set();
+                raw19RawRows.forEach(row => {
+                    for (const col of config.caseIdColumns) {
+                        if (row[col] && row[col].trim() !== '') {
+                            raw19RawCases.add(row[col].trim());
+                            break;
+                        }
+                    }
+                    // 환자 ID (C.1.4 또는 D.1)
+                    const patientIdCols = ['C.1.4', 'D.1', '보고자관리번호'];
+                    for (const col of patientIdCols) {
+                        if (row[col] && row[col].trim() !== '') {
+                            raw19RawPatients.add(row[col].trim().split(',')[0].trim());
+                            break;
+                        }
+                    }
+                });
+
+                // RAW19에서 중대한 사례 (이상사례 섹션)
+                const raw19SeriousCases = extractSeriousCaseIds(raw19Md);
+
+                // RAW19 원시자료 중 중대한 사례 (CS30용)
+                // 이상사례 섹션 파싱
+                const raw19AdverseRows = parseLineListingSection(raw19Md, config.sections.adverseEvent);
+                const raw19RawSeriousCases = new Set();
+                raw19AdverseRows.forEach(row => {
+                    // 보고유형이 '원시'인지 확인
+                    let isRawType = false;
+                    for (const col of reportTypeColumns) {
+                        if (row[col] && row[col].includes('원시')) {
+                            isRawType = true;
+                            break;
+                        }
+                    }
+                    if (!isRawType) return;
+
+                    // 중대성 확인
+                    const allSeriousColumns = [...config.seriousnessColumns.codes, ...config.seriousnessColumns.labels];
+                    let isSerious = false;
+                    for (const col of allSeriousColumns) {
+                        const value = row[col];
+                        if (value && config.seriousnessYesValues.includes(value.trim())) {
+                            isSerious = true;
+                            break;
+                        }
+                    }
+
+                    if (isSerious) {
+                        for (const col of config.caseIdColumns) {
+                            if (row[col] && row[col].trim() !== '') {
+                                raw19RawSeriousCases.add(row[col].trim());
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                // RAW19 통계 병합 (RAW12-15가 없으면 RAW19 값 사용)
+                if (stats.cs33 === 0 && raw19ExpeditedCases.size > 0) {
+                    stats.cs33 = raw19ExpeditedCases.size;
+                    console.log(`✅ [RAW19] CS33_신속보고총사례수: ${stats.cs33} (통합 LineListing)`);
+                }
+                if (stats.cs34 === 0 && raw19PeriodicCases.size > 0) {
+                    stats.cs34 = raw19PeriodicCases.size;
+                    console.log(`✅ [RAW19] CS34_정기보고총사례수: ${stats.cs34} (통합 LineListing)`);
+                }
+                if (stats.cs28 === 0 && raw19RawPatients.size > 0) {
+                    stats.cs28 = raw19RawPatients.size;
+                    console.log(`✅ [RAW19] CS28_원시총환자수: ${stats.cs28} (통합 LineListing)`);
+                }
+                if (stats.cs29 === 0 && raw19RawCases.size > 0) {
+                    stats.cs29 = raw19RawCases.size;
+                    console.log(`✅ [RAW19] CS29_원시총이상사례수: ${stats.cs29} (통합 LineListing)`);
+                }
+                if (stats.cs30 === 0 && raw19RawSeriousCases.size > 0) {
+                    stats.cs30 = raw19RawSeriousCases.size;
+                    console.log(`✅ [RAW19] CS30_원시중대한사례수: ${stats.cs30} (통합 LineListing)`);
+                }
+                if (stats.cs36 === 0 && raw19SeriousCases.size > 0) {
+                    stats.cs36 = raw19SeriousCases.size;
+                    console.log(`✅ [RAW19] CS36_중대한총사례수: ${stats.cs36} (통합 LineListing)`);
+                }
+
+                // 상세 정보 업데이트
+                stats.details.raw19Cases = raw19Rows.length;
+                stats.details.raw19Expedited = raw19ExpeditedCases.size;
+                stats.details.raw19Periodic = raw19PeriodicCases.size;
+                stats.details.raw19Raw = raw19RawCases.size;
+                stats.details.raw19RawSerious = raw19RawSeriousCases.size;
+            }
+
             console.log(`📊 [LineListing] 자동 계산 완료:`, {
                 CS33_신속보고: stats.cs33,
                 CS34_정기보고: stats.cs34,
@@ -1621,7 +1791,12 @@
                     RAW14: stats.details.raw14Cases,
                     RAW14_환자: stats.details.raw14Patients,
                     RAW14_중대한: stats.details.raw14SeriousCases,
-                    RAW15: stats.details.raw15Cases
+                    RAW15: stats.details.raw15Cases,
+                    RAW19: stats.details.raw19Cases || 0,
+                    RAW19_신속: stats.details.raw19Expedited || 0,
+                    RAW19_정기: stats.details.raw19Periodic || 0,
+                    RAW19_원시: stats.details.raw19Raw || 0,
+                    RAW19_원시중대한: stats.details.raw19RawSerious || 0
                 }
             });
 
@@ -1663,17 +1838,300 @@
         let step3RawIdOptions = [];
 
         // ========================================
+        // localStorage 안전 파싱 헬퍼 함수
+        // ========================================
+        const safeLocalStorage = {
+            /**
+             * localStorage에서 JSON 안전 파싱
+             * @param {string} key - localStorage 키
+             * @param {*} defaultValue - 파싱 실패 시 기본값
+             * @returns {*} 파싱된 값 또는 기본값
+             */
+            getJSON(key, defaultValue = null) {
+                try {
+                    const stored = localStorage.getItem(key);
+                    if (!stored) return defaultValue;
+                    return JSON.parse(stored);
+                } catch (err) {
+                    console.error(`[LocalStorage] JSON 파싱 실패 - key: ${key}`, err);
+                    return defaultValue;
+                }
+            },
+
+            /**
+             * localStorage에 JSON 안전 저장
+             * @param {string} key - localStorage 키
+             * @param {*} value - 저장할 값
+             * @returns {boolean} 저장 성공 여부
+             */
+            setJSON(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                    return true;
+                } catch (err) {
+                    console.error(`[LocalStorage] JSON 저장 실패 - key: ${key}`, err);
+                    return false;
+                }
+            },
+
+            /**
+             * localStorage에서 안전하게 값 가져오기
+             * @param {string} key - localStorage 키
+             * @param {string} defaultValue - 기본값
+             * @returns {string} 저장된 값 또는 기본값
+             */
+            get(key, defaultValue = '') {
+                try {
+                    return localStorage.getItem(key) || defaultValue;
+                } catch (err) {
+                    console.error(`[LocalStorage] 읽기 실패 - key: ${key}`, err);
+                    return defaultValue;
+                }
+            }
+        };
+
+        // ========================================
+        // IndexedDB 동기화 검증
+        // ========================================
+        /**
+         * IndexedDB와 localStorage 간 동기화 상태 확인
+         * @param {string} reportId - 보고서 ID
+         * @returns {Promise<{synced: boolean, details: object}>}
+         */
+        async function verifyIndexedDBSync(reportId) {
+            const result = {
+                synced: false,
+                details: {
+                    localStorageFileCount: 0,
+                    indexedDBFileCount: 0,
+                    missingInIndexedDB: [],
+                    extraInIndexedDB: []
+                }
+            };
+
+            try {
+                // 1. localStorage에서 파일 목록 가져오기
+                const localFiles = safeLocalStorage.getJSON('uploadedFiles', []);
+                const localFileNames = new Set(localFiles.map(f => f.name || f.fileName));
+                result.details.localStorageFileCount = localFileNames.size;
+
+                // 2. IndexedDB에서 파일 목록 가져오기
+                if (!window.fileStorage) {
+                    console.warn('[Sync] IndexedDB fileStorage 미로드');
+                    return result;
+                }
+
+                const idbFiles = await window.fileStorage.loadAllFiles();
+                const idbFileNames = new Set(idbFiles.map(f => f.name));
+                result.details.indexedDBFileCount = idbFileNames.size;
+
+                // 3. 차이점 분석
+                localFileNames.forEach(name => {
+                    if (!idbFileNames.has(name)) {
+                        result.details.missingInIndexedDB.push(name);
+                    }
+                });
+
+                idbFileNames.forEach(name => {
+                    if (!localFileNames.has(name)) {
+                        result.details.extraInIndexedDB.push(name);
+                    }
+                });
+
+                // 4. 동기화 상태 판단
+                result.synced = result.details.missingInIndexedDB.length === 0;
+
+                // 5. 로깅
+                if (!result.synced) {
+                    console.warn('[Sync] IndexedDB 동기화 불일치:', result.details);
+                } else {
+                    console.log('[Sync] IndexedDB 동기화 확인 완료:', result.details.indexedDBFileCount, '개 파일');
+                }
+
+            } catch (err) {
+                console.error('[Sync] 동기화 검증 실패:', err);
+            }
+
+            return result;
+        }
+
+        // ========================================
+        // 에러 로깅 강화
+        // ========================================
+        const errorLogger = {
+            logs: [],
+            maxLogs: 100,
+
+            /**
+             * 에러 로그 기록
+             * @param {string} category - 에러 카테고리 (upload, convert, extract 등)
+             * @param {string} message - 에러 메시지
+             * @param {object} context - 추가 컨텍스트 정보
+             */
+            log(category, message, context = {}) {
+                const entry = {
+                    timestamp: new Date().toISOString(),
+                    category,
+                    message,
+                    context,
+                    url: window.location.href,
+                    reportId: safeLocalStorage.get('current_report', 'N/A')
+                };
+
+                this.logs.push(entry);
+
+                // 로그 개수 제한
+                if (this.logs.length > this.maxLogs) {
+                    this.logs.shift();
+                }
+
+                // 콘솔 출력
+                console.error(`[${category.toUpperCase()}] ${message}`, context);
+
+                // localStorage에 저장 (디버깅용)
+                try {
+                    const storedLogs = safeLocalStorage.getJSON('p14_error_logs', []);
+                    storedLogs.push(entry);
+                    if (storedLogs.length > this.maxLogs) {
+                        storedLogs.shift();
+                    }
+                    safeLocalStorage.setJSON('p14_error_logs', storedLogs);
+                } catch (e) {
+                    // localStorage 저장 실패 무시
+                }
+            },
+
+            /**
+             * 에러 로그 조회
+             * @param {string} category - 필터링할 카테고리 (선택)
+             * @returns {Array} 에러 로그 목록
+             */
+            getLogs(category = null) {
+                if (!category) return this.logs;
+                return this.logs.filter(l => l.category === category);
+            },
+
+            /**
+             * 에러 로그 초기화
+             */
+            clear() {
+                this.logs = [];
+                localStorage.removeItem('p14_error_logs');
+            }
+        };
+
+        // 전역 에러 핸들러
+        window.addEventListener('error', (event) => {
+            errorLogger.log('global', event.message, {
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno
+            });
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            errorLogger.log('promise', 'Unhandled Promise Rejection', {
+                reason: event.reason?.message || String(event.reason)
+            });
+        });
+
+        // ========================================
         // 초기화
         // ========================================
+        // RawIdDetector 스크립트 동적 로드
+        const loadRawIdDetectorScript = () => {
+            return new Promise((resolve, reject) => {
+                // 이미 로드된 경우
+                if (isRawIdModuleLoaded()) {
+                    resolve(true);
+                    return;
+                }
+
+                // 기존 스크립트 제거 (재로드를 위해)
+                const existingScript = document.querySelector('script[src*="raw-id-detector.js"]');
+                if (existingScript) {
+                    existingScript.remove();
+                }
+
+                // 새 스크립트 로드
+                const script = document.createElement('script');
+                script.src = '../js/raw-id-detector.js?t=' + Date.now(); // 캐시 방지
+                script.onload = () => {
+                    // 로드 후 약간의 대기 (파싱 시간)
+                    setTimeout(() => {
+                        resolve(isRawIdModuleLoaded());
+                    }, 100);
+                };
+                script.onerror = () => {
+                    console.error('[P14] raw-id-detector.js 스크립트 로드 실패');
+                    reject(new Error('Script load failed'));
+                };
+                document.head.appendChild(script);
+            });
+        };
+
+        // RawIdDetector 모듈 로드 재시도 함수 (동적 로드 포함)
+        const waitForRawIdModule = async (maxRetries = 5, interval = 200) => {
+            // 1차: 기존 로드 대기
+            for (let i = 0; i < maxRetries; i++) {
+                if (isRawIdModuleLoaded()) {
+                    return true;
+                }
+                console.log(`[P14] RawIdDetector 모듈 로드 대기 중... (${i + 1}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, interval));
+            }
+
+            // 2차: 동적 스크립트 로드 시도
+            console.log('[P14] 동적 스크립트 로드 시도...');
+            try {
+                const loaded = await loadRawIdDetectorScript();
+                if (loaded) {
+                    console.log('[P14] 동적 스크립트 로드 성공');
+                    return true;
+                }
+            } catch (err) {
+                console.error('[P14] 동적 스크립트 로드 실패:', err);
+            }
+
+            // 3차: 추가 대기
+            for (let i = 0; i < 3; i++) {
+                if (isRawIdModuleLoaded()) {
+                    return true;
+                }
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            return false;
+        };
+
         document.addEventListener('DOMContentLoaded', async function () {
-            // 1. 모듈 로드 확인 및 변수 초기화
-            if (isRawIdModuleLoaded()) {
+            // 1. 모듈 로드 확인 및 변수 초기화 (재시도 포함)
+            const moduleLoaded = await waitForRawIdModule();
+
+            if (moduleLoaded) {
                 rawIdMapping = getRawIdMapping();
                 step3RawIdOptions = getStep3RawIdOptions();
                 console.log('✅ RawIdDetector v2.0.0 모듈 연결 완료');
             } else {
-                console.error('❌ RawIdDetector 모듈 미로드 - 파일 업로드 기능 제한됨');
-                showToast('RAW ID 모듈 로드 실패. 페이지를 새로고침하세요.', 'error');
+                console.error('❌ RawIdDetector 모듈 미로드 - 기본 매핑 사용');
+                // 폴백: 기본 RAW ID 매핑 제공
+                rawIdMapping = {
+                    'zone-1': ['RAW1.1', 'RAW1.2'],
+                    'zone-2': ['RAW2.1', 'RAW2.2', 'RAW2.3', 'RAW2.4', 'RAW2.5', 'RAW2.6'],
+                    'zone-3': ['RAW7'],
+                    'zone-4': ['RAW8', 'RAW17'],
+                    'zone-5': ['RAW3', 'RAW4', 'RAW5', 'RAW6', 'RAW9', 'RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16', 'RAW19']
+                };
+                step3RawIdOptions = [
+                    { value: 'RAW3', label: 'RAW3_시판후sales데이터' },
+                    { value: 'RAW4', label: 'RAW4_허가현황' },
+                    { value: 'RAW5', label: 'RAW5_안전성조치메일' },
+                    { value: 'RAW6', label: 'RAW6_안전성조치변경' },
+                    { value: 'RAW9', label: 'RAW9_문헌자료' },
+                    { value: 'RAW16', label: 'RAW16_SMQ_lack_of_efficacy' },
+                    { value: 'RAW19', label: 'RAW19_통합LineListing' }
+                ];
+                showToast('RAW ID 모듈 로드 지연 - 기본 설정으로 진행합니다.', 'warning');
             }
 
             // 2. 기존 초기화
@@ -1721,6 +2179,12 @@
                         console.log('✅ DB에서 stage2 데이터 발견');
                         await restoreStateFromUserInputs(report.user_inputs.stage2);
                         showToast('저장된 데이터를 복원했습니다', 'success');
+
+                        // IndexedDB 동기화 검증
+                        const syncResult = await verifyIndexedDBSync(reportId);
+                        if (!syncResult.synced && syncResult.details.missingInIndexedDB.length > 0) {
+                            showToast(`일부 파일(${syncResult.details.missingInIndexedDB.length}개)을 다시 업로드해야 합니다`, 'warning');
+                        }
                         return;
                     }
                 }
@@ -1729,10 +2193,17 @@
                 const restored = await restoreStateFromLocalStorage();
                 if (restored) {
                     showToast('저장된 데이터를 복원했습니다', 'success');
+
+                    // IndexedDB 동기화 검증
+                    const syncResult = await verifyIndexedDBSync(reportId);
+                    if (!syncResult.synced && syncResult.details.missingInIndexedDB.length > 0) {
+                        showToast(`일부 파일(${syncResult.details.missingInIndexedDB.length}개)을 다시 업로드해야 합니다`, 'warning');
+                    }
                 }
 
             } catch (error) {
                 console.error('❌ 상태 복원 실패:', error);
+                errorLogger.log('restore', '상태 복원 실패', { error: error.message, reportId });
                 showToast('저장된 데이터 로드 실패', 'error');
             }
         }
@@ -3386,11 +3857,18 @@
             }));
 
             const convertedMarkdowns = {};
+            const filenameToRawId = {};  // 파일명 → RAW ID 매핑
             validatedFiles.forEach(f => {
                 if (f.name && f.markdown) {
                     convertedMarkdowns[f.name] = f.markdown;
+                    // RAW ID 매핑 저장 (Hybrid 추출에서 사용)
+                    if (f.assignedRawId) {
+                        filenameToRawId[f.name] = f.assignedRawId;
+                    }
                 }
             });
+            // RAW ID 매핑도 localStorage에 저장
+            localStorage.setItem('filenameToRawId', JSON.stringify(filenameToRawId));
 
             localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFilesData));
             localStorage.setItem('convertedMarkdowns', JSON.stringify(convertedMarkdowns));
@@ -3600,14 +4078,196 @@
                 ...dbUserInputs  // DB 데이터 우선 (P13에서 입력한 CS 값)
             };
 
-            // Step 1: Regex 기반 추출
-            const regexExtractedData = buildExtractedData(mergedUserInputs, validatedFiles);
-            console.log('📊 [Step 1] Regex 추출 완료:', regexExtractedData.length, '개 항목');
+            // Step 1: 사용자 입력 데이터 (P13에서 입력한 USER_INPUT 소스)
+            const userInputData = buildExtractedData(mergedUserInputs, validatedFiles);
+            console.log('📊 [Step 1] 사용자 입력 데이터:', userInputData.length, '개 항목');
 
-            // Step 2: LLM 검증 및 보완 (하이브리드 방식)
-            // Note: convertedMarkdowns는 라인 2342에서 이미 선언됨
-            const extractedData = await hybridExtractWithLLM(regexExtractedData, convertedMarkdowns);
-            console.log('📊 [Step 2] 하이브리드 추출 완료:', extractedData.length, '개 항목');
+            // Step 2: Full LLM 추출 (Hybrid 방식 대체)
+            // 모든 RAW 파일에서 LLM으로 직접 데이터 추출
+            console.log('📊 [Step 2] Full LLM 추출 시작...');
+
+            // Note: filenameToRawId는 라인 3857에서 이미 선언됨
+            let extractedData = [...userInputData]; // 사용자 입력 데이터를 기본으로
+
+            if (window.extractBase?.extractAllWithLLM) {
+                try {
+                    const llmResult = await window.extractBase.extractAllWithLLM(
+                        convertedMarkdowns,
+                        filenameToRawId,
+                        {
+                            CS_DEFINITIONS: window.CS_DEFINITIONS,
+                            PH_DEFINITIONS: window.PH_DEFINITIONS,
+                            TABLE_DEFINITIONS: window.TABLE_DEFINITIONS,
+                            onProgress: (progress) => {
+                                if (window.llmProgressBar) {
+                                    window.llmProgressBar.setStreamText(progress.message);
+                                }
+                                console.log(`[FullLLM] ${progress.message}`);
+                            }
+                        }
+                    );
+
+                    if (llmResult.success && llmResult.data) {
+                        // LLM 추출 결과를 extractedData에 병합
+                        const llmData = llmResult.data;
+
+                        // CS 데이터 병합
+                        Object.entries(llmData.CS || {}).forEach(([varId, value]) => {
+                            const existing = extractedData.find(d => d.variable_id === varId);
+                            if (existing) {
+                                // 기존 값이 placeholder면 LLM 값으로 교체
+                                const isPlaceholder = window.isPlaceholderValue?.(existing.data_value) ?? true;
+                                if (isPlaceholder) {
+                                    existing.data_value = value;
+                                    existing.validation_status = 'Pending';
+                                }
+                            } else {
+                                // 신규 추가
+                                const def = window.CS_DEFINITIONS?.[varId];
+                                extractedData.push({
+                                    data_type: 'CS',
+                                    variable_id: varId,
+                                    data_value: value,
+                                    source_raw_id: def?.rawIds?.[0] || 'LLM',
+                                    validation_status: 'Pending'
+                                });
+                            }
+                        });
+
+                        // PH 데이터 병합 (CS와 동일하게 placeholder 체크)
+                        Object.entries(llmData.PH || {}).forEach(([varId, value]) => {
+                            const existing = extractedData.find(d => d.variable_id === varId);
+                            if (existing) {
+                                // 기존 값이 placeholder면 LLM 값으로 교체
+                                const isPlaceholder = window.isPlaceholderValue?.(existing.data_value) ?? true;
+                                if (isPlaceholder) {
+                                    existing.data_value = value;
+                                    existing.validation_status = 'Pending';
+                                }
+                            } else {
+                                // 신규 추가
+                                const def = window.PH_DEFINITIONS?.[varId];
+                                extractedData.push({
+                                    data_type: 'PH',
+                                    variable_id: varId,
+                                    data_value: value,
+                                    source_raw_id: def?.rawIds?.[0] || 'LLM',
+                                    validation_status: 'Pending'
+                                });
+                            }
+                        });
+
+                        // Table 데이터 병합 (CS와 동일하게 placeholder 체크)
+                        Object.entries(llmData.Table || {}).forEach(([varId, value]) => {
+                            const existing = extractedData.find(d => d.variable_id === varId);
+                            if (existing) {
+                                // 기존 값이 placeholder면 LLM 값으로 교체
+                                const isPlaceholder = window.isPlaceholderValue?.(existing.data_value) ?? true;
+                                if (isPlaceholder) {
+                                    existing.data_value = value;
+                                    existing.validation_status = 'Pending';
+                                }
+                            } else {
+                                // 신규 추가
+                                const def = window.TABLE_DEFINITIONS?.[varId];
+                                extractedData.push({
+                                    data_type: 'Table',
+                                    variable_id: varId,
+                                    data_value: value,
+                                    source_raw_id: def?.rawIds?.[0] || 'LLM',
+                                    validation_status: 'Pending'
+                                });
+                            }
+                        });
+
+                        console.log('📊 [Step 2] Full LLM 추출 완료:', llmResult.stats);
+                    }
+                } catch (llmError) {
+                    console.error('📊 [Step 2] Full LLM 추출 오류:', llmError.message);
+                    // 오류 시 기존 userInputData만 사용
+                }
+            } else {
+                console.warn('📊 [Step 2] extractAllWithLLM 미지원, 사용자 입력만 사용');
+            }
+
+            console.log('📊 [Step 2] 최종 추출 데이터:', extractedData.length, '개 항목');
+
+            // Step 3: 의존성 기반 계산 (CALCULATED 변수)은 extractAllWithLLM 내부에서 처리됨
+            // 추가 계산이 필요한 경우를 위한 폴백 로직
+            if (window.extractBase?.extractWithDependencies) {
+                try {
+                    console.log('📊 [Step 3] 의존성 기반 계산 확인...');
+
+                    const dataAsObject = {};
+                    extractedData.forEach(item => {
+                        dataAsObject[item.variable_id] = item.data_value;
+                    });
+
+                    const calculatedVarIds = [
+                        'CS22_연평균판매량',
+                        'CS23_연평균환자노출',
+                        'CS32_신속정기보고총사례수',
+                        'CS35_신속정기원시총사례수',
+                        'CS37_중대하지않은총사례수'
+                    ];
+
+                    const checkPlaceholder = window.isPlaceholderValue || ((v) =>
+                        !v || typeof v !== 'string' || v.includes('LLM 추출 필요') ||
+                        v.includes('계산 필요') || v.startsWith('[')
+                    );
+
+                    const needsCalculation = {};
+                    calculatedVarIds.forEach(varId => {
+                        const currentValue = dataAsObject[varId];
+                        if (!currentValue || checkPlaceholder(currentValue)) {
+                            needsCalculation[varId] = true;
+                        }
+                    });
+
+                    if (Object.keys(needsCalculation).length > 0) {
+                        console.log('[Step 3] 추가 계산 필요:', Object.keys(needsCalculation));
+
+                        const calculatedResults = await window.extractBase.extractWithDependencies(
+                            dataAsObject,
+                            needsCalculation
+                        );
+
+                        Object.entries(calculatedResults).forEach(([varId, value]) => {
+                            if (value !== null && value !== undefined) {
+                                const existing = extractedData.find(d => d.variable_id === varId);
+                                if (existing) {
+                                    existing.data_value = String(value);
+                                    existing.source_raw_id = 'Calculated';
+                                    existing.validation_status = 'Calculated';
+                                    console.log(`[Step 3] ✅ 업데이트: ${varId} = ${value}`);
+                                } else {
+                                    extractedData.push({
+                                        data_type: 'CS',
+                                        variable_id: varId,
+                                        data_value: String(value),
+                                        source_raw_id: 'Calculated',
+                                        validation_status: 'Calculated'
+                                    });
+                                    console.log(`[Step 3] ✅ 신규 추가: ${varId} = ${value}`);
+                                }
+                            }
+                        });
+
+                        console.log('📊 [Step 3] 의존성 기반 계산 완료:', Object.keys(calculatedResults).length, '개 항목');
+                    } else {
+                        console.log('[Step 3] 모든 계산 변수가 이미 추출됨 - 스킵');
+                    }
+
+                    // 실패한 추출 로깅
+                    const failedCalcs = window.extractBase.getFailedExtractions();
+                    if (failedCalcs.length > 0) {
+                        console.warn('[Step 3] ⚠️ 계산 실패 변수:', failedCalcs.map(f => f.varId).join(', '));
+                    }
+
+                } catch (calcError) {
+                    console.error('[Step 3] 의존성 계산 오류:', calcError);
+                }
+            }
 
             // localStorage에 캐시 저장 (빠른 접근용)
             localStorage.setItem('extractedData', JSON.stringify(extractedData));
@@ -3636,12 +4296,139 @@
                     } else {
                         console.warn('⚠️ DB extractedData 저장 실패:', dbResult.error);
                     }
+
+                    // 사용자 알림: placeholder 요약 (재발 방지용 UI)
+                    if (placeholderCount > 0) {
+                        showPlaceholderSummaryAlert(extractedData, placeholderCount);
+                    }
                 } catch (dbError) {
                     console.warn('⚠️ DB extractedData 저장 실패:', dbError);
                 }
             }
 
             console.log('✅ 처리 결과 저장 완료:', validatedFiles.length, '개 파일');
+        }
+
+        /**
+         * Placeholder 요약 알림 표시 (재발 방지용 UI)
+         * @param {Array} extractedData - 추출된 데이터 배열
+         * @param {number} placeholderCount - placeholder 개수
+         */
+        function showPlaceholderSummaryAlert(extractedData, placeholderCount) {
+            // placeholder 체크 함수
+            const isPlaceholderValue = window.isPlaceholderValue || ((v) =>
+                !v || typeof v !== 'string' || v.includes('LLM 추출 필요') ||
+                v.includes('사용자 입력 필요') || v.includes('계산 필요') ||
+                v.includes('DATA_NOT_FOUND') || (v.startsWith('[') && v.includes(']') && v.includes('-'))
+            );
+
+            // placeholder 항목 분류
+            const placeholderItems = extractedData.filter(d => isPlaceholderValue(d.data_value));
+            const csPlaceholders = placeholderItems.filter(d => d.variable_id.startsWith('CS'));
+            const phPlaceholders = placeholderItems.filter(d => d.variable_id.startsWith('PH'));
+            const tablePlaceholders = placeholderItems.filter(d => d.variable_id.startsWith('표'));
+
+            // 실패한 추출/계산 정보 수집
+            const failedExtractions = window.extractBase?.getFailedExtractions() || [];
+            const hybridFailures = window.hybridExtractionFailures || [];
+
+            // 알림 메시지 구성
+            let message = `⚠️ 데이터 추출 결과 요약\n\n`;
+            message += `✅ 정상 추출: ${extractedData.length - placeholderCount}개\n`;
+            message += `⚠️ 미추출(placeholder): ${placeholderCount}개\n\n`;
+
+            if (csPlaceholders.length > 0) {
+                message += `📋 CS 미추출 항목 (${csPlaceholders.length}개):\n`;
+                message += csPlaceholders.slice(0, 10).map(d => `  - ${d.variable_id}`).join('\n');
+                if (csPlaceholders.length > 10) {
+                    message += `\n  ... 외 ${csPlaceholders.length - 10}개`;
+                }
+                message += '\n\n';
+            }
+
+            if (phPlaceholders.length > 0) {
+                message += `📝 PH 미생성 항목 (${phPlaceholders.length}개):\n`;
+                message += phPlaceholders.slice(0, 5).map(d => `  - ${d.variable_id}`).join('\n');
+                if (phPlaceholders.length > 5) {
+                    message += `\n  ... 외 ${phPlaceholders.length - 5}개`;
+                }
+                message += '\n\n';
+            }
+
+            if (failedExtractions.length > 0) {
+                message += `❌ 추출 실패 (재시도 후에도 실패):\n`;
+                message += failedExtractions.slice(0, 5).map(f => `  - ${f.varId}: ${f.error}`).join('\n');
+                message += '\n\n';
+            }
+
+            message += `💡 P15 섹션 편집기에서 직접 수정 가능합니다.`;
+
+            // 콘솔에 상세 로그
+            console.group('📊 Placeholder 요약');
+            console.log('CS 미추출:', csPlaceholders.map(d => d.variable_id));
+            console.log('PH 미생성:', phPlaceholders.map(d => d.variable_id));
+            console.log('Table 미추출:', tablePlaceholders.map(d => d.variable_id));
+            console.log('추출 실패:', failedExtractions);
+            console.log('Hybrid 실패:', hybridFailures);
+            console.groupEnd();
+
+            // 알림 표시 (UI 우선, 없으면 alert)
+            if (window.showToast && typeof window.showToast === 'function') {
+                window.showToast(
+                    `⚠️ ${placeholderCount}개 항목이 미추출 상태입니다. P15에서 확인해주세요.`,
+                    'warning',
+                    8000
+                );
+            } else {
+                // 간단한 toast 메시지 생성
+                const toast = document.createElement('div');
+                toast.className = 'placeholder-alert-toast';
+                toast.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        background: #f59e0b;
+                        color: white;
+                        padding: 16px 24px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        z-index: 10000;
+                        max-width: 400px;
+                        font-size: 14px;
+                        line-height: 1.5;
+                    ">
+                        <strong>⚠️ 데이터 추출 경고</strong><br>
+                        ${placeholderCount}개 항목이 미추출 상태입니다.<br>
+                        <small>CS: ${csPlaceholders.length}개, PH: ${phPlaceholders.length}개</small><br>
+                        <small style="opacity: 0.8;">P15 섹션 편집기에서 확인/수정해주세요.</small>
+                        <button onclick="this.parentElement.parentElement.remove()" style="
+                            position: absolute;
+                            top: 8px;
+                            right: 8px;
+                            background: none;
+                            border: none;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 16px;
+                        ">×</button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+
+                // 10초 후 자동 제거
+                setTimeout(() => toast.remove(), 10000);
+            }
+
+            // localStorage에 미추출 항목 저장 (P15에서 참조 가능)
+            localStorage.setItem('placeholderSummary', JSON.stringify({
+                timestamp: new Date().toISOString(),
+                total: placeholderCount,
+                cs: csPlaceholders.map(d => d.variable_id),
+                ph: phPlaceholders.map(d => d.variable_id),
+                tables: tablePlaceholders.map(d => d.variable_id),
+                failed: failedExtractions
+            }));
         }
 
         /**
@@ -3704,16 +4491,34 @@
                 addIfNotExists('CS8_버전날짜', cs4Value);
             }
 
-            // CS14_신청기한 = CS13 - 6개월
-            const cs13Value = userInputs?.CS13_유효기간;
-            if (cs13Value) {
+            // CS14_신청기한 = CS6_보고서제출일 - 6개월 (테스트 사양 기준)
+            const cs6Value = userInputs?.CS6_보고서제출일;
+            if (cs6Value) {
                 try {
-                    const cs13Date = new Date(cs13Value);
-                    const cs14Date = new Date(cs13Date);
-                    cs14Date.setMonth(cs14Date.getMonth() - 6);
-                    const cs14Value = cs14Date.toISOString().split('T')[0];
-                    if (addIfNotExists('CS14_신청기한', cs14Value)) {
-                        console.log(`📅 CS14_신청기한 계산: ${cs13Value} - 6개월 = ${cs14Value}`);
+                    // 한글 날짜 형식 파싱 함수
+                    const parseKoreanDate = (dateStr) => {
+                        if (!dateStr) return null;
+                        // "2026년 12월 31일" 형식 처리
+                        const koreanMatch = dateStr.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+                        if (koreanMatch) {
+                            const [, year, month, day] = koreanMatch;
+                            return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        }
+                        // ISO 형식 또는 기타 형식 시도
+                        const parsed = new Date(dateStr);
+                        return isNaN(parsed.getTime()) ? null : parsed;
+                    };
+
+                    const cs6Date = parseKoreanDate(cs6Value);
+                    if (cs6Date) {
+                        const cs14Date = new Date(cs6Date);
+                        cs14Date.setMonth(cs14Date.getMonth() - 6);
+                        const cs14Value = cs14Date.toISOString().split('T')[0];
+                        if (addIfNotExists('CS14_신청기한', cs14Value)) {
+                            console.log(`📅 CS14_신청기한 계산: ${cs6Value} - 6개월 = ${cs14Value}`);
+                        }
+                    } else {
+                        console.warn('CS14 계산 실패: CS6 날짜 파싱 불가 -', cs6Value);
                     }
                 } catch (e) {
                     console.warn('CS14 계산 실패:', e);
@@ -3740,8 +4545,8 @@
             // ========================================
             // LineListing 자동 계산 (설정 파일 기반)
             // ========================================
-            // LineListing 파일 존재 여부 확인
-            const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15'];
+            // LineListing 파일 존재 여부 확인 (RAW19 통합 LineListing 포함)
+            const lineListingRawIds = ['RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW19'];
             const hasLineListingFiles = uploadedRawIds.some(id => lineListingRawIds.includes(id));
 
             let lineListingStats = { cs33: 0, cs34: 0, cs36: 0 };
@@ -3767,23 +4572,21 @@
                     console.log(`✅ CS36_중대한총사례수 자동 계산: ${lineListingStats.cs36}`);
                 }
 
-                // CS28_원시총환자수 (RAW14 LineListing 자동 계산)
-                if (lineListingStats.cs28 > 0) {
-                    addIfNotExists('CS28_원시총환자수', String(lineListingStats.cs28), 'LineListing_Auto');
-                    console.log(`✅ CS28_원시총환자수 자동 계산: ${lineListingStats.cs28}`);
-                }
+                // CS28_원시총환자수 (RAW14/RAW19 LineListing 자동 계산)
+                // 원시 데이터 0건도 명시적으로 설정 (placeholder 방지)
+                const cs28Val = lineListingStats.cs28 || 0;
+                addIfNotExists('CS28_원시총환자수', `${cs28Val}명`, 'LineListing_Auto');
+                console.log(`✅ CS28_원시총환자수 자동 계산: ${cs28Val}명`);
 
-                // CS29_원시총이상사례수 (RAW14 LineListing 자동 계산)
-                if (lineListingStats.cs29 > 0) {
-                    addIfNotExists('CS29_원시총이상사례수', String(lineListingStats.cs29), 'LineListing_Auto');
-                    console.log(`✅ CS29_원시총이상사례수 자동 계산: ${lineListingStats.cs29}`);
-                }
+                // CS29_원시총이상사례수 (RAW14/RAW19 LineListing 자동 계산)
+                const cs29Val = lineListingStats.cs29 || 0;
+                addIfNotExists('CS29_원시총이상사례수', `${cs29Val}건`, 'LineListing_Auto');
+                console.log(`✅ CS29_원시총이상사례수 자동 계산: ${cs29Val}건`);
 
-                // CS30_원시중대한사례수 (RAW14 LineListing 자동 계산)
-                if (lineListingStats.cs30 > 0) {
-                    addIfNotExists('CS30_원시중대한사례수', String(lineListingStats.cs30), 'LineListing_Auto');
-                    console.log(`✅ CS30_원시중대한사례수 자동 계산: ${lineListingStats.cs30}`);
-                }
+                // CS30_원시중대한사례수 (RAW14/RAW19 LineListing 자동 계산)
+                const cs30Val = lineListingStats.cs30 || 0;
+                addIfNotExists('CS30_원시중대한사례수', `${cs30Val}건`, 'LineListing_Auto');
+                console.log(`✅ CS30_원시중대한사례수 자동 계산: ${cs30Val}건`);
             }
 
             // 숫자 계산 필드들 (LineListing 자동 계산 우선, fallback: userInputs)
@@ -3793,22 +4596,20 @@
             const cs36 = lineListingStats.cs36 || parseFloat(userInputs?.CS36_중대한총사례수) || 0;
 
             // CS32_신속정기보고총사례수 = CS33 + CS34
-            if (cs33 > 0 || cs34 > 0) {
-                const cs32Value = cs33 + cs34;
-                addIfNotExists('CS32_신속정기보고총사례수', String(cs32Value));
-            }
+            // LineListing이 있으면 항상 계산 (0건도 유효)
+            const cs32Value = cs33 + cs34;
+            addIfNotExists('CS32_신속정기보고총사례수', `${cs32Value}건`, 'CALCULATED');
+            console.log(`✅ CS32_신속정기보고총사례수 계산: ${cs33} + ${cs34} = ${cs32Value}건`);
 
             // CS35_신속정기원시총사례수 = CS33 + CS34 + CS29
-            if (cs33 > 0 || cs34 > 0 || cs29 > 0) {
-                const cs35Value = cs33 + cs34 + cs29;
-                addIfNotExists('CS35_신속정기원시총사례수', String(cs35Value));
+            const cs35Value = cs33 + cs34 + cs29;
+            addIfNotExists('CS35_신속정기원시총사례수', `${cs35Value}건`, 'CALCULATED');
+            console.log(`✅ CS35_신속정기원시총사례수 계산: ${cs33} + ${cs34} + ${cs29} = ${cs35Value}건`);
 
-                // CS37_중대하지않은총사례수 = CS35 - CS36
-                if (cs36 > 0) {
-                    const cs37Value = cs35Value - cs36;
-                    addIfNotExists('CS37_중대하지않은총사례수', String(cs37Value));
-                }
-            }
+            // CS37_중대하지않은총사례수 = CS35 - CS36 (cs36이 0이어도 계산)
+            const cs37Value = cs35Value - cs36;
+            addIfNotExists('CS37_중대하지않은총사례수', `${cs37Value >= 0 ? cs37Value : 0}건`, 'CALCULATED');
+            console.log(`✅ CS37_중대하지않은총사례수 계산: ${cs35Value} - ${cs36} = ${cs37Value >= 0 ? cs37Value : 0}건`);
 
             // ========================================
             // 시판후판매 계산 CS 변수 선계산 (CS19.3, CS22, CS23)
@@ -4000,15 +4801,27 @@
                             }
                         }
 
-                        // RAW 파일 업로드됨 but 추출 실패 → LLM 추출 대상
+                        // RAW 파일 업로드됨 but 추출 실패 → defaultValue 또는 LLM 추출 대상
                         if (matchingRawId) {
-                            extractedData.push({
-                                data_type: 'CS',
-                                variable_id: csKey,
-                                data_value: `[${def.description}] - ${matchingRawId}에서 LLM 추출 필요`,
-                                source_raw_id: matchingRawId,
-                                validation_status: 'Pending'
-                            });
+                            // defaultValue가 정의된 경우 해당 값 사용 (예: 컬럼이 없는 경우)
+                            if (def.defaultValue !== undefined) {
+                                extractedData.push({
+                                    data_type: 'CS',
+                                    variable_id: csKey,
+                                    data_value: def.defaultValue,
+                                    source_raw_id: matchingRawId,
+                                    validation_status: 'Valid'
+                                });
+                                console.log(`📤 CS 기본값 사용: ${csKey} = "${def.defaultValue}"`);
+                            } else {
+                                extractedData.push({
+                                    data_type: 'CS',
+                                    variable_id: csKey,
+                                    data_value: `[${def.description}] - ${matchingRawId}에서 LLM 추출 필요`,
+                                    source_raw_id: matchingRawId,
+                                    validation_status: 'Pending'
+                                });
+                            }
                         } else {
                             // RAW 파일 미업로드 → 필요한 RAW 파일 표시
                             extractedData.push({
@@ -4040,7 +4853,7 @@
                         extractedData.push({
                             data_type: 'PH',
                             variable_id: phKey,
-                            data_value: `[${def.description}] - PSUR 섹션 생성 시 LLM이 작성`,
+                            data_value: `[${def.description}] - ${sourceRawId}에서 LLM 추출 필요`,
                             source_raw_id: sourceRawId,
                             validation_status: 'Pending'
                         });
@@ -4148,9 +4961,27 @@
                             sourceRawId = 'Calculated';
                         } else {
                             // 단일 소스 테이블 (표2, 표6, 표7)
-                            const sourceFile = convertedFiles.find(f =>
-                                (f.assignedRawId || f.rawId) === sourceRawId
-                            );
+                            let sourceFile;
+
+                            // RAW3 (표2_연도별판매량)의 경우, 연도별 판매 데이터가 있는 파일 선택
+                            if (sourceRawId === 'RAW3' && tableKey === '표2_연도별판매량') {
+                                // RAW3 파일들 중 연도 섹션(## 20XX)이 있는 파일 찾기
+                                const raw3Files = convertedFiles.filter(f =>
+                                    (f.assignedRawId || f.rawId) === 'RAW3'
+                                );
+                                sourceFile = raw3Files.find(f =>
+                                    f.markdown && /## 20\d{2}/.test(f.markdown)
+                                ) || raw3Files[0];
+
+                                if (sourceFile) {
+                                    console.log(`📊 RAW3 판매 데이터 파일 선택: ${sourceFile.fileName || sourceFile.file_path}`);
+                                }
+                            } else {
+                                sourceFile = convertedFiles.find(f =>
+                                    (f.assignedRawId || f.rawId) === sourceRawId
+                                );
+                            }
+
                             tableData = sourceFile && sourceFile.markdown
                                 ? extractTableFromMarkdown(sourceFile.markdown, tableKey)
                                 : null;
@@ -4278,7 +5109,9 @@
                                 });
 
                                 // Total 행은 연도별 합계로 저장
-                                if (rowObj.Month && rowObj.Month.includes('Total')) {
+                                // 첫 번째 컬럼(Date 또는 Month)에 'Total' 포함 여부 확인
+                                const firstColValue = rowObj.Date || rowObj.Month || '';
+                                if (firstColValue.includes('Total')) {
                                     yearSummary[year] = {
                                         연도: year,
                                         Korea: rowObj.Korea || '0',
@@ -4288,7 +5121,7 @@
                                         USA: rowObj.USA || '0',
                                         Canada: rowObj.Canada || '0',
                                         India: rowObj.India || '0',
-                                        Total: rowObj.Total || '0'
+                                        Total: rowObj.Total_Vials || rowObj.Total || '0'
                                     };
                                 }
 
@@ -4415,7 +5248,9 @@
                     '중대한(건)': row.중대한,
                     '중대하지않은(건)': row.중대하지않은,
                     '총누적(건)': row.총누적,
-                    '비율(%)': ((row.총누적 / total) * 100).toFixed(1)
+                    '비율(%)': ((row.총누적 / total) * 100).toFixed(1),
+                    '허가사항반영여부': '-',  // P15에서 LLM이 판단
+                    '허가사항반영여부판단근거': '-'  // P15에서 LLM이 판단
                 }));
 
                 // SOC 기준 정렬
@@ -4427,7 +5262,7 @@
                 console.log(`📊 SOC별 건수 피벗 분석: ${rows.length}개 SOC/PT, 총 ${allCases.length}건`);
 
                 return {
-                    headers: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
+                    headers: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)', '허가사항반영여부', '허가사항반영여부판단근거'],
                     data: rows,
                     rowCount: rows.length,
                     totalCases: allCases.length,
@@ -4564,7 +5399,11 @@
                 }
 
                 // 보고유형 컬럼명 확인 (다양한 형식 지원)
-                const typeColumnNames = ['원시/신속/정기', '보고유형', 'Report_Type', '유형'];
+                const typeColumnNames = [
+                    '원시/신속/정기', '원시_신속_정기', '원시·신속·정기',
+                    '보고유형', '보고 유형', 'report_type', 'Report_Type', 'ReportType',
+                    '유형', 'Type', 'type', '구분'
+                ];
                 let typeColumn = null;
                 for (const name of typeColumnNames) {
                     if (tableData.headers.includes(name)) {
@@ -4642,7 +5481,11 @@
                 }
 
                 // 보고유형 컬럼 찾기
-                const typeColumns = ['원시/신속/정기', '보고유형', 'Report_Type'];
+                const typeColumns = [
+                    '원시/신속/정기', '원시_신속_정기', '원시·신속·정기',
+                    '보고유형', '보고 유형', 'report_type', 'Report_Type', 'ReportType',
+                    '유형', 'Type', 'type', '구분'
+                ];
                 let typeCol = null;
                 for (const col of typeColumns) {
                     if (tableData.headers.includes(col)) {
@@ -4886,7 +5729,9 @@
                             '중대한(건)': data.serious,
                             '중대하지않은(건)': data.nonSerious,
                             '총누적(건)': total,
-                            '비율(%)': ratio + '%'
+                            '비율(%)': ratio + '%',
+                            '허가사항반영여부': '-',  // P15에서 LLM이 판단
+                            '허가사항반영여부판단근거': '-'  // P15에서 LLM이 판단
                         });
                     });
 
@@ -4897,13 +5742,15 @@
                     '중대한(건)': totalSerious,
                     '중대하지않은(건)': totalNonSerious,
                     '총누적(건)': totalCases,
-                    '비율(%)': '100.0%'
+                    '비율(%)': '100.0%',
+                    '허가사항반영여부': '-',
+                    '허가사항반영여부판단근거': '-'
                 });
 
                 console.log(`📊 RAW19 SOC 피벗: ${Object.keys(socMap).length}개 SOC, 총 ${totalCases}건`);
 
                 return {
-                    headers: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)'],
+                    headers: ['SOC', 'PT', '중대한(건)', '중대하지않은(건)', '총누적(건)', '비율(%)', '허가사항반영여부', '허가사항반영여부판단근거'],
                     data: rows,
                     rowCount: rows.length,
                     summary: { socCount: Object.keys(socMap).length, serious: totalSerious, nonSerious: totalNonSerious, total: totalCases },
@@ -4916,6 +5763,9 @@
         }
 
         /**
+         * @deprecated 2026-01-20: Full LLM 방식으로 대체됨
+         * 새 방식: window.extractBase.extractAllWithLLM() 사용
+         *
          * 하이브리드 데이터 추출 - LLM 검증 및 보완 (싱글턴 모듈 연동)
          * @param {Array} regexExtractedData - Regex로 추출한 데이터
          * @param {Object} convertedMarkdowns - RAW 파일별 마크다운 내용
@@ -5005,23 +5855,17 @@
 
                 console.log(`[Hybrid] requiredCS 목록: ${requiredCS.length}개 변수`, requiredCS);
 
-                // 플레이스홀더 패턴 정의 (이 패턴이 포함되면 "데이터 없음"으로 판단)
-                const placeholderPatterns = [
-                    'LLM 추출 필요',
-                    '사용자 입력 필요',
-                    '계산 필요',
-                    '자동 생성',
-                    'DATA_NOT_FOUND',
-                    '필요 RAW:',
-                    'PSUR 생성 시'
-                ];
-
-                // 플레이스홀더 여부 판단 함수
-                const isPlaceholder = (value) => {
-                    if (!value || value.length <= 2) return true;
-                    if (value.startsWith('[') && value.includes(']')) return true; // [설명] 형식
-                    return placeholderPatterns.some(pattern => value.includes(pattern));
-                };
+                // 플레이스홀더 여부 판단 함수 (중앙화된 함수 사용 - 재발 방지)
+                const isPlaceholder = window.isPlaceholderValue || ((value) => {
+                    if (!value || typeof value !== 'string') return true;
+                    if (value.length <= 2) return true;
+                    if (value.startsWith('[') && value.includes(']') && value.includes('-')) return true;
+                    const patterns = window.PLACEHOLDER_PATTERNS || [
+                        'LLM 추출 필요', '사용자 입력 필요', '계산 필요',
+                        '자동 생성', 'DATA_NOT_FOUND', '필요 RAW:', 'PSUR 생성 시'
+                    ];
+                    return patterns.some(pattern => value.includes(pattern));
+                });
 
                 // 실제 데이터가 있는지 확인 (플레이스홀더 제외)
                 const missingCS = requiredCS.filter(cs => {
@@ -5062,11 +5906,20 @@
 
                     console.log('[Hybrid] RAW별 누락 CS 매핑:', rawToMissingCS);
 
+                    // 파일명 → RAW ID 매핑 로드
+                    const filenameToRawId = JSON.parse(localStorage.getItem('filenameToRawId') || '{}');
+                    console.log('[Hybrid] 파일명→RAW ID 매핑:', filenameToRawId);
+
                     // 파일별 LLM 추출 수행
                     for (const [fileName, markdownContent] of Object.entries(convertedMarkdowns)) {
-                        // 파일명에서 RAW ID 추출 (예: "RAW4_허가현황.xlsx.md" -> "RAW4")
-                        const rawIdMatch = fileName.match(/(RAW\d+(?:\.\d+)?)/i);
-                        const rawId = rawIdMatch ? rawIdMatch[1].toUpperCase() : null;
+                        // 1. 먼저 매핑에서 RAW ID 찾기
+                        let rawId = filenameToRawId[fileName];
+
+                        // 2. 매핑에 없으면 파일명에서 추출 시도 (fallback)
+                        if (!rawId) {
+                            const rawIdMatch = fileName.match(/(RAW\d+(?:\.\d+)?)/i);
+                            rawId = rawIdMatch ? rawIdMatch[1].toUpperCase() : null;
+                        }
 
                         if (!rawId || !rawToMissingCS[rawId]) continue;
 
@@ -5083,16 +5936,18 @@
 
                         if (Object.keys(targetDefs).length === 0) continue;
 
-                        // extractBase.extractFromMarkdown 호출
+                        // extractBase.extractFromMarkdownWithRetry 호출 (재발 방지: 재시도 로직 포함)
                         try {
                             if (window.llmProgressBar) {
-                                window.llmProgressBar.setStreamText(`${rawId}에서 CS 데이터 추출 중...`);
+                                window.llmProgressBar.setStreamText(`${rawId}에서 CS 데이터 추출 중 (재시도 지원)...`);
                             }
 
-                            const result = await window.extractBase.extractFromMarkdown(
+                            // 재시도 옵션: 최대 2회 재시도, 실패 시 개별 변수 추출
+                            const result = await window.extractBase.extractFromMarkdownWithRetry(
                                 markdownContent,
                                 rawId,
-                                targetDefs
+                                targetDefs,
+                                { maxRetries: 2, retryDelay: 1500, splitOnFailure: true, validatePlaceholders: true }
                             );
 
                             if (result.success && result.data) {
@@ -5105,7 +5960,7 @@
                                         // 기존 플레이스홀더 값 업데이트
                                         existing.data_value = value;
                                         existing.source_raw_id = rawId;
-                                        existing.validation_status = 'LLM_Extracted';
+                                        existing.validation_status = 'Pending';
                                         console.log(`[Hybrid] ✅ ${varId} 업데이트 완료 (${rawId})`);
 
                                         // missingCS에서 제거
@@ -5118,7 +5973,7 @@
                                             variable_id: varId,
                                             data_value: value,
                                             source_raw_id: rawId,
-                                            validation_status: 'LLM_Extracted'
+                                            validation_status: 'Pending'
                                         });
                                         console.log(`[Hybrid] ✅ ${varId} 신규 추가 (${rawId})`);
 
@@ -5126,10 +5981,21 @@
                                         if (idx > -1) missingCS.splice(idx, 1);
                                     }
                                 });
+
+                                // 실패한 변수 로깅 (재발 방지: 실패 추적)
+                                if (result.failedVars && result.failedVars.length > 0) {
+                                    console.warn(`[Hybrid] ⚠️ ${rawId}: ${result.failedVars.length}개 변수 추출 최종 실패:`, result.failedVars);
+                                }
                             }
                         } catch (err) {
                             console.error(`[Hybrid] ${rawId} 추출 오류:`, err.message);
                         }
+                    }
+
+                    // 실패한 추출 목록 확인 및 사용자 알림 준비
+                    const failedExtractions = window.extractBase?.getFailedExtractions() || [];
+                    if (failedExtractions.length > 0) {
+                        console.warn(`[Hybrid] ⚠️ 총 ${failedExtractions.length}개 변수 추출 최종 실패:`, failedExtractions.map(f => f.varId));
                     }
 
                     console.log(`[Hybrid] 싱글턴 모듈 추출 완료, 잔여 누락: ${missingCS.length}개`);
@@ -5169,21 +6035,25 @@
                     'CS19': ['RAW3'],   // 시판후판매
                     'CS55': ['RAW5', 'RAW6'],  // 안전성조치
                     'CS56': ['RAW7'],   // 안전성정보변경
-                    'CS25': ['RAW12', 'RAW13'],  // 신속보고
-                    'CS28': ['RAW14'], 'CS29': ['RAW14'], 'CS30': ['RAW14'],  // 원시자료
+                    'CS25': ['RAW19', 'RAW12', 'RAW13'],  // 신속보고 (RAW19 우선)
+                    'CS28': ['RAW19'], 'CS29': ['RAW19'], 'CS30': ['RAW19'],  // 원시자료 (RAW19 우선)
+                    'CS32': ['RAW19'], 'CS33': ['RAW19'], 'CS34': ['RAW19'],  // LineListing 계산
+                    'CS35': ['RAW19'], 'CS36': ['RAW19'], 'CS37': ['RAW19'],  // LineListing 계산
                     'CS15': ['RAW2.2', 'RAW2.4'],  // 효능효과
                     'CS16': ['RAW2.1', 'RAW2.5'],  // 용법용량
                 };
 
-                // PH 서술문 생성에 필요한 RAW 파일 매핑
+                // PH 서술문 생성에 필요한 RAW 파일 매핑 (RAW19 통합 LineListing 반영)
                 const PH_TO_RAW_PRIORITY = {
-                    'PH4': ['RAW14'],  // 원시자료서술문
-                    'PH5': ['RAW14'],  // 원시자료서술문2
-                    'PH6': ['RAW12', 'RAW13', 'RAW14', 'RAW15'],  // 개별증례분석문
+                    'PH4': ['RAW19'],  // 원시자료서술문 (RAW19에서 원시 필터)
+                    'PH5': ['RAW19'],  // 원시자료서술문2 (RAW19에서 원시 필터)
+                    'PH6': ['RAW19'],  // 개별증례분석문 (RAW19 전체)
                     'PH7': ['RAW8', 'RAW17'],  // 새로분석된의뢰의시험
+                    'PH7.1': ['RAW17', 'RAW11'],  // 새로분석된비중재시험
                     'PH8': ['RAW8', 'RAW17'],  // 시작또는진행중시험
+                    'PH8.1': ['RAW17'],  // 시작또는진행중인비중재시험
                     'PH9': ['RAW9'],  // 문헌에발표된안전성
-                    'PH10': ['RAW12', 'RAW13', 'RAW14', 'RAW15', 'RAW16'],  // 유효성관련정보
+                    'PH10': ['RAW19', 'RAW16'],  // 유효성관련정보 (RAW19 + SMQ)
                     'PH11': [],  // 총괄평가문 - 전체 문서 기반
                     'PH12': []   // 결론 - 전체 문서 기반
                 };
@@ -5211,24 +6081,45 @@
                 });
                 console.log('[Hybrid] 우선 포함 RAW 파일 (CS+PH):', [...priorityRawIds]);
 
+                // 파일명 → RAW ID 매핑 기반 우선순위 판별 함수
+                const getFileRawId = (fileName) => {
+                    // 1. filenameToRawId 매핑에서 먼저 확인
+                    if (filenameToRawId[fileName]) {
+                        return filenameToRawId[fileName];
+                    }
+                    // 2. 파일명에서 RAW ID 패턴 추출 (fallback)
+                    const rawIdMatch = fileName.match(/(RAW\d+(?:\.\d+)?)/i);
+                    return rawIdMatch ? rawIdMatch[1].toUpperCase() : null;
+                };
+
+                const isPriorityFile = (fileName) => {
+                    const rawId = getFileRawId(fileName);
+                    if (!rawId) return false;
+                    // RAW19 또는 priorityRawIds에 포함된 파일
+                    return priorityRawIds.has(rawId) || rawId === 'RAW19';
+                };
+
                 // 파일을 우선순위에 따라 정렬
                 const sortedEntries = Object.entries(convertedMarkdowns).sort((a, b) => {
                     const aFileName = a[0];
                     const bFileName = b[0];
-                    const aIsPriority = [...priorityRawIds].some(raw => aFileName.includes(raw));
-                    const bIsPriority = [...priorityRawIds].some(raw => bFileName.includes(raw));
+                    const aIsPriority = isPriorityFile(aFileName);
+                    const bIsPriority = isPriorityFile(bFileName);
                     if (aIsPriority && !bIsPriority) return -1;
                     if (!aIsPriority && bIsPriority) return 1;
                     return 0;
                 });
 
-                // 우선순위 파일은 전체 포함, 나머지는 8000자 제한
+                // 우선순위 파일은 전체 포함, 나머지는 5000자 제한
+                // RAW19 LineListing은 특별히 25000자까지 허용 (PH4-6 생성에 필수)
                 const allMarkdowns = sortedEntries
                     .map(([fileName, content]) => {
-                        const isPriority = [...priorityRawIds].some(raw => fileName.includes(raw));
-                        const maxLen = isPriority ? 15000 : 5000; // 우선순위 파일은 더 많이 포함
-                        console.log(`[Hybrid] 파일 포함: ${fileName} (${isPriority ? '우선순위' : '일반'}, ${Math.min(content?.length || 0, maxLen)}자)`);
-                        return `### ${fileName}\n${(content || '').substring(0, maxLen)}`;
+                        const rawId = getFileRawId(fileName);
+                        const isPriority = isPriorityFile(fileName);
+                        // RAW19는 25000자, 기타 우선순위는 15000자, 일반은 5000자
+                        const maxLen = rawId === 'RAW19' ? 25000 : (isPriority ? 15000 : 5000);
+                        console.log(`[Hybrid] 파일 포함: ${fileName} (RAW: ${rawId || 'N/A'}, ${isPriority ? '우선순위' : '일반'}, ${Math.min(content?.length || 0, maxLen)}자)`);
+                        return `### ${fileName} [${rawId || 'Unknown'}]\n${(content || '').substring(0, maxLen)}`;
                     })
                     .join('\n\n---\n\n');
 
@@ -5247,7 +6138,20 @@
    - RAW4 (허가현황): 국가, 브랜드명, 허가번호, 허가상태, 허가일 등이 표 형식으로 포함되어 있습니다.
    - RAW3 (시판후 판매 데이터): 연도별 판매량이 포함되어 있습니다.
    - RAW8 (임상노출데이터): 임상시험 노출 정보가 포함되어 있습니다.
+   - RAW7 (안전성정보변경): 허가사항 변경 이력이 포함되어 있습니다. CS56 변수들을 추출하세요:
+     * CS56_참고정보의변경서술문: 안전성정보 변경 여부와 변경 내용 서술
+     * CS56_별첨2참고정보변경표: 변경 전/후 대비표 (표 형식)
+     * CS56.1_허가사항변경일: 변경 일자 (YYYY년 MM월 DD일)
+     * CS56.2~CS56.7: 기존/최신 효능효과, 용법용량, 사용상의주의사항
 3. **찾을 수 없는 항목만 "DATA_NOT_FOUND"로 표시하세요.**
+4. **RAW19 통합 LineListing 구조 (PH4-6 생성 시 필수 이해!):**
+   - RAW19는 RAW12(국외신속), RAW13(국내신속), RAW14(원시자료), RAW15(정기보고)를 통합한 파일입니다.
+   - **'원시/신속/정기' 컬럼**으로 보고 유형을 구분합니다:
+     * '원시' = 원시자료 (RAW14 대체) → PH4, PH5 생성 시 이 행만 분석
+     * '신속' = 신속보고 (RAW12+RAW13 대체)
+     * '정기' = 정기보고 (RAW15 대체)
+   - **PH4, PH5**: '원시/신속/정기' 컬럼이 '원시'인 행만 필터링하여 분석
+   - **PH6**: RAW19 전체 데이터(원시+신속+정기 모두)를 종합 분석
 
 ## 현재 Regex로 추출된 데이터 (참고용 - 플레이스홀더 제외)
 \`\`\`json
@@ -5271,15 +6175,15 @@ ${allMarkdowns.substring(0, 60000)}
 ## 작업 지침
 1. **누락된 CS 항목**: 위 RAW 자료에서 해당 값을 찾아 추출하세요.
 2. **PH 서술문 (⚠️ 필수 생성!)**: 아래 상세 지침에 따라 각 PH 변수를 생성하세요:
-   - **PH4_원시자료서술문**: RAW14 원시자료에서 추출. 형식: "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 N명의 환자에서 M건의 이상사례가 확인되었으며, SOC별로 분석한 결과... (200-400자)"
-   - **PH5_원시자료서술문2**: RAW14 원시자료에서 추출. 표7 참조 문구 포함. 형식: "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 N건이며..."
-   - **PH6_개별증례분석문**: RAW12/13/14/15 LineListing 통합 분석. 형식: "개별 증례 분석 결과, 중대한 이상사례 N건 중 인과관계가 '관련있음' 또는 '가능함'으로 평가된 사례는 M건이다..."
+   - **PH4_원시자료서술문**: RAW19 통합 LineListing에서 '원시/신속/정기' 컬럼이 '원시'인 행 분석. 형식: "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 N명의 환자에서 M건의 이상사례가 확인되었으며, SOC별로 분석한 결과... (200-400자)"
+   - **PH5_원시자료서술문2**: RAW19 통합 LineListing에서 원시 필터링 후 표7 참조 문구 포함. 형식: "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 N건이며..."
+   - **PH6_개별증례분석문**: RAW19 통합 LineListing 전체 분석 (원시+신속+정기 모두 포함). 형식: "개별 증례 분석 결과, 중대한 이상사례 N건 중 인과관계가 '관련있음' 또는 '가능함'으로 평가된 사례는 M건이다..."
    - **PH7_새로_분석된_의뢰의_시험**: RAW8/RAW17에서 추출. 해당 없으면: "본 보고기간 동안 중요한 안전성 정보를 포함하거나 새롭게 분석된 회사 의뢰의 시험이 없어 해당사항이 없다."
    - **PH7.1_새로분석된_비중재시험**: RAW17에서 NIS 시험 정보 추출. 해당 없으면: "본 보고기간 동안 새롭게 분석된 비중재 시험(NIS)이 없다."
    - **PH8_시작또는진행중시험**: RAW8/RAW17에서 진행중인 시험 정보 추출. 해당 없으면: "본 보고기간 동안 안전성 문제를 검토하기 위한 새로운 시험이 없다."
-   - **PH8_.1_시작또는진행중인비중재시험**: RAW17에서 진행중인 NIS 정보 추출.
+   - **PH8.1_시작또는진행중인비중재시험**: RAW17에서 진행중인 NIS 정보 추출.
    - **PH9_문헌에발표된안전성**: RAW9 문헌자료에서 안전성 관련 내용 요약. 해당 없으면: "본 보고기간 동안 문헌에 발표된 중요한 안전성 정보는 없다."
-   - **PH10_유효성관련정보**: RAW12-16 + MedDRA SMQ(lack of efficacy) 분석. 형식: "MedDRA SMQ(lack of efficacy)를 적용하여 분석한 결과, 유효성 결여 관련 사례는 N건이다..."
+   - **PH10_유효성관련정보**: RAW19 통합 LineListing + RAW16 MedDRA SMQ(lack of efficacy) 분석. 형식: "MedDRA SMQ(lack of efficacy)를 적용하여 분석한 결과, 유효성 결여 관련 사례는 N건이다..."
    - **PH11_총괄평가문**: 전체 문서 기반 종합 안전성 평가. 형식: "보고기간 동안 수집된 안전성 정보 평가결과, (1) 신규 안전성 우려사항 발견 여부, (2) 허가사항 변경 필요 여부, (3) 추가 조치 필요 여부 등을 기술..."
    - **PH12_결론**: 유익성-위해성 균형 평가 결론. 형식: "본 보고기간([CS3]~[CS4]) 동안 수집된 안전성 정보를 분석한 결과, 현재까지 알려진 유익성-위해성 프로파일에 영향을 미치는 새로운 안전성 우려사항은 확인되지 않았다..."
 3. **GENERATED 항목 (⚠️ 필수 생성 - 모두 반드시 생성해야 함!)**: 아래 형식에 맞게 생성하세요.
@@ -5326,7 +6230,16 @@ ${allMarkdowns.substring(0, 60000)}
    - CS35_신속정기원시총사례수: **⚠️ CS33 + CS34 + RAW14(원시자료) 행 수로 계산!**
    - CS37_중대하지않은총사례수: **⚠️ CS35 - CS36으로 계산!**
 13. **CS55 안전성조치** (RAW5, RAW6에서): 허가팀 메일 기반 안전성 조치 서술문
-14. **CS56 참고정보변경** (RAW7에서): 안전성 정보 변경 내역
+14. **CS56 참고정보변경** (RAW7에서): 안전성정보변경 문서에서 다음 항목들을 추출:
+   - CS56_참고정보의변경서술문: 변경 여부와 변경 내용 요약 서술문
+   - CS56_별첨2참고정보변경표: 변경 전/후 대비 표 (표 형식 마크다운)
+   - CS56.1_허가사항변경일: 변경 일자(들) - 형식: "YYYY년 MM월 DD일" 또는 "YYYY년 MM월 DD일(변경내용), YYYY년 MM월 DD일(변경내용)"
+   - CS56.2_기존효능효과: 보고시작시점 효능효과 전문
+   - CS56.3_기존용량용법: 보고시작시점 용법용량 전문
+   - CS56.4_기존사용상의주의사항: 보고시작시점 사용상의주의사항 전문
+   - CS56.5_최신효능효과: 보고종료시점 효능효과 전문 (변경 없으면 "변경 없음")
+   - CS56.6_최신용량용법: 보고종료시점 용법용량 전문 (변경 없으면 "변경 없음")
+   - CS56.7_최신사용상의주의사항: 보고종료시점 사용상의주의사항 전문 (변경 없으면 "변경 없음")
 
 ## 출력 형식
 반드시 아래 JSON 형식으로만 응답하세요:
@@ -5352,6 +6265,9 @@ ${allMarkdowns.substring(0, 60000)}
     "CS32_신속정기보고총사례수": "40",
     "CS35_신속정기원시총사례수": "60",
     "CS37_중대하지않은총사례수": "52",
+    "CS56_참고정보의변경서술문": "본 보고기간 동안 안전성 정보와 관련한 참고 정보의 변경은 아래와 같다. 2024년 3월 15일 사용상의주의사항 중 '경고' 섹션에 새로운 안전성 정보가 추가되었다.",
+    "CS56_별첨2참고정보변경표": "| 구분 | 변경 전 | 변경 후 |\\n|---|---|---|\\n| 경고 | (기존 내용) | (신규 추가된 경고 문구) |",
+    "CS56.1_허가사항변경일": "2024년 03월 15일(사용상의주의사항 변경)",
     "CS57_참고문헌리스트": "1. 참고문헌1\\n2. 참고문헌2",
     "PH4_원시자료서술문": "본 보고기간 동안 한국의약품안전관리원에서 제공받은 자발적 보고자료(원시자료)로부터 15명의 환자에서 23건의 이상사례가 확인되었으며...",
     "PH5_원시자료서술문2": "원시자료 상세 내역은 표 7에 기재하였다. 보고된 이상사례 중 중대한 이상사례는 5건이며...",
@@ -5393,78 +6309,110 @@ ${allMarkdowns.substring(0, 60000)}
 
 찾을 수 없는 항목은 "DATA_NOT_FOUND"로 표시하세요.`;
 
-                // 6. LLM 호출
-                if (window.llmProgressBar) {
-                    window.llmProgressBar.setStreamText('LLM 데이터 추출/생성 중...');
-                }
-
-                const response = await window.multiLLMClient.generate(prompt, {
-                    provider: 'google',
-                    model: 'gemini-2.0-flash',
-                    temperature: 0.2,
-                    maxTokens: 16384  // PH 서술문 포함하여 증가
-                });
-
-                if (!response?.text) {
-                    console.warn('[Hybrid] LLM 응답 없음');
-                    return regexExtractedData;
-                }
-
-                // 7. LLM 응답 파싱 (견고한 처리)
+                // 6. LLM 호출 (재시도 로직 포함)
+                const MAX_LLM_RETRIES = 2;
                 let llmResult = null;
-                try {
-                    // 여러 패턴으로 JSON 추출 시도
-                    let jsonContent = null;
+                let lastError = null;
 
-                    // 패턴 1: ```json ... ```
-                    const jsonMatch = response.text.match(/```json\s*([\s\S]*?)\s*```/);
-                    if (jsonMatch) {
-                        jsonContent = jsonMatch[1];
-                    }
+                for (let retryAttempt = 0; retryAttempt <= MAX_LLM_RETRIES; retryAttempt++) {
+                    try {
+                        if (window.llmProgressBar) {
+                            const retryText = retryAttempt > 0 ? ` (재시도 ${retryAttempt}/${MAX_LLM_RETRIES})` : '';
+                            window.llmProgressBar.setStreamText(`LLM 데이터 추출/생성 중...${retryText}`);
+                        }
 
-                    // 패턴 2: ``` ... ``` (언어 지정 없음)
-                    if (!jsonContent) {
-                        const codeMatch = response.text.match(/```\s*([\s\S]*?)\s*```/);
-                        if (codeMatch && codeMatch[1].trim().startsWith('{')) {
-                            jsonContent = codeMatch[1];
+                        // 재시도 시 온도 증가 (다양한 응답 유도)
+                        const temperature = retryAttempt === 0 ? 0.2 : 0.3 + (retryAttempt * 0.1);
+
+                        const response = await window.multiLLMClient.generate(prompt, {
+                            provider: 'google',
+                            model: 'gemini-2.0-flash',
+                            temperature: temperature,
+                            maxTokens: 16384  // PH 서술문 포함하여 증가
+                        });
+
+                        if (!response?.text) {
+                            console.warn(`[Hybrid] LLM 응답 없음 (시도 ${retryAttempt + 1})`);
+                            lastError = new Error('LLM 응답 없음');
+                            continue;
+                        }
+
+                        // 7. LLM 응답 파싱 (견고한 처리)
+                        let jsonContent = null;
+
+                        // 패턴 1: ```json ... ```
+                        const jsonMatch = response.text.match(/```json\s*([\s\S]*?)\s*```/);
+                        if (jsonMatch) {
+                            jsonContent = jsonMatch[1];
+                        }
+
+                        // 패턴 2: ``` ... ``` (언어 지정 없음)
+                        if (!jsonContent) {
+                            const codeMatch = response.text.match(/```\s*([\s\S]*?)\s*```/);
+                            if (codeMatch && codeMatch[1].trim().startsWith('{')) {
+                                jsonContent = codeMatch[1];
+                            }
+                        }
+
+                        // 패턴 3: 순수 JSON 객체 찾기
+                        if (!jsonContent) {
+                            const pureJsonMatch = response.text.match(/(\{[\s\S]*"extracted"[\s\S]*\})/);
+                            if (pureJsonMatch) {
+                                jsonContent = pureJsonMatch[1];
+                            }
+                        }
+
+                        if (!jsonContent) {
+                            console.warn(`[Hybrid] JSON 추출 실패 (시도 ${retryAttempt + 1})`);
+                            console.log('[Hybrid] LLM 응답 (처음 500자):', response.text.substring(0, 500));
+                            lastError = new Error('JSON 추출 실패');
+                            continue;
+                        }
+
+                        // JSON 정제: 불필요한 문자 제거
+                        jsonContent = jsonContent
+                            .trim()
+                            .replace(/^\uFEFF/, '')                    // BOM 제거
+                            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // 제어 문자 제거 (탭, 개행, CR 제외)
+
+                        // 디버깅: 정제된 JSON 내용 출력
+                        console.log('[Hybrid] 정제된 JSON (처음 200자):', jsonContent.substring(0, 200));
+
+                        llmResult = JSON.parse(jsonContent);
+                        console.log(`[Hybrid] LLM 추출 성공 (시도 ${retryAttempt + 1}):`, llmResult);
+
+                        // 성공 시 루프 탈출
+                        break;
+
+                    } catch (parseError) {
+                        console.error(`[Hybrid] JSON 파싱 오류 (시도 ${retryAttempt + 1}):`, parseError.message);
+                        lastError = parseError;
+
+                        // 재시도 전 대기 (exponential backoff)
+                        if (retryAttempt < MAX_LLM_RETRIES) {
+                            const delay = 1500 * (retryAttempt + 1);
+                            console.log(`[Hybrid] ${delay}ms 후 재시도...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
                         }
                     }
-
-                    // 패턴 3: 순수 JSON 객체 찾기
-                    if (!jsonContent) {
-                        const pureJsonMatch = response.text.match(/(\{[\s\S]*"extracted"[\s\S]*\})/);
-                        if (pureJsonMatch) {
-                            jsonContent = pureJsonMatch[1];
-                        }
-                    }
-
-                    if (!jsonContent) {
-                        console.warn('[Hybrid] JSON 추출 실패 - Regex 결과 사용');
-                        console.log('[Hybrid] LLM 응답 (처음 500자):', response.text.substring(0, 500));
-                        return regexExtractedData;
-                    }
-
-                    // JSON 정제: 불필요한 문자 제거
-                    jsonContent = jsonContent
-                        .trim()
-                        .replace(/^\uFEFF/, '')                    // BOM 제거
-                        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // 제어 문자 제거 (탭, 개행, CR 제외)
-
-                    // 디버깅: 정제된 JSON 내용 출력
-                    console.log('[Hybrid] 정제된 JSON (처음 200자):', jsonContent.substring(0, 200));
-
-                    llmResult = JSON.parse(jsonContent);
-                    console.log('[Hybrid] LLM 추출 결과:', llmResult);
-
-                } catch (parseError) {
-                    console.error('[Hybrid] JSON 파싱 오류:', parseError.message);
-                    console.log('[Hybrid] LLM 응답 (처음 1000자):', response.text.substring(0, 1000));
-                    console.warn('[Hybrid] Regex 결과만 사용');
-                    return regexExtractedData;
                 }
 
+                // 모든 재시도 실패 시
                 if (!llmResult) {
-                    console.warn('[Hybrid] LLM 결과 없음 - Regex 결과 사용');
+                    console.warn('[Hybrid] LLM 추출 최종 실패 - Regex 결과만 사용');
+                    console.error('[Hybrid] 마지막 오류:', lastError?.message);
+
+                    // 실패 정보 기록 (사용자 알림용)
+                    if (!window.hybridExtractionFailures) {
+                        window.hybridExtractionFailures = [];
+                    }
+                    window.hybridExtractionFailures.push({
+                        timestamp: new Date().toISOString(),
+                        stage: 'hybrid_llm_parse',
+                        error: lastError?.message || 'Unknown error',
+                        retries: MAX_LLM_RETRIES
+                    });
+
                     return regexExtractedData;
                 }
 
@@ -5510,7 +6458,7 @@ ${allMarkdowns.substring(0, 60000)}
                             // 기존 값이 Pending이고 LLM 신뢰도가 높으면 업데이트
                             if (existing.validation_status === 'Pending' && confidence >= 0.7) {
                                 existing.data_value = value;
-                                existing.validation_status = confidence >= 0.9 ? 'Validated' : 'LLM_Extracted';
+                                existing.validation_status = confidence >= 0.9 ? 'Validated' : 'Pending';
                                 existing.llm_confidence = confidence;
                                 console.log(`[Hybrid] 업데이트: ${varId} (신뢰도: ${confidence})`);
                             }
@@ -5522,8 +6470,8 @@ ${allMarkdowns.substring(0, 60000)}
                                 data_type: dataType,
                                 variable_id: varId,
                                 data_value: value,
-                                source_raw_id: 'LLM_Extracted',
-                                validation_status: confidence >= 0.9 ? 'Validated' : 'LLM_Extracted',
+                                source_raw_id: 'LLM',
+                                validation_status: confidence >= 0.9 ? 'Validated' : 'Pending',
                                 llm_confidence: confidence
                             });
                             console.log(`[Hybrid] 신규 추가: ${varId} (신뢰도: ${confidence})`);
@@ -6299,8 +7247,33 @@ ${phIds.map(id => `  "${id}": "생성된 서술문..."`).join(',\n')}
             let completedGroups = 0;
             const totalGroups = phase1Groups.length + 1;  // +1 for Phase 2
 
+            // 원시자료 0건 체크 (PH4-5 기본 서술문 처리)
+            const cs28Value = csData?.CS28_원시총환자수 || '0';
+            const cs29Value = csData?.CS29_원시총이상사례수 || '0';
+            const isRawDataEmpty = cs28Value === '0명' || cs28Value === '0' || parseInt(cs28Value) === 0;
+            console.log(`[generatePHData] 원시자료 확인: CS28=${cs28Value}, CS29=${cs29Value}, isEmpty=${isRawDataEmpty}`);
+
             for (const phGroup of phase1Groups) {
                 try {
+                    // PH4-5: 원시자료 0건이면 기본 서술문 자동 설정 (LLM 호출 생략)
+                    if ((phGroup.includes('PH4_원시자료서술문') || phGroup.includes('PH5_원시자료서술문2')) && isRawDataEmpty) {
+                        console.log(`[generatePHData] 원시자료 0건 - PH4, PH5 기본 서술문 사용`);
+                        const cs31Value = csData?.CS31_원시자료신청일 || '보고기간 시작 전';
+                        const companyName = csData?.CS2_회사명 || '품목허가권자';
+
+                        // PH4 기본 서술문
+                        phData['PH4_원시자료서술문'] = `원시자료를 ${cs31Value}에 신청하였으며, 결과를 확인하였을 때 본 보고기간 동안의 원시자료 내역은 없었다.`;
+
+                        // PH5 기본 서술문
+                        phData['PH5_원시자료서술문2'] = `원시자료를 ${cs31Value}에 신청하였으며, 결과를 확인하였을 때 본 보고기간 동안의 원시자료 내역은 없었다. ${companyName}(주)가 KIDS로 보고한 사례는 제외하였다.`;
+
+                        completedGroups++;
+                        if (progressCallback) {
+                            progressCallback(`PH 생성 중: ${phGroup.join(', ')} (원시 0건 - 기본값 적용)`);
+                        }
+                        continue;  // LLM 호출 없이 다음 그룹으로
+                    }
+
                     // 필요한 RAW ID 수집
                     const requiredRawIds = new Set();
                     phGroup.forEach(phId => {
@@ -6782,7 +7755,7 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                             variable_id: varId,
                             data_value: value,
                             source_raw_id: 'LLM_SingleTurn',
-                            validation_status: 'LLM_Extracted'
+                            validation_status: 'Pending'
                         });
                     }
                 });
@@ -6797,7 +7770,7 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                             variable_id: varId,
                             data_value: value,
                             source_raw_id: 'LLM_SingleTurn',
-                            validation_status: 'LLM_Extracted'
+                            validation_status: 'Pending'
                         });
                     }
                 });
@@ -6812,7 +7785,7 @@ ${Object.keys(convertedMarkdowns).length > 0 ? allMarkdowns : '제공된 RAW 데
                             variable_id: tableId,
                             data_value: JSON.stringify(tableData), // 객체를 JSON 문자열로 저장
                             source_raw_id: 'LLM_SingleTurn',
-                            validation_status: 'LLM_Extracted'
+                            validation_status: 'Pending'
                         });
                     }
                 });

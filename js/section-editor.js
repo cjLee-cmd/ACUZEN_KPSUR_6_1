@@ -774,6 +774,15 @@ class SectionEditor {
         // 테이블 패턴: | col1 | col2 | 형식의 연속된 줄
         const tableRegex = /(?:^|\n)((?:\|[^\n]+\|\n?)+)/g;
 
+        // 헬퍼: 파이프로 분리 후 양 끝 빈 요소만 제거 (빈 셀은 유지)
+        const splitTableRow = (line) => {
+            let cells = line.split('|');
+            // 맨 앞/뒤의 빈 요소 제거 (| 로 시작/끝나므로)
+            if (cells.length > 0 && cells[0].trim() === '') cells.shift();
+            if (cells.length > 0 && cells[cells.length - 1].trim() === '') cells.pop();
+            return cells;
+        };
+
         return markdown.replace(tableRegex, (match, tableBlock) => {
             const lines = tableBlock.trim().split('\n').filter(line => line.trim());
             if (lines.length < 2) return match;
@@ -782,12 +791,15 @@ class SectionEditor {
             const separatorIndex = lines.findIndex(line => /^\|[\s\-:|]+\|$/.test(line.trim()) && line.includes('---'));
             if (separatorIndex === -1) return match;
 
+            // 헤더에서 컬럼 수 결정
+            const headerCells = splitTableRow(lines[0]);
+            const columnCount = headerCells.length;
+
             let tableHtml = '<div class="table-wrapper"><table class="md-table">';
 
             // 헤더 행
             if (separatorIndex > 0) {
                 tableHtml += '<thead><tr>';
-                const headerCells = lines[0].split('|').filter(cell => cell.trim() !== '');
                 headerCells.forEach(cell => {
                     tableHtml += `<th>${cell.trim()}</th>`;
                 });
@@ -797,12 +809,14 @@ class SectionEditor {
             // 바디 행
             tableHtml += '<tbody>';
             for (let i = separatorIndex + 1; i < lines.length; i++) {
-                const cells = lines[i].split('|').filter(cell => cell.trim() !== '');
+                const cells = splitTableRow(lines[i]);
                 if (cells.length > 0) {
                     tableHtml += '<tr>';
-                    cells.forEach(cell => {
-                        tableHtml += `<td>${cell.trim()}</td>`;
-                    });
+                    // 컬럼 수에 맞게 셀 생성 (부족하면 빈 셀 추가)
+                    for (let j = 0; j < columnCount; j++) {
+                        const cellContent = j < cells.length ? cells[j].trim() : '';
+                        tableHtml += `<td>${cellContent}</td>`;
+                    }
                     tableHtml += '</tr>';
                 }
             }
