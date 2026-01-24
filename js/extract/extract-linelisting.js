@@ -1644,10 +1644,27 @@
                 });
             }
 
-            // RAW15: 정기보고 → CS34 (추가 가능)
+            // RAW15: 정기보고 → CS34는 이제 LLM에서 처리 (extract-cs.js useLLM: true)
+            // 레거시 호환을 위해 CS28만 코드 기반 유지
             if (rawId === 'RAW15') {
-                csValues['CS34_정기보고총사례수'] = String(this.processedData.length);
-                console.log(`[LineListingExtractor] ${rawId} → CS34 추출 완료: ${this.processedData.length}건`);
+                console.log(`[LineListingExtractor] ${rawId} → CS34는 LLM에서 추출 (useLLM: true)`);
+            }
+
+            // RAW19: 통합 LineListing
+            // CS32-CS37은 이제 LLM에서 처리 (extract-cs.js useLLM: true)
+            // 여기서는 CS28_원시총환자수만 코드 기반으로 추출 (원시자료 환자수는 단순 카운팅)
+            if (rawId === 'RAW19') {
+                const rawCount = this.processedData.filter(row =>
+                    row['원시/신속/정기'] === '원시'
+                ).length;
+
+                csValues['CS28_원시총환자수'] = String(rawCount);
+
+                console.log(`[LineListingExtractor] RAW19 → CS28(원시) 추출 완료:`, {
+                    CS28_원시: rawCount,
+                    총건수: this.processedData.length,
+                    note: 'CS33/CS34/CS36은 LLM에서 추출 (useLLM: true)'
+                });
             }
 
             return csValues;
